@@ -1,0 +1,3 @@
+$Env.CLERK_SECRET_KEY="sk_test_9m1DDfnMtj4TE8Mx92AQh0abmiMH15GaYHy2YMGFyt"
+
+wrangler dev

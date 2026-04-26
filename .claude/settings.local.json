@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x /Users/hprith/Developer/life-tracker/mcp-server/run-backend.sh)"
+    ]
+  }
+}
