@@ -1,5 +1,6 @@
 # Quant
 
+[![SafeSkill 89/100](https://img.shields.io/badge/SafeSkill-89%2F100_Passes%20with%20Notes-yellow)](https://safeskill.dev/scan/hatiprithwish-quant)
 > Turn your Claude subscription into a personal life-tracker. Talk to Claude, watch your data appear on your dashboard.
 
 **Live:** https://quant-frontend.pages.dev
