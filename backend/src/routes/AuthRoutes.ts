@@ -7,10 +7,11 @@ import { AuthRepo } from "../repos/AuthRepo";
 import { ZAuthSyncRequest } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
+import { authRateLimiter } from "../middlewares/rateLimiter";
 
 const authRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-authRoutes.post("/sync", zValidator("json", ZAuthSyncRequest), async (c) => {
+authRoutes.post("/sync", authRateLimiter, zValidator("json", ZAuthSyncRequest), async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
   const authHeader = c.req.header("Authorization");
   const token = authHeader?.replace("Bearer ", "");

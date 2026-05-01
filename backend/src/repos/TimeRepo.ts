@@ -24,21 +24,19 @@ export class TimeRepo {
     req: LogTimeRepoRequest,
     db: DrizzleDb,
   ): Promise<LogTimeResponse> {
-    const bucketInt = timeBucketLabelToInt[req.bucket];
-
-    const id = await TimeDAL.insert(
-      {
+    await TimeDAL.insertMany(
+      req.entries.map((entry) => ({
         userId: req.userId,
-        date: req.date,
-        bucket: bucketInt,
-        activity: req.activity,
-        startTime: req.start_time,
-        endTime: req.end_time,
-      },
+        date: entry.date,
+        bucket: timeBucketLabelToInt[entry.bucket],
+        activity: entry.activity,
+        startTime: entry.start_time,
+        endTime: entry.end_time,
+      })),
       db,
     );
 
-    return { isSuccess: true, message: "Time logged", id };
+    return { isSuccess: true, message: "Time logged", insertedCount: req.entries.length };
   }
 
   static async getSummary(

@@ -4,22 +4,20 @@ import { timeLogs } from "../db/schema";
 import { InsertTimeLogDbRequest, GetTimeLogsDbRequest } from "../schemas";
 
 export class TimeDAL {
-  static async insert(
-    req: InsertTimeLogDbRequest,
+  static async insertMany(
+    items: InsertTimeLogDbRequest[],
     db: DrizzleDb,
-  ): Promise<number> {
-    const result = await db
-      .insert(timeLogs)
-      .values({
+  ): Promise<void> {
+    await db.insert(timeLogs).values(
+      items.map((req) => ({
         user_id: req.userId,
         date: req.date,
         bucket: req.bucket,
         activity: req.activity,
         start_time: req.startTime,
         end_time: req.endTime,
-      })
-      .returning({ id: timeLogs.id });
-    return result[0].id;
+      })),
+    );
   }
 
   static async findByDateRange(req: GetTimeLogsDbRequest, db: DrizzleDb) {

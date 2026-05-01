@@ -4,6 +4,7 @@ import FoodPage from "./food";
 import ExpensesPage from "./expenses";
 import TimePage from "./time";
 import SettingsPage from "./settings";
+import ScratchpadPage from "./scratchpad";
 
 export default function DashboardPage() {
   return (
@@ -16,6 +17,7 @@ export default function DashboardPage() {
             <Route path="/food" element={<FoodPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/time" element={<TimePage />} />
+            <Route path="/scratchpad" element={<ScratchpadPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </div>

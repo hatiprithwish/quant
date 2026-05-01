@@ -7,10 +7,11 @@ import { clerkAuthMiddleware } from "../middlewares/clerkAuth";
 import { ZFoodQueryRequest } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
+import { generalRateLimiter } from "../middlewares/rateLimiter";
 
 const foodRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-foodRoutes.post("/", clerkAuthMiddleware, zValidator("json", ZFoodQueryRequest), async (c) => {
+foodRoutes.post("/", clerkAuthMiddleware, generalRateLimiter, zValidator("json", ZFoodQueryRequest), async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
   const userId = c.get("userId");
   const body = c.req.valid("json");

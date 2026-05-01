@@ -24,7 +24,7 @@ export interface ExpenseCategorySummary {
 }
 
 export interface LogExpenseResponse extends ApiResponse {
-  id: number;
+  insertedCount: number;
 }
 
 export interface GetExpenseSummaryResponse extends ApiResponse {

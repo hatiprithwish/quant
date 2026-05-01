@@ -3,7 +3,7 @@ import { ZTimeBucketLabelEnum } from "./TimeEnum";
 
 const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
 
-export const ZLogTimeRequest = z.object({
+export const ZTimeEntryInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   bucket: ZTimeBucketLabelEnum,
   activity: z.string().min(1),
@@ -13,6 +13,10 @@ export const ZLogTimeRequest = z.object({
   end_time: z
     .string()
     .regex(ISO_DATETIME_REGEX, "Must be YYYY-MM-DD HH:MM"),
+});
+
+export const ZLogTimeRequest = z.object({
+  entries: z.array(ZTimeEntryInput).min(1),
 });
 export type LogTimeRequest = z.infer<typeof ZLogTimeRequest>;
 

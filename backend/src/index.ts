@@ -6,6 +6,7 @@ import { authRoutes } from "./routes/AuthRoutes";
 import { foodRoutes } from "./routes/FoodRoutes";
 import { expenseRoutes } from "./routes/ExpenseRoutes";
 import { timeRoutes } from "./routes/TimeRoutes";
+import { scratchpadRoutes } from "./routes/ScratchpadRoutes";
 import { oauthRoutes } from "./routes/OAuthRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
@@ -83,6 +84,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/query/food", foodRoutes);
 app.route("/api/query/expenses", expenseRoutes);
 app.route("/api/query/time", timeRoutes);
+app.route("/api/scratchpad", scratchpadRoutes);
 app.route("/oauth", oauthRoutes);
 
 app.all("/mcp", async (c) => {

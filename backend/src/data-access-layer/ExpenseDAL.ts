@@ -4,13 +4,12 @@ import { expenseLogs } from "../db/schema";
 import { InsertExpenseDbRequest, GetExpensesDbRequest } from "../schemas";
 
 export class ExpenseDAL {
-  static async insert(
-    req: InsertExpenseDbRequest,
+  static async insertMany(
+    items: InsertExpenseDbRequest[],
     db: DrizzleDb,
-  ): Promise<number> {
-    const result = await db
-      .insert(expenseLogs)
-      .values({
+  ): Promise<void> {
+    await db.insert(expenseLogs).values(
+      items.map((req) => ({
         user_id: req.userId,
         date: req.date,
         amount: req.amount,
@@ -18,9 +17,8 @@ export class ExpenseDAL {
         category: req.category,
         description: req.description,
         payment_method: req.paymentMethod,
-      })
-      .returning({ id: expenseLogs.id });
-    return result[0].id;
+      })),
+    );
   }
 
   static async findByDateRange(req: GetExpensesDbRequest, db: DrizzleDb) {

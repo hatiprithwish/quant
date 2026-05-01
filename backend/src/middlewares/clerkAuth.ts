@@ -19,7 +19,6 @@ export const clerkAuthMiddleware = createMiddleware<{
   }
 
   try {
-    console.log("CLERK SECRET KEY:", c.env.CLERK_SECRET_KEY);
     const payload = await verifyToken(token, {
       secretKey: c.env.CLERK_SECRET_KEY,
     });

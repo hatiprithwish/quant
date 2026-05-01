@@ -11,4 +11,11 @@ CREATE TABLE `oauth_auth_codes` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `oauth_auth_codes_code_unique` ON `oauth_auth_codes` (`code`);
+CREATE UNIQUE INDEX `oauth_auth_codes_code_unique` ON `oauth_auth_codes` (`code`);--> statement-breakpoint
+CREATE TABLE `scratchpads` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`user_id` text NOT NULL,
+	`content` text DEFAULT '' NOT NULL,
+	`updated_at` text DEFAULT (datetime('now')) NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);

@@ -18,22 +18,20 @@ export class ExpenseRepo {
     req: LogExpenseRepoRequest,
     db: DrizzleDb,
   ): Promise<LogExpenseResponse> {
-    const categoryInt = expenseCategoryLabelToInt[req.category];
-
-    const id = await ExpenseDAL.insert(
-      {
+    await ExpenseDAL.insertMany(
+      req.entries.map((entry) => ({
         userId: req.userId,
-        date: req.date,
-        amount: req.amount,
-        currency: req.currency ?? "INR",
-        category: categoryInt,
-        description: req.description ?? null,
-        paymentMethod: req.payment_method ?? null,
-      },
+        date: entry.date,
+        amount: entry.amount,
+        currency: entry.currency ?? "INR",
+        category: expenseCategoryLabelToInt[entry.category],
+        description: entry.description ?? null,
+        paymentMethod: entry.payment_method ?? null,
+      })),
       db,
     );
 
-    return { isSuccess: true, message: "Expense logged", id };
+    return { isSuccess: true, message: "Expenses logged", insertedCount: req.entries.length };
   }
 
   static async getSummary(

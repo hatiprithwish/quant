@@ -14,43 +14,44 @@ export function registerTimeTools(
 ) {
   server.tool(
     "log_time",
-    "Log a time block for an activity. Use full ISO datetimes so cross-midnight activities (like sleep) are handled correctly.",
+    "Log one or more time blocks in a single call. Use full ISO datetimes so cross-midnight activities (like sleep) are handled correctly.",
     {
-      date: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/)
-        .describe("Log date YYYY-MM-DD (the day you are logging for)"),
-      bucket: ZTimeBucketLabelEnum.describe(
-        `Time bucket. Valid values: ${AppConstants.BUCKETS.join(", ")}`,
-      ),
-      activity: z
-        .string()
+      entries: z
+        .array(
+          z.object({
+            date: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .describe("Log date YYYY-MM-DD (the day you are logging for)"),
+            bucket: ZTimeBucketLabelEnum.describe(
+              `Time bucket. Valid values: ${AppConstants.BUCKETS.join(", ")}`,
+            ),
+            activity: z
+              .string()
+              .min(1)
+              .describe("Brief description of what was done"),
+            start_time: z
+              .string()
+              .regex(ISO_DATETIME_REGEX)
+              .describe("Start datetime as 'YYYY-MM-DD HH:MM' (24h)"),
+            end_time: z
+              .string()
+              .regex(ISO_DATETIME_REGEX)
+              .describe(
+                "End datetime as 'YYYY-MM-DD HH:MM' (24h). Can be next day for cross-midnight activities.",
+              ),
+          }),
+        )
         .min(1)
-        .describe("Brief description of what was done"),
-      start_time: z
-        .string()
-        .regex(ISO_DATETIME_REGEX)
-        .describe("Start datetime as 'YYYY-MM-DD HH:MM' (24h)"),
-      end_time: z
-        .string()
-        .regex(ISO_DATETIME_REGEX)
-        .describe(
-          "End datetime as 'YYYY-MM-DD HH:MM' (24h). Can be next day for cross-midnight activities.",
-        ),
+        .describe("List of time blocks to log"),
     },
-    async ({ date, bucket, activity, start_time, end_time }) => {
-      await TimeRepo.logTime(
-        { date, bucket, activity, start_time, end_time, userId },
-        db,
-      );
-      const durationMins = Math.round(
-        (new Date(end_time).getTime() - new Date(start_time).getTime()) / 60000,
-      );
+    async ({ entries }) => {
+      const result = await TimeRepo.logTime({ entries, userId }, db);
       return {
         content: [
           {
             type: "text",
-            text: `Logged ${durationMins} min of "${activity}" (${bucket}) on ${date}.`,
+            text: `Logged ${result.insertedCount} time block(s).`,
           },
         ],
       };

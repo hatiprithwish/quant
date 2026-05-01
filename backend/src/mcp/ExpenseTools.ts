@@ -12,51 +12,40 @@ export function registerExpenseTools(
 ) {
   server.tool(
     "log_expense",
-    "Log a single expense with category, amount, and payment method.",
+    "Log one or more expenses in a single call.",
     {
-      date: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/)
-        .describe("Date in YYYY-MM-DD format"),
-      amount: z.number().positive().describe("Amount spent"),
-      currency: z
-        .string()
-        .default("INR")
-        .describe("Currency code (default INR)"),
-      category: ZExpenseCategoryLabelEnum.describe(
-        `Expense category. Valid values: ${AppConstants.EXPENSE_CATEGORIES.join(", ")}`,
-      ),
-      description: z.string().optional().describe("What was purchased"),
-      payment_method: z
-        .string()
-        .optional()
-        .describe("Payment method (UPI, cash, card name, etc.)"),
+      entries: z
+        .array(
+          z.object({
+            date: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .describe("Date in YYYY-MM-DD format"),
+            amount: z.number().positive().describe("Amount spent"),
+            currency: z
+              .string()
+              .default("INR")
+              .describe("Currency code (default INR)"),
+            category: ZExpenseCategoryLabelEnum.describe(
+              `Expense category. Valid values: ${AppConstants.EXPENSE_CATEGORIES.join(", ")}`,
+            ),
+            description: z.string().optional().describe("What was purchased"),
+            payment_method: z
+              .string()
+              .optional()
+              .describe("Payment method (UPI, cash, card name, etc.)"),
+          }),
+        )
+        .min(1)
+        .describe("List of expenses to log"),
     },
-    async ({
-      date,
-      amount,
-      currency,
-      category,
-      description,
-      payment_method,
-    }) => {
-      await ExpenseRepo.logExpense(
-        {
-          date,
-          amount,
-          currency,
-          category,
-          description,
-          payment_method,
-          userId,
-        },
-        db,
-      );
+    async ({ entries }) => {
+      const result = await ExpenseRepo.logExpense({ entries, userId }, db);
       return {
         content: [
           {
             type: "text",
-            text: `Logged expense of ${currency} ${amount} (${category}) on ${date}.`,
+            text: `Logged ${result.insertedCount} expense(s).`,
           },
         ],
       };

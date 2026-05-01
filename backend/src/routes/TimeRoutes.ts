@@ -7,10 +7,11 @@ import { clerkAuthMiddleware } from "../middlewares/clerkAuth";
 import { ZTimeQueryRequest } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
+import { generalRateLimiter } from "../middlewares/rateLimiter";
 
 const timeRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-timeRoutes.post("/", clerkAuthMiddleware, zValidator("json", ZTimeQueryRequest), async (c) => {
+timeRoutes.post("/", clerkAuthMiddleware, generalRateLimiter, zValidator("json", ZTimeQueryRequest), async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
   const userId = c.get("userId");
   const body = c.req.valid("json");

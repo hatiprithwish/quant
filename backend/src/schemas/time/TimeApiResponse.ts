@@ -24,7 +24,7 @@ export interface DayTimeSummary {
 }
 
 export interface LogTimeResponse extends ApiResponse {
-  id: number;
+  insertedCount: number;
 }
 
 export interface GetTimeSummaryResponse extends ApiResponse {

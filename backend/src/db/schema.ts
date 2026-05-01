@@ -97,9 +97,21 @@ export const oauthAuthCodes = sqliteTable("oauth_auth_codes", {
     .default(sql`(datetime('now'))`),
 });
 
+export const scratchpads = sqliteTable("scratchpads", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  content: text("content").notNull().default(""),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
 export type FoodLog = typeof foodLogs.$inferSelect;
 export type ExpenseLog = typeof expenseLogs.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
+export type Scratchpad = typeof scratchpads.$inferSelect;
