@@ -33,29 +33,38 @@ function startOfYear() {
   return d.toISOString().split("T")[0];
 }
 
-const PRESETS = {
-  today: [{ label: "Today", from: today(), to: today() }],
-  food: [
-    { label: "Today", from: today(), to: today() },
-    { label: "7 days", from: daysAgo(6), to: today() },
-    { label: "30 days", from: daysAgo(29), to: today() },
-  ],
-  expenses: [
-    { label: "Today", from: today(), to: today() },
-    { label: "7 days", from: daysAgo(6), to: today() },
-    { label: "Month", from: startOfMonth(), to: today() },
-    { label: "Quarter", from: startOfQuarter(), to: today() },
-    { label: "Year", from: startOfYear(), to: today() },
-  ],
-  time: [
-    { label: "Today", from: today(), to: today() },
-    { label: "7 days", from: daysAgo(6), to: today() },
-    { label: "Month", from: startOfMonth(), to: today() },
-    { label: "Year", from: startOfYear(), to: today() },
-  ],
-};
+type PresetGroupKey = "today" | "food" | "expenses" | "time";
 
-export type PresetGroup = keyof typeof PRESETS;
+function getPresets(group: PresetGroupKey): Preset[] {
+  const t = today();
+  switch (group) {
+    case "today":
+      return [{ label: "Today", from: t, to: t }];
+    case "food":
+      return [
+        { label: "Today", from: t, to: t },
+        { label: "7 days", from: daysAgo(6), to: t },
+        { label: "30 days", from: daysAgo(29), to: t },
+      ];
+    case "expenses":
+      return [
+        { label: "Today", from: t, to: t },
+        { label: "7 days", from: daysAgo(6), to: t },
+        { label: "Month", from: startOfMonth(), to: t },
+        { label: "Quarter", from: startOfQuarter(), to: t },
+        { label: "Year", from: startOfYear(), to: t },
+      ];
+    case "time":
+      return [
+        { label: "Today", from: t, to: t },
+        { label: "7 days", from: daysAgo(6), to: t },
+        { label: "Month", from: startOfMonth(), to: t },
+        { label: "Year", from: startOfYear(), to: t },
+      ];
+  }
+}
+
+export type PresetGroup = PresetGroupKey;
 
 interface Props {
   group: PresetGroup;
@@ -65,7 +74,7 @@ interface Props {
 }
 
 export default function DateRangeSelector({ group, from, to, onChange }: Props) {
-  const presets: Preset[] = PRESETS[group];
+  const presets: Preset[] = getPresets(group);
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
