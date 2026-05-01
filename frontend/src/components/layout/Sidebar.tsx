@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: "/food", label: "Food", icon: "🥗" },
   { to: "/expenses", label: "Expenses", icon: "💸" },
   { to: "/time", label: "Time", icon: "⏱" },
+  { to: "/scratchpad", label: "Scratchpad", icon: "📝" },
   { to: "/settings", label: "Settings", icon: "⚙️" },
 ];
 

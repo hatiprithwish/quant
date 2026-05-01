@@ -4,6 +4,7 @@ import type {
   GetFoodSummaryResponse,
   GetExpenseSummaryResponse,
   GetTimeSummaryResponse,
+  GetScratchpadResponse,
 } from "@/schemas";
 
 export function useGetFood(from: string, to: string) {
@@ -45,5 +46,12 @@ export function useGetTime(from: string, to: string, bucket?: string) {
         bucket,
       }),
     enabled: isEnabled,
+  });
+}
+
+export function useGetScratchpad() {
+  return useQuery({
+    queryKey: ["/api/scratchpad"],
+    queryFn: () => apiClient.get<GetScratchpadResponse>("/api/scratchpad"),
   });
 }
