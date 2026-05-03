@@ -17,7 +17,7 @@ export default function FoodPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-gray-900">Food & Nutrition</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Food & Nutrition</h2>
         <DateRangeSelector
           group="food"
           from={from}
@@ -27,11 +27,11 @@ export default function FoodPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
           Failed to load food data.
         </div>
       )}
@@ -45,9 +45,9 @@ export default function FoodPage() {
               { label: "Carbs", value: `${data.totalCarb_g.toFixed(0)}g`, color: "amber" },
               { label: "Fat", value: `${data.totalFat_g.toFixed(0)}g`, color: "rose" },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
-                <div className={`text-xs font-medium text-${color}-600 mb-1`}>{label}</div>
-                <div className="text-2xl font-bold text-gray-900">{value}</div>
+              <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+                <div className={`text-xs font-medium text-${color}-600 dark:text-${color}-400 mb-1`}>{label}</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</div>
               </div>
             ))}
           </div>

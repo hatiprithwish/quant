@@ -8,10 +8,10 @@ export default function LoginPage() {
   if (isSignedIn) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Life Tracker</h1>
-        <p className="text-gray-500 mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Life Tracker</h1>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">
           Track your food, expenses, and time
         </p>
         <SignIn routing="hash" />

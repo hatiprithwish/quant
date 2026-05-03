@@ -32,8 +32,8 @@ export default function ExpenseCharts({ data }: Props) {
   return (
     <div className="grid grid-cols-2 gap-4">
       {barData.length > 1 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
             Daily Spending
           </h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -51,8 +51,8 @@ export default function ExpenseCharts({ data }: Props) {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
           By Category
         </h3>
         <ResponsiveContainer width="100%" height={200}>

@@ -87,7 +87,7 @@ export default function DateRangeSelector({ group, from, to, onChange }: Props) 
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               active
                 ? "bg-indigo-600 text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600"
+                : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400"
             }`}
           >
             {p.label}
@@ -100,16 +100,16 @@ export default function DateRangeSelector({ group, from, to, onChange }: Props) 
           value={from}
           max={to}
           onChange={(e) => onChange(e.target.value, to)}
-          className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-indigo-300"
+          className="text-xs border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-300 dark:focus:border-indigo-700"
         />
-        <span className="text-gray-400 text-xs">→</span>
+        <span className="text-gray-400 dark:text-gray-500 text-xs">→</span>
         <input
           type="date"
           value={to}
           min={from}
           max={today()}
           onChange={(e) => onChange(from, e.target.value)}
-          className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-indigo-300"
+          className="text-xs border border-gray-200 dark:border-gray-700 rounded px-2 py-1 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-indigo-300 dark:focus:border-indigo-700"
         />
       </div>
     </div>
