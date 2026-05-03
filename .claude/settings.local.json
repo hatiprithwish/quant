@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chmod +x /Users/hprith/Developer/life-tracker/mcp-server/run-backend.sh)"
+      "Bash(chmod +x /Users/hprith/Developer/life-tracker/mcp-server/run-backend.sh)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(open http://localhost:5174)"
     ]
   }
 }

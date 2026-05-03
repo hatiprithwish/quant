@@ -8,6 +8,13 @@ import { expenseRoutes } from "./routes/ExpenseRoutes";
 import { timeRoutes } from "./routes/TimeRoutes";
 import { scratchpadRoutes } from "./routes/ScratchpadRoutes";
 import { oauthRoutes } from "./routes/OAuthRoutes";
+import { walletRoutes } from "./routes/WalletRoutes";
+import { walletMutationRoutes } from "./routes/WalletMutationRoutes";
+import { entryRoutes } from "./routes/EntryRoutes";
+import { transactionQueryRoutes } from "./routes/TransactionQueryRoutes";
+import { budgetRoutes } from "./routes/BudgetRoutes";
+import { recurringTransactionRoutes } from "./routes/RecurringTransactionRoutes";
+import { debtRoutes } from "./routes/DebtRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
@@ -86,6 +93,13 @@ app.route("/api/query/expenses", expenseRoutes);
 app.route("/api/query/time", timeRoutes);
 app.route("/api/scratchpad", scratchpadRoutes);
 app.route("/oauth", oauthRoutes);
+app.route("/api/query/wallets", walletRoutes);
+app.route("/api/wallet", walletMutationRoutes);
+app.route("/api/entry", entryRoutes);
+app.route("/api/query/transactions", transactionQueryRoutes);
+app.route("/api/query/budgets", budgetRoutes);
+app.route("/api/query/recurring-transactions", recurringTransactionRoutes);
+app.route("/api/query/debts", debtRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";

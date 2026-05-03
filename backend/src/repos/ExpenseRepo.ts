@@ -12,6 +12,7 @@ import {
   ExpenseCategorySummary,
   ExpenseRow,
 } from "../schemas";
+import { detectPeriod, computePriorRange } from "../utils/periodUtils";
 
 export class ExpenseRepo {
   static async logExpense(
@@ -95,12 +96,33 @@ export class ExpenseRepo {
       count: data.count,
     }));
 
+    const period = detectPeriod(req.from, req.to);
+    let vsPrevious: number | null = null;
+
+    if (period) {
+      const prior = computePriorRange(period, req.from, req.to);
+      const priorRows = await ExpenseDAL.findByDateRange(
+        {
+          userId: req.userId,
+          from: prior.from,
+          to: prior.to,
+          category: categoryFilter,
+        },
+        db,
+      );
+      const priorTotal = priorRows.reduce((s, r) => s + r.amount, 0);
+      if (priorTotal > 0) {
+        vsPrevious = Math.round(((grandTotal - priorTotal) / priorTotal) * 10000) / 100;
+      }
+    }
+
     return {
       isSuccess: true,
       message: "Expense summary retrieved",
       grandTotal,
       byDay,
       byCategory,
+      vsPrevious,
     };
   }
 }

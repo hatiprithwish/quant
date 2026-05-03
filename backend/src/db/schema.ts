@@ -1,9 +1,21 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import {
   MealTypeIntEnum,
   ExpenseCategoryIntEnum,
   TimeBucketIntEnum,
+  WalletTypeEnum,
+  BudgetPeriodEnum,
+  RecurringTransactionPeriodEnum,
+  DebtTypeEnum,
+  DebtStatusEnum,
+  DepositCategoryEnum,
 } from "../schemas";
 
 export const users = sqliteTable("users", {
@@ -31,6 +43,38 @@ export const apiKeys = sqliteTable("api_keys", {
   revoked_at: text("revoked_at"),
 });
 
+export const wallets = sqliteTable("wallets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  type: text("type").$type<WalletTypeEnum>().notNull(),
+  credit_limit: real("credit_limit"),
+  active: integer("active").notNull().default(1),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const depositLogs = sqliteTable("deposit_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  wallet_id: integer("wallet_id")
+    .notNull()
+    .references(() => wallets.id),
+  date: text("date").notNull(),
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("INR"),
+  category: text("category").$type<DepositCategoryEnum>().notNull(),
+  description: text("description"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export const foodLogs = sqliteTable("food_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   user_id: text("user_id")
@@ -55,6 +99,7 @@ export const expenseLogs = sqliteTable("expense_logs", {
   user_id: text("user_id")
     .notNull()
     .references(() => users.id),
+  wallet_id: integer("wallet_id").references(() => wallets.id),
   date: text("date").notNull(),
   amount: real("amount").notNull(),
   currency: text("currency").notNull().default("INR"),
@@ -89,7 +134,9 @@ export const oauthAuthCodes = sqliteTable("oauth_auth_codes", {
   code: text("code").notNull().unique(),
   redirect_uri: text("redirect_uri").notNull(),
   code_challenge: text("code_challenge").notNull(),
-  code_challenge_method: text("code_challenge_method").notNull().default("S256"),
+  code_challenge_method: text("code_challenge_method")
+    .notNull()
+    .default("S256"),
   expires_at: text("expires_at").notNull(),
   used: integer("used").notNull().default(0),
   created_at: text("created_at")
@@ -108,6 +155,97 @@ export const scratchpads = sqliteTable("scratchpads", {
     .default(sql`(datetime('now'))`),
 });
 
+export const budgets = sqliteTable(
+  "budgets",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    label: text("label").notNull(),
+    category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
+    color: text("color").notNull(),
+    amount: real("amount").notNull(),
+    period: text("period").$type<BudgetPeriodEnum>().notNull(),
+    created_at: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => ({
+    userCategoryUnique: uniqueIndex("budgets_user_category_unique").on(
+      t.user_id,
+      t.category,
+    ),
+  }),
+);
+
+export const recurringTransactionItems = sqliteTable("recurring_transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  amount: real("amount").notNull(),
+  period: text("period").$type<RecurringTransactionPeriodEnum>().notNull(),
+  category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
+  next_date: text("next_date").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const debts = sqliteTable("debts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  type: text("type").$type<DebtTypeEnum>().notNull(),
+  counterparty_name: text("counterparty_name").notNull(),
+  amount: real("amount").notNull(),
+  paid_amount: real("paid_amount").notNull().default(0),
+  status: text("status")
+    .$type<DebtStatusEnum>()
+    .notNull()
+    .default(DebtStatusEnum.Pending),
+  due_date: text("due_date"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const transferLogs = sqliteTable("transfer_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  from_wallet_id: integer("from_wallet_id")
+    .notNull()
+    .references(() => wallets.id),
+  to_wallet_id: integer("to_wallet_id")
+    .notNull()
+    .references(() => wallets.id),
+  amount: real("amount").notNull(),
+  currency: text("currency").notNull().default("INR"),
+  description: text("description"),
+  date: text("date").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const debtRepayments = sqliteTable("debt_repayments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  debt_id: integer("debt_id")
+    .notNull()
+    .references(() => debts.id),
+  amount: real("amount").notNull(),
+  date: text("date").notNull(),
+  note: text("note"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
@@ -115,3 +253,11 @@ export type FoodLog = typeof foodLogs.$inferSelect;
 export type ExpenseLog = typeof expenseLogs.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
 export type Scratchpad = typeof scratchpads.$inferSelect;
+export type Wallet = typeof wallets.$inferSelect;
+export type DepositLog = typeof depositLogs.$inferSelect;
+export type Budget = typeof budgets.$inferSelect;
+export type RecurringTransactionItem =
+  typeof recurringTransactionItems.$inferSelect;
+export type Debt = typeof debts.$inferSelect;
+export type DebtRepayment = typeof debtRepayments.$inferSelect;
+export type TransferLog = typeof transferLogs.$inferSelect;
