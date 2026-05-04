@@ -1,6 +1,6 @@
 # Quant
 
-> Turn your Claude subscription into a personal life-tracker. Talk to Claude, watch your data appear on your dashboard.
+> Turn your Claude subscription into a personal life-tracker. Talk to Claude, watch your data appear on your dashboard
 
 **Live:** https://quant-frontend.pages.dev
 
