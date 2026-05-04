@@ -1,6 +1,6 @@
 import { and, between, eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { expenseLogs } from "../db/schema";
+import { expenseLogs } from "../db/tables";
 import {
   InsertExpenseDbRequest,
   GetExpensesDbRequest,

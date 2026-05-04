@@ -1,6 +1,6 @@
 import { and, between, eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { timeLogs } from "../db/schema";
+import { timeLogs } from "../db/tables";
 import { InsertTimeLogDbRequest, GetTimeLogsDbRequest } from "../schemas";
 
 export class TimeDAL {

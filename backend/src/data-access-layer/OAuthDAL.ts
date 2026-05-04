@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { oauthAuthCodes } from "../db/schema";
+import { oauthAuthCodes } from "../db/tables";
 
 export class OAuthDAL {
   static async insertAuthCode(
@@ -13,7 +13,7 @@ export class OAuthDAL {
       codeChallengeMethod: string;
       expiresAt: string;
     },
-    db: DrizzleDb
+    db: DrizzleDb,
   ) {
     await db.insert(oauthAuthCodes).values({
       id: req.id,

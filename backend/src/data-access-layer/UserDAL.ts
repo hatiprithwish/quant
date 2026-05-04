@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { users } from "../db/schema";
+import { users } from "../db/tables";
 
 export interface UpsertUserDbRequest {
   id: string;
@@ -9,10 +9,7 @@ export interface UpsertUserDbRequest {
 }
 
 export class UserDAL {
-  static async findByClerkId(
-    clerkUserId: string,
-    db: DrizzleDb
-  ) {
+  static async findByClerkId(clerkUserId: string, db: DrizzleDb) {
     const result = await db
       .select()
       .from(users)

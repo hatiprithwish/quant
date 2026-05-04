@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { debts, debtRepayments } from "../db/schema";
+import { debts, debtRepayments } from "../db/tables";
 import { GetDebtsDbRequest, GetDebtRepaymentsDbRequest } from "../schemas";
 
 export class DebtDAL {
@@ -8,7 +8,10 @@ export class DebtDAL {
     return db.select().from(debts).where(eq(debts.user_id, req.userId));
   }
 
-  static async findRepaymentsByDebtIds(req: GetDebtRepaymentsDbRequest, db: DrizzleDb) {
+  static async findRepaymentsByDebtIds(
+    req: GetDebtRepaymentsDbRequest,
+    db: DrizzleDb,
+  ) {
     if (req.debtIds.length === 0) return [];
     return db
       .select()

@@ -184,10 +184,21 @@ export const recurringTransactionItems = sqliteTable("recurring_transactions", {
   user_id: text("user_id")
     .notNull()
     .references(() => users.id),
+  wallet_id: integer("wallet_id")
+    .notNull()
+    .references(() => wallets.id),
+  type: text("type").$type<"expense" | "income">().notNull().default("expense"),
   name: text("name").notNull(),
   amount: real("amount").notNull(),
   period: text("period").$type<RecurringTransactionPeriodEnum>().notNull(),
+  interval: integer("interval").notNull().default(1),
+  week_days: text("week_days"),
+  month_end: integer("month_end").notNull().default(0),
+  end_condition: text("end_condition").$type<"forever" | "until" | "for">().notNull().default("forever"),
+  end_date: text("end_date"),
+  occurrences: integer("occurrences"),
   category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
+  description: text("description"),
   next_date: text("next_date").notNull(),
   created_at: text("created_at")
     .notNull()

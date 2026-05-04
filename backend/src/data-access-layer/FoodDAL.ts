@@ -1,6 +1,6 @@
 import { and, between, eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { foodLogs } from "../db/schema";
+import { foodLogs } from "../db/tables";
 import { InsertFoodLogDbRequest, GetFoodLogsDbRequest } from "../schemas";
 
 export class FoodDAL {

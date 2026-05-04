@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { apiKeys } from "../db/schema";
+import { apiKeys } from "../db/tables";
 
 export class ApiKeyDAL {
   static async findByUserId(userId: string, db: DrizzleDb) {
@@ -14,7 +14,7 @@ export class ApiKeyDAL {
 
   static async getUserIdByKey(
     key: string,
-    db: DrizzleDb
+    db: DrizzleDb,
   ): Promise<string | null> {
     const result = await db
       .select({ user_id: apiKeys.user_id })
@@ -30,7 +30,7 @@ export class ApiKeyDAL {
 
   static async insert(
     req: { id: string; userId: string; key: string },
-    db: DrizzleDb
+    db: DrizzleDb,
   ) {
     await db.insert(apiKeys).values({
       id: req.id,

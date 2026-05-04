@@ -9,6 +9,7 @@ import {
 } from "@/api/cachedQueries";
 import AddWalletModal from "./AddWalletModal";
 import EditWalletModal from "./EditWalletModal";
+import AddRecurringTransactionModal from "./AddRecurringTransactionModal";
 
 interface Props {
   data: GetExpenseSummaryResponse | null;
@@ -181,20 +182,28 @@ function DebtRow({ entry }: { entry: DebtEntry }) {
   );
 }
 
-function RecurringRow({ item }: { item: RecurringTransactionItem }) {
+function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit: (item: RecurringTransactionItem) => void }) {
   return (
-    <div className="flex items-center justify-between">
+    <div
+      className="flex items-center justify-between group cursor-pointer"
+      onClick={() => onEdit(item)}
+    >
       <div className="flex items-center gap-2.5">
-        <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600" />
+        <span className={`w-2 h-2 rounded-full ${item.type === "income" ? "bg-emerald-400" : "bg-neutral-400 dark:bg-neutral-600"}`} />
         <div>
-          <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name || item.description}</div>
           <div className="text-[10px] text-gray-400 dark:text-neutral-500">
             {item.period.charAt(0).toUpperCase() + item.period.slice(1)} · Next: {fmtDate(item.next_date)}
           </div>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-sm font-semibold text-gray-900 dark:text-white">₹{item.amount.toLocaleString("en-IN")}</span>
+        <span className={`text-sm font-semibold ${item.type === "income" ? "text-emerald-500" : "text-gray-900 dark:text-white"}`}>
+          {item.type === "income" ? "+" : ""}₹{item.amount.toLocaleString("en-IN")}
+        </span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="opacity-0 group-hover:opacity-40 transition-opacity">
+          <path d="M8 2l2 2-5.5 5.5H3v-1.5L8 2z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </div>
     </div>
   );
@@ -206,6 +215,8 @@ export default function DashboardTab({ data }: Props) {
   const [budgetPeriod, setBudgetPeriod] = useState<BudgetPeriodEnum>(BudgetPeriodEnum.Monthly);
   const [showAddWallet, setShowAddWallet] = useState(false);
   const [editingWallet, setEditingWallet] = useState<WalletWithBalance | null>(null);
+  const [showAddRecurring, setShowAddRecurring] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTransactionItem | null>(null);
 
   const { data: walletsData } = useGetWallets();
   const { data: budgetsData } = useGetBudgets(budgetPeriod, periodStartDate[budgetPeriod]());
@@ -318,12 +329,25 @@ export default function DashboardTab({ data }: Props) {
           <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recurring</h3>
-              <button className="text-xs text-gray-400 dark:text-neutral-500 border border-gray-200 dark:border-neutral-700 rounded px-2 py-0.5 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors">
+              <button
+                onClick={() => { setEditingRecurring(null); setShowAddRecurring(true); }}
+                className="text-xs text-gray-400 dark:text-neutral-500 border border-gray-200 dark:border-neutral-700 rounded px-2 py-0.5 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
+              >
                 + Add
               </button>
             </div>
             <div className="space-y-3">
-              {recurring.length === 0 ? <p className="text-xs text-gray-400 dark:text-neutral-500">No recurring transactions.</p> : recurring.map((r) => <RecurringRow key={r.id} item={r} />)}
+              {recurring.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-neutral-500">No recurring transactions.</p>
+              ) : (
+                recurring.map((r) => (
+                  <RecurringRow
+                    key={r.id}
+                    item={r}
+                    onEdit={(item) => { setEditingRecurring(item); setShowAddRecurring(true); }}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -332,6 +356,13 @@ export default function DashboardTab({ data }: Props) {
       {/* Modals */}
       {showAddWallet && <AddWalletModal onClose={() => setShowAddWallet(false)} />}
       {editingWallet && <EditWalletModal wallet={editingWallet} onClose={() => setEditingWallet(null)} />}
+      {showAddRecurring && (
+        <AddRecurringTransactionModal
+          wallets={wallets}
+          editing={editingRecurring ?? undefined}
+          onClose={() => { setShowAddRecurring(false); setEditingRecurring(null); }}
+        />
+      )}
     </div>
   );
 }

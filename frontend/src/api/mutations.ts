@@ -6,6 +6,13 @@ import type {
   WalletTypeEnum,
   DepositCategoryEnum,
   ExpenseCategoryLabelEnum,
+  CreateRecurringTransactionResponse,
+  UpdateRecurringTransactionResponse,
+} from "@/schemas";
+import type {
+  RecurringTransactionPeriodEnum,
+  RecurringTransactionTypeEnum,
+  RecurringEndConditionEnum,
 } from "@/schemas";
 
 // ── Wallet mutations ──────────────────────────────────────────────────────────
@@ -228,6 +235,64 @@ export function useMutationDeleteTransfer(from: string, to: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/query/transactions", from, to] });
       qc.invalidateQueries({ queryKey: ["/api/query/wallets"] });
+    },
+  });
+}
+
+// ── Recurring Transaction mutations ──────────────────────────────────────────
+
+export interface CreateRecurringTransactionInput {
+  type: RecurringTransactionTypeEnum;
+  name: string;
+  amount: number;
+  category: ExpenseCategoryLabelEnum;
+  wallet_id: number;
+  period: RecurringTransactionPeriodEnum;
+  interval: number;
+  week_days?: number[];
+  month_end: boolean;
+  end_condition: RecurringEndConditionEnum;
+  end_date?: string;
+  occurrences?: number;
+  description?: string;
+  start_date: string;
+}
+
+export interface UpdateRecurringTransactionInput {
+  type?: RecurringTransactionTypeEnum;
+  name?: string;
+  amount?: number;
+  category?: ExpenseCategoryLabelEnum;
+  wallet_id?: number;
+  period?: RecurringTransactionPeriodEnum;
+  interval?: number;
+  week_days?: number[];
+  month_end?: boolean;
+  end_condition?: RecurringEndConditionEnum;
+  end_date?: string | null;
+  occurrences?: number | null;
+  description?: string | null;
+  start_date?: string;
+}
+
+export function useMutationCreateRecurringTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateRecurringTransactionInput) =>
+      apiClient.post<CreateRecurringTransactionResponse>("/api/recurring-transaction", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/recurring-transactions"] });
+    },
+  });
+}
+
+export function useMutationUpdateRecurringTransaction(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateRecurringTransactionInput) =>
+      apiClient.patch<UpdateRecurringTransactionResponse>(`/api/recurring-transaction/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/recurring-transactions"] });
     },
   });
 }

@@ -1,6 +1,6 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { wallets, depositLogs, expenseLogs, transferLogs } from "../db/schema";
+import { wallets, depositLogs, expenseLogs, transferLogs } from "../db/tables";
 import {
   GetWalletsDbRequest,
   InsertWalletDbRequest,

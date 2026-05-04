@@ -35,5 +35,6 @@ export class AppConstants {
     DATABASE: "DATABASE",
     AUTH: "AUTH",
     MCP: "MCP",
+    CRON: "CRON",
   } as const;
 }

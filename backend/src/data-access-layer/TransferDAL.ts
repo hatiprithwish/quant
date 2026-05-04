@@ -1,6 +1,6 @@
 import { and, between, eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { transferLogs } from "../db/schema";
+import { transferLogs } from "../db/tables";
 import { InsertTransferDbRequest, UpdateTransferDbRequest } from "../schemas";
 
 export class TransferDAL {
