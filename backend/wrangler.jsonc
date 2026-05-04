@@ -5,7 +5,6 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
-    "FRONTEND_URL": "https://quant-frontend.pages.dev",
   },
   "d1_databases": [
     {
@@ -42,7 +41,7 @@
       "name": "quant-backend-staging",
       "vars": {
         "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
-        "FRONTEND_URL": "https://staging.quant.pages.dev",
+        "FRONTEND_URL": "https://staging.quant-frontend.pages.dev",
       },
       "d1_databases": [
         {
@@ -69,7 +68,7 @@
       "name": "quant-backend",
       "vars": {
         "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
-        "FRONTEND_URL": "https://quant.pages.dev",
+        "FRONTEND_URL": "https://quant-frontend.pages.dev",
       },
       "d1_databases": [
         {
