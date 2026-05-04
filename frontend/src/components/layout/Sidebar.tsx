@@ -7,14 +7,35 @@ const NAV_ITEMS = [
   { to: "/food", label: "Food" },
   { to: "/expenses", label: "Expenses" },
   { to: "/time", label: "Time" },
+  { to: "/scratchpad", label: "Scratch Pad" },
   { to: "/settings", label: "Settings" },
 ];
 
 function QuantLogo() {
   return (
-    <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="16,2 30,26 2,26" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
-      <line x1="16" y1="10" x2="16" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <polygon
+        points="16,2 30,26 2,26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="16"
+        y1="10"
+        x2="16"
+        y2="22"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <circle cx="16" cy="7" r="1.5" fill="currentColor" />
     </svg>
   );
@@ -35,7 +56,9 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="flex items-center gap-2 text-white">
             <QuantLogo />
-            <span className="text-sm font-bold tracking-widest uppercase">Quant</span>
+            <span className="text-sm font-bold tracking-widest uppercase">
+              Quant
+            </span>
           </div>
         )}
         {collapsed && (
@@ -99,7 +122,13 @@ export default function Sidebar() {
       <div className="px-2 py-4 border-t border-neutral-800 space-y-0.5">
         <button
           onClick={toggleTheme}
-          title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
+          title={
+            collapsed
+              ? theme === "dark"
+                ? "Light mode"
+                : "Dark mode"
+              : undefined
+          }
           className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors ${
             collapsed ? "justify-center" : ""
           }`}
