@@ -20,8 +20,7 @@ export class ExpenseDAL {
         currency: req.currency,
         category: req.category,
         description: req.description,
-        payment_method: req.paymentMethod,
-        wallet_id: req.walletId ?? null,
+        wallet_id: req.walletId,
       })),
     );
   }
@@ -36,8 +35,7 @@ export class ExpenseDAL {
         currency: req.currency,
         category: req.category,
         description: req.description,
-        payment_method: req.paymentMethod,
-        wallet_id: req.walletId ?? null,
+        wallet_id: req.walletId,
       })
       .returning();
     return rows[0];

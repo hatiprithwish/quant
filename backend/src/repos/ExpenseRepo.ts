@@ -27,7 +27,7 @@ export class ExpenseRepo {
         currency: entry.currency ?? "INR",
         category: expenseCategoryLabelToInt[entry.category],
         description: entry.description ?? null,
-        paymentMethod: entry.payment_method ?? null,
+        walletId: entry.wallet_id ?? null,
       })),
       db,
     );
@@ -71,7 +71,7 @@ export class ExpenseRepo {
         currency: row.currency,
         category: expenseCategoryIntToLabel[row.category],
         description: row.description,
-        payment_method: row.payment_method,
+        wallet_id: row.wallet_id ?? null,
       });
 
       const catData = categoryMap.get(row.category) ?? { total: 0, count: 0 };

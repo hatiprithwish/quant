@@ -7,7 +7,6 @@ export const ZExpenseEntryInput = z.object({
   currency: z.string().default("INR"),
   category: ZExpenseCategoryLabelEnum,
   description: z.string().optional(),
-  payment_method: z.string().optional(),
   wallet_id: z.number().int().positive().optional(),
 });
 

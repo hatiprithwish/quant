@@ -7,8 +7,7 @@ export interface InsertExpenseDbRequest {
   currency: string;
   category: ExpenseCategoryIntEnum;
   description: string | null;
-  paymentMethod: string | null;
-  walletId?: number | null;
+  walletId: number | null;
 }
 
 export interface GetExpensesDbRequest {

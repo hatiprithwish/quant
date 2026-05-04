@@ -37,4 +37,36 @@
       "simple": { "limit": 10, "period": 60 },
     },
   ],
+  "env": {
+    "staging": {
+      "name": "quant-backend-staging",
+      "vars": {
+        "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "FRONTEND_URL": "https://staging.quant.pages.dev",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "quant-db",
+          "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+    },
+    "production": {
+      "name": "quant-backend",
+      "vars": {
+        "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "FRONTEND_URL": "https://quant.pages.dev",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "quant-db",
+          "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+    },
+  },
 }

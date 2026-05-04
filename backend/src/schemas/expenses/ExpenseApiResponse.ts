@@ -8,7 +8,7 @@ export interface ExpenseRow {
   currency: string;
   category: ExpenseCategoryLabelEnum;
   description: string | null;
-  payment_method: string | null;
+  wallet_id: number | null;
 }
 
 export interface ExpenseDaySummary {

@@ -105,7 +105,6 @@ export const expenseLogs = sqliteTable("expense_logs", {
   currency: text("currency").notNull().default("INR"),
   category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
   description: text("description"),
-  payment_method: text("payment_method"),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
