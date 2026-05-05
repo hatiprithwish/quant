@@ -6,6 +6,8 @@ import { getDb } from "../db";
 import { registerFoodTools } from "./FoodTools";
 import { registerExpenseTools } from "./ExpenseTools";
 import { registerTimeTools } from "./TimeTools";
+import { Logger } from "../config/Logger";
+import { AppConstants } from "../config/Constants";
 
 const FAKE_INIT_ID = "__stateless_init__";
 
@@ -95,7 +97,8 @@ function buildTransport(): {
 export async function handleMcpRequest(
   request: Request,
   userId: string,
-  env: Env
+  env: Env,
+  correlationId: string
 ): Promise<Response> {
   if (request.method === "GET") {
     return new Response(
@@ -116,6 +119,13 @@ export async function handleMcpRequest(
   try {
     body = (await request.json()) as JSONRPCMessage;
   } catch {
+    Logger.error({
+      correlationId,
+      logCategory: AppConstants.LOG_CATEGORIES.MCP,
+      logAction: "McpParseError",
+      message: "Failed to parse MCP request body",
+      metadata: { userId },
+    });
     return new Response(
       JSON.stringify({
         jsonrpc: "2.0",
@@ -126,14 +136,25 @@ export async function handleMcpRequest(
     );
   }
 
+  const bodyRecord = body as Record<string, unknown>;
+  const method = bodyRecord["method"] as string | undefined;
+  const toolName = (bodyRecord["params"] as Record<string, unknown> | undefined)?.["name"] as string | undefined;
+
+  Logger.info({
+    correlationId,
+    logCategory: AppConstants.LOG_CATEGORIES.MCP,
+    logAction: "McpIncomingMessage",
+    message: "MCP message received",
+    metadata: { userId, method, ...(toolName ? { toolName } : {}) },
+  });
+
   const db = getDb(env.DB);
   const server = buildServer(userId, db);
   const { transport, waitFor } = buildTransport();
 
   await server.connect(transport);
 
-  const bodyRecord = body as Record<string, unknown>;
-  const isInitialize = bodyRecord["method"] === "initialize";
+  const isInitialize = method === "initialize";
   const hasId = "id" in bodyRecord;
 
   if (!isInitialize) {
@@ -150,6 +171,25 @@ export async function handleMcpRequest(
   const requestId = bodyRecord["id"] as string | number;
   transport.onmessage?.(body);
   const response = await waitFor(requestId);
+
+  const responseRecord = response as Record<string, unknown>;
+  if (responseRecord["error"]) {
+    Logger.warn({
+      correlationId,
+      logCategory: AppConstants.LOG_CATEGORIES.MCP,
+      logAction: "McpToolError",
+      message: "MCP tool returned error",
+      metadata: { userId, method, ...(toolName ? { toolName } : {}), error: responseRecord["error"] },
+    });
+  } else {
+    Logger.info({
+      correlationId,
+      logCategory: AppConstants.LOG_CATEGORIES.MCP,
+      logAction: "McpToolSuccess",
+      message: "MCP tool completed",
+      metadata: { userId, method, ...(toolName ? { toolName } : {}) },
+    });
+  }
 
   return new Response(JSON.stringify(response), {
     headers: { "Content-Type": "application/json" },

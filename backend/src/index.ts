@@ -74,6 +74,15 @@ app.get("/.well-known/oauth-protected-resource/mcp", (c) => {
   });
 });
 
+app.get("/mcp/.well-known/oauth-protected-resource", (c) => {
+  const base = new URL(c.req.url).origin;
+  return c.json({
+    resource: `${base}/mcp`,
+    authorization_servers: [base],
+    bearer_methods_supported: ["header"],
+  });
+});
+
 app.post("/register", async (c) => {
   const base = new URL(c.req.url).origin;
   const body = await c.req.json().catch(() => ({}));
@@ -137,7 +146,7 @@ app.all("/mcp", async (c) => {
     metadata: { userId, method: c.req.method },
   });
 
-  return handleMcpRequest(c.req.raw, userId, c.env);
+  return handleMcpRequest(c.req.raw, userId, c.env, correlationId);
 });
 
 export default app;

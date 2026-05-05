@@ -13,7 +13,7 @@ export function registerExpenseTools(
 ) {
   server.tool(
     "log_expense",
-    "Log one or more expenses in a single call.",
+    "Log one or more expenses in a single call. IMPORTANT: Always call list_wallets first to get valid wallet IDs. Never omit wallet_id — always debit the correct wallet.",
     {
       entries: z
         .array(
@@ -36,7 +36,7 @@ export function registerExpenseTools(
               .int()
               .positive()
               .optional()
-              .describe("Wallet ID to debit. Call list_wallets first to get valid IDs."),
+              .describe("Wallet ID to debit (integer). REQUIRED unless user explicitly says no wallet. Call list_wallets first — never guess or omit this."),
           }),
         )
         .min(1)
