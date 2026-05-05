@@ -6,23 +6,28 @@ import {
   GetExpensesDbRequest,
   UpdateExpenseDbRequest,
 } from "../schemas";
+import { AppConstants } from "@/config/Constants";
 
 export class ExpenseDAL {
   static async insertMany(
     items: InsertExpenseDbRequest[],
     db: DrizzleDb,
   ): Promise<void> {
-    await db.insert(expenseLogs).values(
-      items.map((req) => ({
-        user_id: req.userId,
-        date: req.date,
-        amount: req.amount,
-        currency: req.currency,
-        category: req.category,
-        description: req.description,
-        wallet_id: req.walletId,
-      })),
-    );
+    const chunkSize = AppConstants.D1_INSERT_CHUNK_SIZES.EXPENSE;
+    for (let i = 0; i < items.length; i += chunkSize) {
+      const chunk = items.slice(i, i + chunkSize);
+      await db.insert(expenseLogs).values(
+        chunk.map((req) => ({
+          user_id: req.userId,
+          date: req.date,
+          amount: req.amount,
+          currency: req.currency,
+          category: req.category,
+          description: req.description,
+          wallet_id: req.walletId,
+        })),
+      );
+    }
   }
 
   static async insertOne(req: InsertExpenseDbRequest, db: DrizzleDb) {
