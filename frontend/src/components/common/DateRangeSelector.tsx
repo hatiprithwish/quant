@@ -33,7 +33,7 @@ function startOfYear() {
   return d.toISOString().split("T")[0];
 }
 
-type PresetGroupKey = "today" | "food" | "expenses" | "time";
+type PresetGroupKey = "today" | "food" | "expenses" | "time" | "body";
 
 function getPresets(group: PresetGroupKey): Preset[] {
   const t = today();
@@ -59,6 +59,13 @@ function getPresets(group: PresetGroupKey): Preset[] {
         { label: "Today", from: t, to: t },
         { label: "7 days", from: daysAgo(6), to: t },
         { label: "Month", from: startOfMonth(), to: t },
+        { label: "Year", from: startOfYear(), to: t },
+      ];
+    case "body":
+      return [
+        { label: "30 days", from: daysAgo(29), to: t },
+        { label: "90 days", from: daysAgo(89), to: t },
+        { label: "6 months", from: daysAgo(179), to: t },
         { label: "Year", from: startOfYear(), to: t },
       ];
   }

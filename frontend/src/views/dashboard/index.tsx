@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import FoodPage from "./food";
 import ExpensesPage from "./expenses";
 import TimePage from "./time";
+import BodyPage from "./body";
 import SettingsPage from "./settings";
 import ScratchpadPage from "./scratchpad";
 
@@ -20,6 +21,7 @@ export default function DashboardPage() {
             <Route path="/food" element={<FoodPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/time" element={<TimePage />} />
+            <Route path="/body" element={<BodyPage />} />
             <Route path="/scratchpad" element={<ScratchpadPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>

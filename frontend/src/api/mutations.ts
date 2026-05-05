@@ -8,6 +8,8 @@ import type {
   ExpenseCategoryLabelEnum,
   CreateRecurringTransactionResponse,
   UpdateRecurringTransactionResponse,
+  CreateBodyMetricResponse,
+  CreateBodyMeasurementResponse,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -293,6 +295,64 @@ export function useMutationUpdateRecurringTransaction(id: number) {
       apiClient.patch<UpdateRecurringTransactionResponse>(`/api/recurring-transaction/${id}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/query/recurring-transactions"] });
+    },
+  });
+}
+
+// ── Body measurement mutations ────────────────────────────────────────────────
+
+export interface CreateBodyMetricInput {
+  name: string;
+  unit: string;
+}
+
+export function useMutationCreateBodyMetric() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBodyMetricInput) =>
+      apiClient.post<CreateBodyMetricResponse>("/api/body/metric", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export function useMutationUpdateBodyMetric(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string }) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/body/metric/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export function useMutationDeleteBodyMetric() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/body/metric/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export interface CreateBodyMeasurementInput {
+  metric_id: number;
+  value: number;
+  recorded_at: string;
+}
+
+export function useMutationCreateBodyMeasurement(metricId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBodyMeasurementInput) =>
+      apiClient.post<CreateBodyMeasurementResponse>("/api/body/measurement", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/measurements", metricId] });
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
     },
   });
 }

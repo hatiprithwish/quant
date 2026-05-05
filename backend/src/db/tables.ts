@@ -256,6 +256,38 @@ export const debtRepayments = sqliteTable("debt_repayments", {
     .default(sql`(datetime('now'))`),
 });
 
+export const bodyMetrics = sqliteTable("body_metrics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  unit: text("unit").notNull(),
+  locked: integer("locked").notNull().default(0),
+  deleted_at: text("deleted_at"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const bodyMeasurementLogs = sqliteTable("body_measurement_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  metric_id: integer("metric_id")
+    .notNull()
+    .references(() => bodyMetrics.id),
+  value: real("value").notNull(),
+  recorded_at: text("recorded_at").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
@@ -271,3 +303,5 @@ export type RecurringTransactionItem =
 export type Debt = typeof debts.$inferSelect;
 export type DebtRepayment = typeof debtRepayments.$inferSelect;
 export type TransferLog = typeof transferLogs.$inferSelect;
+export type BodyMetric = typeof bodyMetrics.$inferSelect;
+export type BodyMeasurementLog = typeof bodyMeasurementLogs.$inferSelect;

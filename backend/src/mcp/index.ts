@@ -6,6 +6,7 @@ import { getDb } from "../db";
 import { registerFoodTools } from "./FoodTools";
 import { registerExpenseTools } from "./ExpenseTools";
 import { registerTimeTools } from "./TimeTools";
+import { registerBodyTools } from "./BodyTools";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
 
@@ -33,6 +34,7 @@ function buildServer(userId: string, db: ReturnType<typeof getDb>): McpServer {
   registerFoodTools(server, userId, db);
   registerExpenseTools(server, userId, db);
   registerTimeTools(server, userId, db);
+  registerBodyTools(server, userId, db);
 
   server.tool(
     "get_today",

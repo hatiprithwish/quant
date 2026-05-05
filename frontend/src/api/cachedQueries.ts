@@ -10,6 +10,8 @@ import type {
   GetDebtsResponse,
   GetRecurringTransactionsResponse,
   GetTransactionsResponse,
+  GetBodyMetricsResponse,
+  GetBodyMeasurementsResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -100,6 +102,27 @@ export function useGetTransactions(from: string, to: string) {
     queryKey: ["/api/query/transactions", from, to],
     queryFn: () =>
       apiClient.post<GetTransactionsResponse>("/api/query/transactions", { from, to }),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetBodyMetrics() {
+  return useQuery({
+    queryKey: ["/api/query/body/metrics"],
+    queryFn: () => apiClient.get<GetBodyMetricsResponse>("/api/query/body/metrics"),
+  });
+}
+
+export function useGetBodyMeasurements(metricId: number, from: string, to: string) {
+  const isEnabled = Boolean(metricId && from && to);
+  return useQuery({
+    queryKey: ["/api/query/body/measurements", metricId, from, to],
+    queryFn: () =>
+      apiClient.post<GetBodyMeasurementsResponse>("/api/query/body/measurements", {
+        metric_id: metricId,
+        from,
+        to,
+      }),
     enabled: isEnabled,
   });
 }
