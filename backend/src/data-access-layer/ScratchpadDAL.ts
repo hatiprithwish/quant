@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { scratchpads } from "../db/schema";
+import { scratchpads } from "../db/tables";
 
 export class ScratchpadDAL {
   static async getByUserId(userId: string, db: DrizzleDb): Promise<string> {
@@ -12,7 +12,11 @@ export class ScratchpadDAL {
     return rows[0]?.content ?? "";
   }
 
-  static async upsert(userId: string, content: string, db: DrizzleDb): Promise<void> {
+  static async upsert(
+    userId: string,
+    content: string,
+    db: DrizzleDb,
+  ): Promise<void> {
     const existing = await db
       .select({ id: scratchpads.id })
       .from(scratchpads)

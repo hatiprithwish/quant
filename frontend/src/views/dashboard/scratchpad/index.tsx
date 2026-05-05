@@ -65,14 +65,14 @@ export default function ScratchpadPage() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-gray-500">Loading…</p>;
+    return <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Scratchpad</h1>
-        <span className={`text-xs ${saveStatus === "error" ? "text-red-500" : "text-gray-400"}`}>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Scratchpad</h1>
+        <span className={`text-xs ${saveStatus === "error" ? "text-red-500 dark:text-red-400" : "text-gray-400 dark:text-gray-500"}`}>
           {saveStatus === "saving" && "Saving…"}
           {saveStatus === "saved" && "Saved"}
           {saveStatus === "unsaved" && "Unsaved changes"}
@@ -80,7 +80,7 @@ export default function ScratchpadPage() {
         </span>
       </div>
       <textarea
-        className="w-full h-[70vh] rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        className="w-full h-[70vh] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 text-sm text-gray-800 dark:text-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700"
         placeholder="Write anything…"
         value={text}
         onChange={handleChange}

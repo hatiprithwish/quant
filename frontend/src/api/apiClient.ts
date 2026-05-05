@@ -52,4 +52,23 @@ export const apiClient = {
     });
     return handleResponse<T>(res);
   },
+
+  patch: async <T>(path: string, body: unknown): Promise<T> => {
+    const headers = await authHeaders();
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(body),
+    });
+    return handleResponse<T>(res);
+  },
+
+  delete: async <T>(path: string): Promise<T> => {
+    const headers = await authHeaders();
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "DELETE",
+      headers,
+    });
+    return handleResponse<T>(res);
+  },
 };

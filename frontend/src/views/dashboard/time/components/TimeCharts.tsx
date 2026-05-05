@@ -31,8 +31,8 @@ export default function TimeCharts({ data, multiDay }: Props) {
 
   if (!multiDay) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
           Time by Bucket
         </h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -82,8 +82,8 @@ export default function TimeCharts({ data, multiDay }: Props) {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-700 mb-4">
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
         Daily Hours by Bucket
       </h3>
       <ResponsiveContainer width="100%" height={240}>

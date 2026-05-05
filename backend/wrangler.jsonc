@@ -3,35 +3,83 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-10",
   "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
-    "FRONTEND_URL": "https://quant-frontend.pages.dev",
+  "triggers": {
+    "crons": ["0 0 * * *"],
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "quant-db",
-      "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
-      "remote": true,
-      "migrations_dir": "./src/db/migrations",
-    },
-  ],
   "observability": {
     "logs": {
       "enabled": true,
       "invocation_logs": true,
     },
   },
-  "rate_limiting": [
+  "ratelimits": [
     {
-      "binding": "RATE_LIMITER_GENERAL",
+      "name": "RATE_LIMITER_GENERAL",
       "namespace_id": "1",
       "simple": { "limit": 60, "period": 60 },
     },
     {
-      "binding": "RATE_LIMITER_AUTH",
+      "name": "RATE_LIMITER_AUTH",
       "namespace_id": "2",
       "simple": { "limit": 10, "period": 60 },
     },
   ],
+  "env": {
+    "staging": {
+      "name": "quant-backend-staging",
+      "vars": {
+        "FRONTEND_URL": "https://staging.quant-frontend.pages.dev",
+        "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "quant-db",
+          "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
+          "remote": true,
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMITER_GENERAL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 },
+        },
+        {
+          "name": "RATE_LIMITER_AUTH",
+          "namespace_id": "2",
+          "simple": { "limit": 10, "period": 60 },
+        },
+      ],
+    },
+    "production": {
+      "name": "quant-backend",
+      "vars": {
+        "FRONTEND_URL": "https://quant-frontend.pages.dev",
+        "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "quant-db",
+          "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
+          "remote": true,
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMITER_GENERAL",
+          "namespace_id": "1",
+          "simple": { "limit": 60, "period": 60 },
+        },
+        {
+          "name": "RATE_LIMITER_AUTH",
+          "namespace_id": "2",
+          "simple": { "limit": 10, "period": 60 },
+        },
+      ],
+    },
+  },
 }

@@ -4,6 +4,7 @@ import { DrizzleDb } from "../db";
 import { ExpenseRepo } from "../repos/ExpenseRepo";
 import { ZExpenseCategoryLabelEnum } from "../schemas";
 import { AppConstants } from "../config/Constants";
+import { WalletDAL } from "../data-access-layer/WalletDAL";
 
 export function registerExpenseTools(
   server: McpServer,
@@ -30,10 +31,12 @@ export function registerExpenseTools(
               `Expense category. Valid values: ${AppConstants.EXPENSE_CATEGORIES.join(", ")}`,
             ),
             description: z.string().optional().describe("What was purchased"),
-            payment_method: z
-              .string()
+            wallet_id: z
+              .number()
+              .int()
+              .positive()
               .optional()
-              .describe("Payment method (UPI, cash, card name, etc.)"),
+              .describe("Wallet ID to debit. Call list_wallets first to get valid IDs."),
           }),
         )
         .min(1)
@@ -91,5 +94,17 @@ export function registerExpenseTools(
         },
       ],
     }),
+  );
+
+  server.tool(
+    "list_wallets",
+    "List all active wallets with their IDs, names, types, and current balances. Call this before log_expense to resolve the correct wallet_id.",
+    {},
+    async () => {
+      const walletList = await WalletDAL.findAllWithBalance({ userId }, db);
+      return {
+        content: [{ type: "text", text: JSON.stringify(walletList, null, 2) }],
+      };
+    },
   );
 }

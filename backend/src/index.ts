@@ -8,11 +8,20 @@ import { expenseRoutes } from "./routes/ExpenseRoutes";
 import { timeRoutes } from "./routes/TimeRoutes";
 import { scratchpadRoutes } from "./routes/ScratchpadRoutes";
 import { oauthRoutes } from "./routes/OAuthRoutes";
+import { walletRoutes } from "./routes/WalletRoutes";
+import { walletMutationRoutes } from "./routes/WalletMutationRoutes";
+import { entryRoutes } from "./routes/EntryRoutes";
+import { transactionQueryRoutes } from "./routes/TransactionQueryRoutes";
+import { budgetRoutes } from "./routes/BudgetRoutes";
+import { recurringTransactionRoutes } from "./routes/RecurringTransactionRoutes";
+import { recurringTransactionMutationRoutes } from "./routes/RecurringTransactionMutationRoutes";
+import { debtRoutes } from "./routes/DebtRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
 import { Logger } from "./config/Logger";
 import { AppConstants } from "./config/Constants";
+import { processRecurringTransactions } from "./providers/CronTriggers";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -21,16 +30,16 @@ app.use(
   cors({
     origin: (origin) => origin,
     allowHeaders: ["Content-Type", "Authorization", "Mcp-Session-Id"],
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS", "PATCH"],
     exposeHeaders: ["Mcp-Session-Id"],
     credentials: true,
-  })
+  }),
 );
 
 app.use("*", correlationIdMiddleware);
 
 app.get("/health", (c) =>
-  c.json({ isSuccess: true, message: "Life Tracker MCP Server is running" })
+  c.json({ isSuccess: true, message: "Life Tracker MCP Server is running" }),
 );
 
 app.get("/.well-known/oauth-authorization-server", (c) => {
@@ -69,15 +78,18 @@ app.post("/register", async (c) => {
   const base = new URL(c.req.url).origin;
   const body = await c.req.json().catch(() => ({}));
   const clientId = crypto.randomUUID();
-  return c.json({
-    client_id: clientId,
-    client_name: body.client_name ?? "Claude",
-    redirect_uris: body.redirect_uris ?? [],
-    grant_types: ["authorization_code"],
-    response_types: ["code"],
-    token_endpoint_auth_method: "none",
-    registration_client_uri: `${base}/register/${clientId}`,
-  }, 201);
+  return c.json(
+    {
+      client_id: clientId,
+      client_name: body.client_name ?? "Claude",
+      redirect_uris: body.redirect_uris ?? [],
+      grant_types: ["authorization_code"],
+      response_types: ["code"],
+      token_endpoint_auth_method: "none",
+      registration_client_uri: `${base}/register/${clientId}`,
+    },
+    201,
+  );
 });
 
 app.route("/api/auth", authRoutes);
@@ -86,6 +98,14 @@ app.route("/api/query/expenses", expenseRoutes);
 app.route("/api/query/time", timeRoutes);
 app.route("/api/scratchpad", scratchpadRoutes);
 app.route("/oauth", oauthRoutes);
+app.route("/api/query/wallets", walletRoutes);
+app.route("/api/wallet", walletMutationRoutes);
+app.route("/api/entry", entryRoutes);
+app.route("/api/query/transactions", transactionQueryRoutes);
+app.route("/api/query/budgets", budgetRoutes);
+app.route("/api/query/recurring-transactions", recurringTransactionRoutes);
+app.route("/api/recurring-transaction", recurringTransactionMutationRoutes);
+app.route("/api/query/debts", debtRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
@@ -121,3 +141,8 @@ app.all("/mcp", async (c) => {
 });
 
 export default app;
+
+export const scheduled: ExportedHandlerScheduledHandler<Env> = async (_controller, env, ctx) => {
+  const db = getDb(env.DB);
+  ctx.waitUntil(processRecurringTransactions(db));
+};

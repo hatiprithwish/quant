@@ -35,5 +35,13 @@ export class AppConstants {
     DATABASE: "DATABASE",
     AUTH: "AUTH",
     MCP: "MCP",
+    CRON: "CRON",
+  } as const;
+
+  // D1 hard limit: 100 bound parameters per statement.
+  static readonly D1_INSERT_CHUNK_SIZES = {
+    TIME: 16,    // 6 params/row
+    EXPENSE: 14, // 7 params/row
+    FOOD: 10,    // 10 params/row
   } as const;
 }

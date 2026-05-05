@@ -62,4 +62,5 @@ export interface GetExpenseSummaryResponse extends ApiResponse {
   grandTotal: number;
   byDay: ExpenseDaySummary[];
   byCategory: ExpenseCategorySummary[];
+  vsPrevious: number | null;
 }

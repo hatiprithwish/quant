@@ -24,7 +24,7 @@ export default function TimePage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-gray-900">Time Tracker</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Time Tracker</h2>
         <DateRangeSelector
           group="time"
           from={from}
@@ -34,20 +34,20 @@ export default function TimePage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-8 text-gray-400 text-sm">Loading…</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
           Failed to load time data.
         </div>
       )}
 
       {data && (
         <>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-            <span className="text-sm text-gray-500">Total tracked</span>
-            <span className="text-3xl font-bold text-gray-900">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Total tracked</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {fmtMins(data.totalMinutes)}
             </span>
           </div>
@@ -60,28 +60,28 @@ export default function TimePage() {
             {data.byBucket.map((b) => (
               <div
                 key={b.bucket}
-                className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"
+                className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3"
               >
                 <div
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: timeBucketColor[b.bucket] }}
                 />
-                <span className="text-sm text-gray-700 flex-1">
+                <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                   {timeBucketDisplayLabel[b.bucket]}
                 </span>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                   {fmtMins(b.total_minutes)}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 text-sm font-semibold text-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Activity Log
             </div>
             {data.days.length === 0 ? (
-              <div className="text-center py-10 text-gray-400 text-sm">
+              <div className="text-center py-10 text-gray-400 dark:text-gray-500 text-sm">
                 No time logged for this period.
               </div>
             ) : (
@@ -97,17 +97,17 @@ export default function TimePage() {
                 .map((a) => (
                   <div
                     key={a.id}
-                    className="px-5 py-2.5 flex items-center gap-3 border-t border-gray-50 text-sm"
+                    className="px-5 py-2.5 flex items-center gap-3 border-t border-gray-50 dark:border-gray-800 text-sm"
                   >
                     <div
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: timeBucketColor[a.bucket] }}
                     />
-                    <span className="flex-1 text-gray-800">{a.activity}</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="flex-1 text-gray-800 dark:text-gray-200">{a.activity}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
                       {a.start_time.slice(11, 16)} – {a.end_time.slice(11, 16)}
                     </span>
-                    <span className="text-xs font-medium text-gray-600 w-14 text-right">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 w-14 text-right">
                       {fmtMins(a.duration_minutes)}
                     </span>
                   </div>

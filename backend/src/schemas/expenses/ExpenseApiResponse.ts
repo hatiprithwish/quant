@@ -8,7 +8,7 @@ export interface ExpenseRow {
   currency: string;
   category: ExpenseCategoryLabelEnum;
   description: string | null;
-  payment_method: string | null;
+  wallet_id: number | null;
 }
 
 export interface ExpenseDaySummary {
@@ -31,4 +31,5 @@ export interface GetExpenseSummaryResponse extends ApiResponse {
   grandTotal: number;
   byDay: ExpenseDaySummary[];
   byCategory: ExpenseCategorySummary[];
+  vsPrevious: number | null;
 }

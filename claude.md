@@ -1,6 +1,6 @@
 # Project Rules
 
-- [API Endpoints](.claude/api-endpoints.md)
+- [API Design Rules](.claude/api-endpoints.md)
 - [Backend Architecture](.claude/backend-architecture.md)
 - [Backend Folder Structure](.claude/backend-folder-structure.md)
 - [Backend Schema](.claude/backend-schema.md)
