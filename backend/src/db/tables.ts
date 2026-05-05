@@ -9,13 +9,17 @@ import { sql } from "drizzle-orm";
 import {
   MealTypeIntEnum,
   ExpenseCategoryIntEnum,
-  TimeBucketIntEnum,
   WalletTypeEnum,
   BudgetPeriodEnum,
   RecurringTransactionPeriodEnum,
   DebtTypeEnum,
   DebtStatusEnum,
   DepositCategoryEnum,
+  QuestStatusEnum,
+  QuestCategoryEnum,
+  MilestoneStatusEnum,
+  TaskStatusEnum,
+  XpSourceTypeEnum,
 } from "../schemas";
 
 export const users = sqliteTable("users", {
@@ -110,13 +114,33 @@ export const expenseLogs = sqliteTable("expense_logs", {
     .default(sql`(datetime('now'))`),
 });
 
+export const timeBuckets = sqliteTable("time_buckets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  is_distraction: integer("is_distraction").notNull().default(0),
+  quest_id: text("quest_id"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  deleted_at: text("deleted_at"),
+});
+
 export const timeLogs = sqliteTable("time_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   user_id: text("user_id")
     .notNull()
     .references(() => users.id),
   date: text("date").notNull(),
-  bucket: integer("bucket").$type<TimeBucketIntEnum>().notNull(),
+  bucket_id: integer("bucket_id")
+    .notNull()
+    .references(() => timeBuckets.id),
   activity: text("activity").notNull(),
   start_time: text("start_time").notNull(),
   end_time: text("end_time").notNull(),
@@ -288,6 +312,105 @@ export const bodyMeasurementLogs = sqliteTable("body_measurement_logs", {
     .default(sql`(datetime('now'))`),
 });
 
+export const quests = sqliteTable("quests", {
+  id: text("id").primaryKey(),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").$type<QuestCategoryEnum>().notNull(),
+  color: text("color").notNull(),
+  status: text("status").$type<QuestStatusEnum>().notNull().default(QuestStatusEnum.Active),
+  deadline: text("deadline"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  deleted_at: text("deleted_at"),
+});
+
+export const questMilestones = sqliteTable("quest_milestones", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  quest_id: text("quest_id")
+    .notNull()
+    .references(() => quests.id),
+  name: text("name").notNull(),
+  xp_reward: integer("xp_reward").notNull().default(100),
+  order: integer("order").notNull().default(0),
+  status: text("status").$type<MilestoneStatusEnum>().notNull().default(MilestoneStatusEnum.Pending),
+  due_date: text("due_date"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const questTasks = sqliteTable("quest_tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  quest_id: text("quest_id")
+    .notNull()
+    .references(() => quests.id),
+  milestone_id: integer("milestone_id").references(() => questMilestones.id),
+  name: text("name").notNull(),
+  status: text("status").$type<TaskStatusEnum>().notNull().default(TaskStatusEnum.Todo),
+  xp_reward: integer("xp_reward").notNull().default(20),
+  due_date: text("due_date"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const questXpEvents = sqliteTable("quest_xp_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  quest_id: text("quest_id").references(() => quests.id),
+  source_type: text("source_type").$type<XpSourceTypeEnum>().notNull(),
+  source_id: integer("source_id"),
+  xp: integer("xp").notNull(),
+  occurred_at: text("occurred_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const userAchievements = sqliteTable("user_achievements", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  achievement_key: text("achievement_key").notNull(),
+  unlocked_at: text("unlocked_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const userStreaks = sqliteTable("user_streaks", {
+  user_id: text("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  current_streak: integer("current_streak").notNull().default(0),
+  longest_streak: integer("longest_streak").notNull().default(0),
+  last_active_date: text("last_active_date"),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
@@ -305,3 +428,10 @@ export type DebtRepayment = typeof debtRepayments.$inferSelect;
 export type TransferLog = typeof transferLogs.$inferSelect;
 export type BodyMetric = typeof bodyMetrics.$inferSelect;
 export type BodyMeasurementLog = typeof bodyMeasurementLogs.$inferSelect;
+export type TimeBucket = typeof timeBuckets.$inferSelect;
+export type Quest = typeof quests.$inferSelect;
+export type QuestMilestone = typeof questMilestones.$inferSelect;
+export type QuestTask = typeof questTasks.$inferSelect;
+export type QuestXpEvent = typeof questXpEvents.$inferSelect;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type UserStreak = typeof userStreaks.$inferSelect;

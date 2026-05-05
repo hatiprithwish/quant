@@ -1,42 +1,24 @@
 import { ApiResponse } from "../common";
 
-export enum TimeBucketLabelEnum {
-  Career = "career",
-  Sleep = "sleep",
-  Maintenance = "maintenance",
-  Fitness = "fitness",
-  Learning = "learning",
-  Social = "social",
-  Entertainment = "entertainment",
-  PersonalDev = "personal-dev",
+export interface TimeBucketItem {
+  id: number;
+  name: string;
+  color: string;
+  is_distraction: boolean;
+  quest_id: string | null;
+  quest_name: string | null;
 }
 
-export const timeBucketDisplayLabel: Record<TimeBucketLabelEnum, string> = {
-  [TimeBucketLabelEnum.Career]: "Career",
-  [TimeBucketLabelEnum.Sleep]: "Sleep",
-  [TimeBucketLabelEnum.Maintenance]: "Maintenance",
-  [TimeBucketLabelEnum.Fitness]: "Fitness",
-  [TimeBucketLabelEnum.Learning]: "Learning",
-  [TimeBucketLabelEnum.Social]: "Social",
-  [TimeBucketLabelEnum.Entertainment]: "Entertainment",
-  [TimeBucketLabelEnum.PersonalDev]: "Personal Dev",
-};
-
-export const timeBucketColor: Record<TimeBucketLabelEnum, string> = {
-  [TimeBucketLabelEnum.Career]: "#6366f1",
-  [TimeBucketLabelEnum.Sleep]: "#0ea5e9",
-  [TimeBucketLabelEnum.Maintenance]: "#94a3b8",
-  [TimeBucketLabelEnum.Fitness]: "#10b981",
-  [TimeBucketLabelEnum.Learning]: "#f59e0b",
-  [TimeBucketLabelEnum.Social]: "#ec4899",
-  [TimeBucketLabelEnum.Entertainment]: "#8b5cf6",
-  [TimeBucketLabelEnum.PersonalDev]: "#ef4444",
-};
+export interface GetTimeBucketsResponse extends ApiResponse {
+  buckets: TimeBucketItem[];
+}
 
 export interface TimeActivity {
   id: number;
   date: string;
-  bucket: TimeBucketLabelEnum;
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
   activity: string;
   start_time: string;
   end_time: string;
@@ -44,7 +26,9 @@ export interface TimeActivity {
 }
 
 export interface BucketSummary {
-  bucket: TimeBucketLabelEnum;
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
   total_minutes: number;
   activities: TimeActivity[];
 }
@@ -58,5 +42,5 @@ export interface DayTimeSummary {
 export interface GetTimeSummaryResponse extends ApiResponse {
   days: DayTimeSummary[];
   totalMinutes: number;
-  byBucket: { bucket: TimeBucketLabelEnum; total_minutes: number }[];
+  byBucket: { bucket_id: number; bucket_name: string; bucket_color: string; total_minutes: number }[];
 }

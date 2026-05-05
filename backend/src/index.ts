@@ -18,6 +18,9 @@ import { recurringTransactionMutationRoutes } from "./routes/RecurringTransactio
 import { debtRoutes } from "./routes/DebtRoutes";
 import { bodyRoutes } from "./routes/BodyRoutes";
 import { bodyMutationRoutes } from "./routes/BodyMutationRoutes";
+import { questsRoutes } from "./routes/QuestsRoutes";
+import { questsMutationRoutes } from "./routes/QuestsMutationRoutes";
+import { timeBucketsRoutes } from "./routes/TimeBucketsRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
@@ -119,6 +122,9 @@ app.route("/api/recurring-transaction", recurringTransactionMutationRoutes);
 app.route("/api/query/debts", debtRoutes);
 app.route("/api/query/body", bodyRoutes);
 app.route("/api/body", bodyMutationRoutes);
+app.route("/api/query/quests", questsRoutes);
+app.route("/api/quest", questsMutationRoutes);
+app.route("/api/time-bucket", timeBucketsRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
