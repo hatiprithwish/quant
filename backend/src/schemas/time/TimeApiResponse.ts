@@ -1,10 +1,11 @@
 import { ApiResponse } from "../common";
-import { TimeBucketLabelEnum } from "./TimeEnum";
 
 export interface TimeActivity {
   id: number;
   date: string;
-  bucket: TimeBucketLabelEnum;
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
   activity: string;
   start_time: string;
   end_time: string;
@@ -12,7 +13,9 @@ export interface TimeActivity {
 }
 
 export interface BucketSummary {
-  bucket: TimeBucketLabelEnum;
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
   total_minutes: number;
   activities: TimeActivity[];
 }
@@ -30,5 +33,5 @@ export interface LogTimeResponse extends ApiResponse {
 export interface GetTimeSummaryResponse extends ApiResponse {
   days: DayTimeSummary[];
   totalMinutes: number;
-  byBucket: { bucket: TimeBucketLabelEnum; total_minutes: number }[];
+  byBucket: { bucket_id: number; bucket_name: string; bucket_color: string; total_minutes: number }[];
 }

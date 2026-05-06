@@ -24,6 +24,19 @@
       "simple": { "limit": 10, "period": 60 },
     },
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "quant-db",
+      "database_id": "12047b82-fbcd-41cd-b143-06da8ba8a934",
+      "remote": true,
+      "migrations_dir": "./src/db/migrations",
+    },
+  ],
+  "vars": {
+    "FRONTEND_URL": "http:localhost:5173",
+    "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA",
+  },
   "env": {
     "staging": {
       "name": "quant-backend-staging",

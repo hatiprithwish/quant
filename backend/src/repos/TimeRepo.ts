@@ -3,9 +3,6 @@ import { TimeDAL } from "../data-access-layer/TimeDAL";
 import {
   LogTimeRepoRequest,
   TimeQueryRepoRequest,
-  timeBucketLabelToInt,
-  timeBucketIntToLabel,
-  TimeBucketIntEnum,
   LogTimeResponse,
   GetTimeSummaryResponse,
   DayTimeSummary,
@@ -28,7 +25,7 @@ export class TimeRepo {
       req.entries.map((entry) => ({
         userId: req.userId,
         date: entry.date,
-        bucket: timeBucketLabelToInt[entry.bucket],
+        bucket_id: entry.bucket_id,
         activity: entry.activity,
         startTime: entry.start_time,
         endTime: entry.end_time,
@@ -43,15 +40,13 @@ export class TimeRepo {
     req: TimeQueryRepoRequest,
     db: DrizzleDb,
   ): Promise<GetTimeSummaryResponse> {
-    const bucketFilter = req.bucket ? timeBucketLabelToInt[req.bucket] : null;
-
     const rows = await TimeDAL.findByDateRange(
-      { userId: req.userId, from: req.from, to: req.to, bucket: bucketFilter },
+      { userId: req.userId, from: req.from, to: req.to, bucket_id: req.bucket_id ?? null },
       db,
     );
 
-    const dayMap = new Map<string, Map<TimeBucketIntEnum, TimeActivity[]>>();
-    const bucketTotals = new Map<TimeBucketIntEnum, number>();
+    const dayMap = new Map<string, Map<number, TimeActivity[]>>();
+    const bucketTotals = new Map<number, { name: string; color: string; minutes: number }>();
     let totalMinutes = 0;
 
     for (const row of rows) {
@@ -59,22 +54,26 @@ export class TimeRepo {
 
       if (!dayMap.has(row.date)) dayMap.set(row.date, new Map());
       const bMap = dayMap.get(row.date)!;
-      if (!bMap.has(row.bucket)) bMap.set(row.bucket, []);
+      if (!bMap.has(row.bucket_id)) bMap.set(row.bucket_id, []);
 
-      bMap.get(row.bucket)!.push({
+      bMap.get(row.bucket_id)!.push({
         id: row.id,
         date: row.date,
-        bucket: timeBucketIntToLabel[row.bucket],
+        bucket_id: row.bucket_id,
+        bucket_name: row.bucket_name,
+        bucket_color: row.bucket_color,
         activity: row.activity,
         start_time: row.start_time,
         end_time: row.end_time,
         duration_minutes: duration,
       });
 
-      bucketTotals.set(
-        row.bucket,
-        (bucketTotals.get(row.bucket) ?? 0) + duration,
-      );
+      const existing = bucketTotals.get(row.bucket_id);
+      bucketTotals.set(row.bucket_id, {
+        name: row.bucket_name,
+        color: row.bucket_color,
+        minutes: (existing?.minutes ?? 0) + duration,
+      });
       totalMinutes += duration;
     }
 
@@ -82,12 +81,11 @@ export class TimeRepo {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, bMap]) => {
         const buckets: BucketSummary[] = Array.from(bMap.entries()).map(
-          ([bucketInt, activities]) => ({
-            bucket: timeBucketIntToLabel[bucketInt],
-            total_minutes: activities.reduce(
-              (s, a) => s + a.duration_minutes,
-              0,
-            ),
+          ([bucketId, activities]) => ({
+            bucket_id: bucketId,
+            bucket_name: activities[0].bucket_name,
+            bucket_color: activities[0].bucket_color,
+            total_minutes: activities.reduce((s, a) => s + a.duration_minutes, 0),
             activities,
           }),
         );
@@ -98,9 +96,11 @@ export class TimeRepo {
         };
       });
 
-    const byBucket = Array.from(bucketTotals.entries()).map(([b, mins]) => ({
-      bucket: timeBucketIntToLabel[b],
-      total_minutes: mins,
+    const byBucket = Array.from(bucketTotals.entries()).map(([id, { name, color, minutes }]) => ({
+      bucket_id: id,
+      bucket_name: name,
+      bucket_color: color,
+      total_minutes: minutes,
     }));
 
     return {

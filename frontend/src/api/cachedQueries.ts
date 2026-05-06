@@ -4,12 +4,18 @@ import type {
   GetFoodSummaryResponse,
   GetExpenseSummaryResponse,
   GetTimeSummaryResponse,
+  GetTimeBucketsResponse,
   GetScratchpadResponse,
   GetWalletsResponse,
   GetBudgetsResponse,
   GetDebtsResponse,
   GetRecurringTransactionsResponse,
   GetTransactionsResponse,
+  GetBodyMetricsResponse,
+  GetBodyMeasurementsResponse,
+  GetQuestsDashboardResponse,
+  GetQuestDetailResponse,
+  GetQuestsKanbanResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -41,17 +47,52 @@ export function useGetExpenses(
   });
 }
 
-export function useGetTime(from: string, to: string, bucket?: string) {
+export function useGetTime(from: string, to: string, bucket_id?: number) {
   const isEnabled = Boolean(from && to);
   return useQuery({
-    queryKey: ["/api/query/time", from, to, bucket],
+    queryKey: ["/api/query/time", from, to, bucket_id],
     queryFn: () =>
       apiClient.post<GetTimeSummaryResponse>("/api/query/time", {
         from,
         to,
-        bucket,
+        bucket_id,
       }),
     enabled: isEnabled,
+  });
+}
+
+export function useGetTimeBuckets() {
+  return useQuery({
+    queryKey: ["/api/time-bucket"],
+    queryFn: () => apiClient.get<GetTimeBucketsResponse>("/api/time-bucket"),
+  });
+}
+
+export function useGetQuestsDashboard(from: string, to: string) {
+  const isEnabled = Boolean(from && to);
+  return useQuery({
+    queryKey: ["/api/query/quests", from, to],
+    queryFn: () =>
+      apiClient.post<GetQuestsDashboardResponse>("/api/query/quests", { from, to }),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetQuestDetail(questId: string) {
+  const isEnabled = Boolean(questId);
+  return useQuery({
+    queryKey: ["/api/query/quests/detail", questId],
+    queryFn: () =>
+      apiClient.post<GetQuestDetailResponse>(`/api/query/quests/detail/${questId}`, {}),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetQuestsKanban() {
+  return useQuery({
+    queryKey: ["/api/query/quests/kanban"],
+    queryFn: () =>
+      apiClient.post<GetQuestsKanbanResponse>("/api/query/quests/kanban", {}),
   });
 }
 
@@ -100,6 +141,27 @@ export function useGetTransactions(from: string, to: string) {
     queryKey: ["/api/query/transactions", from, to],
     queryFn: () =>
       apiClient.post<GetTransactionsResponse>("/api/query/transactions", { from, to }),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetBodyMetrics() {
+  return useQuery({
+    queryKey: ["/api/query/body/metrics"],
+    queryFn: () => apiClient.get<GetBodyMetricsResponse>("/api/query/body/metrics"),
+  });
+}
+
+export function useGetBodyMeasurements(metricId: number, from: string, to: string) {
+  const isEnabled = Boolean(metricId && from && to);
+  return useQuery({
+    queryKey: ["/api/query/body/measurements", metricId, from, to],
+    queryFn: () =>
+      apiClient.post<GetBodyMeasurementsResponse>("/api/query/body/measurements", {
+        metric_id: metricId,
+        from,
+        to,
+      }),
     enabled: isEnabled,
   });
 }

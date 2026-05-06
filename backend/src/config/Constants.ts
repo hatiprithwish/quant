@@ -43,5 +43,6 @@ export class AppConstants {
     TIME: 16,    // 6 params/row
     EXPENSE: 14, // 7 params/row
     FOOD: 10,    // 10 params/row
+    BODY_LOG: 20, // 5 params/row
   } as const;
 }

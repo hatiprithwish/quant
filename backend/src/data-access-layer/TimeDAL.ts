@@ -1,6 +1,6 @@
 import { and, between, eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { timeLogs } from "../db/tables";
+import { timeLogs, timeBuckets } from "../db/tables";
 import { InsertTimeLogDbRequest, GetTimeLogsDbRequest } from "../schemas";
 import { AppConstants } from "../config/Constants";
 
@@ -16,7 +16,7 @@ export class TimeDAL {
         chunk.map((req) => ({
           user_id: req.userId,
           date: req.date,
-          bucket: req.bucket,
+          bucket_id: req.bucket_id,
           activity: req.activity,
           start_time: req.startTime,
           end_time: req.endTime,
@@ -31,13 +31,23 @@ export class TimeDAL {
       between(timeLogs.date, req.from, req.to),
     ];
 
-    if (req.bucket !== null) {
-      conditions.push(eq(timeLogs.bucket, req.bucket));
+    if (req.bucket_id !== null) {
+      conditions.push(eq(timeLogs.bucket_id, req.bucket_id));
     }
 
     return db
-      .select()
+      .select({
+        id: timeLogs.id,
+        date: timeLogs.date,
+        bucket_id: timeLogs.bucket_id,
+        bucket_name: timeBuckets.name,
+        bucket_color: timeBuckets.color,
+        activity: timeLogs.activity,
+        start_time: timeLogs.start_time,
+        end_time: timeLogs.end_time,
+      })
       .from(timeLogs)
+      .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
       .where(and(...conditions))
       .orderBy(timeLogs.date, timeLogs.start_time);
   }

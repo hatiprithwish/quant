@@ -8,6 +8,14 @@ import type {
   ExpenseCategoryLabelEnum,
   CreateRecurringTransactionResponse,
   UpdateRecurringTransactionResponse,
+  CreateBodyMetricResponse,
+  CreateBodyMeasurementResponse,
+  CreateQuestResponse,
+  UpdateTaskStatusResponse,
+  QuestCategoryEnum,
+  QuestStatusEnum,
+  TaskStatusEnum,
+  MilestoneStatusEnum,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -293,6 +301,251 @@ export function useMutationUpdateRecurringTransaction(id: number) {
       apiClient.patch<UpdateRecurringTransactionResponse>(`/api/recurring-transaction/${id}`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/query/recurring-transactions"] });
+    },
+  });
+}
+
+// ── Body measurement mutations ────────────────────────────────────────────────
+
+export interface CreateBodyMetricInput {
+  name: string;
+  unit: string;
+}
+
+export function useMutationCreateBodyMetric() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBodyMetricInput) =>
+      apiClient.post<CreateBodyMetricResponse>("/api/body/metric", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export function useMutationUpdateBodyMetric(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string }) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/body/metric/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export function useMutationDeleteBodyMetric() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/body/metric/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+export interface CreateBodyMeasurementInput {
+  metric_id: number;
+  value: number;
+  recorded_at: string;
+}
+
+export function useMutationCreateBodyMeasurement(metricId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBodyMeasurementInput) =>
+      apiClient.post<CreateBodyMeasurementResponse>("/api/body/measurement", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/body/measurements", metricId] });
+      qc.invalidateQueries({ queryKey: ["/api/query/body/metrics"] });
+    },
+  });
+}
+
+// ── Time bucket mutations ─────────────────────────────────────────────────────
+
+export interface CreateTimeBucketInput {
+  name: string;
+  color: string;
+  is_distraction: boolean;
+  quest_id?: string | null;
+}
+
+export interface UpdateTimeBucketInput {
+  name?: string;
+  color?: string;
+  is_distraction?: boolean;
+  quest_id?: string | null;
+}
+
+export function useMutationCreateTimeBucket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateTimeBucketInput) =>
+      apiClient.post<{ isSuccess: boolean; bucket_id: number }>("/api/time-bucket", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/time-bucket"] });
+    },
+  });
+}
+
+export function useMutationUpdateTimeBucket(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateTimeBucketInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/time-bucket/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/time-bucket"] });
+    },
+  });
+}
+
+export function useMutationDeleteTimeBucket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/time-bucket/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/time-bucket"] });
+    },
+  });
+}
+
+// ── Quest mutations ───────────────────────────────────────────────────────────
+
+export interface CreateQuestInput {
+  name: string;
+  description?: string;
+  category: QuestCategoryEnum;
+  color: string;
+  deadline?: string;
+}
+
+export interface UpdateQuestInput {
+  name?: string;
+  description?: string | null;
+  category?: QuestCategoryEnum;
+  color?: string;
+  status?: QuestStatusEnum;
+  deadline?: string | null;
+}
+
+export function useMutationCreateQuest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateQuestInput) =>
+      apiClient.post<CreateQuestResponse>("/api/quest", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests"] });
+    },
+  });
+}
+
+export function useMutationUpdateQuest(questId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateQuestInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/quest/${questId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail", questId] });
+    },
+  });
+}
+
+export function useMutationDeleteQuest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (questId: string) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/quest/${questId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests"] });
+    },
+  });
+}
+
+// ── Milestone mutations ───────────────────────────────────────────────────────
+
+export interface CreateMilestoneInput {
+  name: string;
+  xp_reward?: number;
+  due_date?: string;
+  order?: number;
+}
+
+export interface UpdateMilestoneInput {
+  name?: string;
+  xp_reward?: number;
+  due_date?: string | null;
+  status?: MilestoneStatusEnum;
+  order?: number;
+}
+
+export function useMutationCreateMilestone(questId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateMilestoneInput) =>
+      apiClient.post<{ isSuccess: boolean; milestone_id: number }>(`/api/quest/${questId}/milestone`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail", questId] });
+    },
+  });
+}
+
+export function useMutationUpdateMilestone(questId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ milestoneId, ...data }: UpdateMilestoneInput & { milestoneId: number }) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/quest/milestone/${milestoneId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail", questId] });
+    },
+  });
+}
+
+// ── Task mutations ────────────────────────────────────────────────────────────
+
+export interface CreateTaskInput {
+  name: string;
+  milestone_id?: number;
+  xp_reward?: number;
+  due_date?: string;
+}
+
+export function useMutationCreateTask(questId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateTaskInput) =>
+      apiClient.post<{ isSuccess: boolean; task_id: number; xp_awarded: number }>(`/api/quest/${questId}/task`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail", questId] });
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/kanban"] });
+    },
+  });
+}
+
+export function useMutationUpdateTaskStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, status }: { taskId: number; status: TaskStatusEnum }) =>
+      apiClient.patch<UpdateTaskStatusResponse>(`/api/quest/task/${taskId}`, { status }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/kanban"] });
+    },
+  });
+}
+
+export function useMutationDeleteTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/quest/task/${taskId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/detail"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/quests/kanban"] });
     },
   });
 }

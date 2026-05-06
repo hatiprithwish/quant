@@ -12,9 +12,6 @@ import {
   Cell,
 } from "recharts";
 import type { GetTimeSummaryResponse } from "@/schemas";
-import { timeBucketColor, timeBucketDisplayLabel, TimeBucketLabelEnum } from "@/schemas";
-
-const ALL_BUCKETS = Object.values(TimeBucketLabelEnum);
 
 interface Props {
   data: GetTimeSummaryResponse;
@@ -22,10 +19,10 @@ interface Props {
 }
 
 export default function TimeCharts({ data, multiDay }: Props) {
-  const pieData = data.byBucket.map((b) => ({
-    name: timeBucketDisplayLabel[b.bucket],
+  const pieData = data.byBucket.map(b => ({
+    name: b.bucket_name,
     value: b.total_minutes,
-    fill: timeBucketColor[b.bucket],
+    fill: b.bucket_color,
     hours: (b.total_minutes / 60).toFixed(1),
   }));
 
@@ -37,49 +34,32 @@ export default function TimeCharts({ data, multiDay }: Props) {
         </h3>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
-            <Pie
-              data={pieData}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={80}
-            >
+            <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
               {pieData.map((entry, i) => (
                 <Cell key={i} fill={entry.fill} />
               ))}
             </Pie>
             <Tooltip
-              formatter={(v) => [
-                `${(Number(v ?? 0) / 60).toFixed(1)}h`,
-                "",
-              ]}
+              formatter={(v) => [`${(Number(v ?? 0) / 60).toFixed(1)}h`, ""]}
               contentStyle={{ fontSize: 12, borderRadius: 8 }}
             />
-            <Legend
-              formatter={(value) => (
-                <span style={{ fontSize: 11 }}>{value}</span>
-              )}
-            />
+            <Legend formatter={(value) => <span style={{ fontSize: 11 }}>{value}</span>} />
           </PieChart>
         </ResponsiveContainer>
       </div>
     );
   }
 
-  const stackedData = data.days.map((day) => {
+  const bucketNames = [...new Set(data.byBucket.map(b => b.bucket_name))];
+  const bucketColorMap = Object.fromEntries(data.byBucket.map(b => [b.bucket_name, b.bucket_color]));
+
+  const stackedData = data.days.map(day => {
     const entry: Record<string, string | number> = { date: day.date.slice(5) };
     for (const b of day.buckets) {
-      entry[timeBucketDisplayLabel[b.bucket]] = parseFloat(
-        (b.total_minutes / 60).toFixed(1)
-      );
+      entry[b.bucket_name] = parseFloat((b.total_minutes / 60).toFixed(1));
     }
     return entry;
   });
-
-  const activeBuckets = ALL_BUCKETS.filter((b) =>
-    data.byBucket.some((x) => x.bucket === b)
-  );
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
@@ -96,13 +76,8 @@ export default function TimeCharts({ data, multiDay }: Props) {
             formatter={(v) => [`${Number(v ?? 0)}h`, ""]}
           />
           <Legend formatter={(v) => <span style={{ fontSize: 11 }}>{v}</span>} />
-          {activeBuckets.map((b) => (
-            <Bar
-              key={b}
-              dataKey={timeBucketDisplayLabel[b]}
-              stackId="a"
-              fill={timeBucketColor[b]}
-            />
+          {bucketNames.map(name => (
+            <Bar key={name} dataKey={name} stackId="a" fill={bucketColorMap[name]} />
           ))}
         </BarChart>
       </ResponsiveContainer>

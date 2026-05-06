@@ -8,3 +8,5 @@ export * from "./budgets";
 export * from "./debts";
 export * from "./recurring-transactions";
 export * from "./transactions";
+export * from "./body";
+export * from "./quests";
