@@ -1,5 +1,6 @@
 import { DrizzleDb } from "../db";
 import { RecurringTransactionDAL } from "../data-access-layer/RecurringTransactionDAL";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   RecurringTransactionQueryRepoRequest,
   GetRecurringTransactionsResponse,
@@ -7,11 +8,11 @@ import {
   CreateRecurringTransactionResponse,
   UpdateRecurringTransactionRepoRequest,
   UpdateRecurringTransactionResponse,
-  expenseCategoryIntToLabel,
-  expenseCategoryLabelToInt,
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
   RecurringTransactionTypeEnum,
+  MoneyCategoryItem,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
 
 function calcEndDate(
@@ -33,23 +34,30 @@ function calcEndDate(
   return d.toISOString().split("T")[0];
 }
 
-function rowToItem(row: {
-  id: number;
-  type: string;
-  name: string;
-  amount: number;
-  period: string;
-  interval: number;
-  week_days: string | null;
-  month_end: number;
-  end_condition: string;
-  end_date: string | null;
-  occurrences: number | null;
-  category: number;
-  description: string | null;
-  wallet_id: number;
-  next_date: string;
-}) {
+function toMoneyCategoryItem(row: { id: number; name: string; display_label: string; color: string; type: string }): MoneyCategoryItem {
+  return { id: row.id, name: row.name, display_label: row.display_label, color: row.color, type: row.type as MoneyCategoryTypeEnum };
+}
+
+function rowToItem(
+  row: {
+    id: number;
+    type: string;
+    name: string;
+    amount: number;
+    period: string;
+    interval: number;
+    week_days: string | null;
+    month_end: number;
+    end_condition: string;
+    end_date: string | null;
+    occurrences: number | null;
+    category_id: number;
+    description: string | null;
+    wallet_id: number;
+    next_date: string;
+  },
+  cat: MoneyCategoryItem,
+) {
   return {
     id: row.id,
     type: row.type as RecurringTransactionTypeEnum,
@@ -62,7 +70,7 @@ function rowToItem(row: {
     end_condition: row.end_condition as RecurringEndConditionEnum,
     end_date: row.end_date,
     occurrences: row.occurrences,
-    category: expenseCategoryIntToLabel[row.category as keyof typeof expenseCategoryIntToLabel],
+    category: cat,
     description: row.description,
     wallet_id: row.wallet_id,
     next_date: row.next_date,
@@ -75,10 +83,13 @@ export class RecurringTransactionRepo {
     db: DrizzleDb,
   ): Promise<GetRecurringTransactionsResponse> {
     const rows = await RecurringTransactionDAL.findAll({ userId: req.userId }, db);
+    const allCats = await MoneyCategoryDAL.findAll(req.userId, db);
+    const catMap = new Map(allCats.map((c) => [c.id, toMoneyCategoryItem(c)]));
+
     return {
       isSuccess: true,
       message: "Recurring transactions retrieved",
-      items: rows.map(rowToItem),
+      items: rows.map((row) => rowToItem(row, catMap.get(row.category_id)!)),
     };
   }
 
@@ -86,8 +97,6 @@ export class RecurringTransactionRepo {
     req: CreateRecurringTransactionRepoRequest,
     db: DrizzleDb,
   ): Promise<CreateRecurringTransactionResponse> {
-    const categoryInt = expenseCategoryLabelToInt[req.category as keyof typeof expenseCategoryLabelToInt];
-
     let endDate: string | null = null;
     if (req.end_condition === RecurringEndConditionEnum.Until) {
       endDate = req.end_date ?? null;
@@ -109,17 +118,19 @@ export class RecurringTransactionRepo {
         endCondition: req.end_condition,
         endDate,
         occurrences: req.occurrences ?? null,
-        category: categoryInt,
+        categoryId: req.category_id,
         description: req.description ?? null,
         nextDate: req.start_date,
       },
       db,
     );
 
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+
     return {
       isSuccess: true,
       message: "Recurring transaction created",
-      item: rowToItem(row),
+      item: rowToItem(row, toMoneyCategoryItem(cat!)),
     };
   }
 
@@ -142,6 +153,7 @@ export class RecurringTransactionRepo {
     if (req.month_end !== undefined) updates.monthEnd = req.month_end ? 1 : 0;
     if (req.description !== undefined) updates.description = req.description ?? null;
     if (req.start_date !== undefined) updates.nextDate = req.start_date;
+    if (req.category_id !== undefined) updates.categoryId = req.category_id;
 
     if (req.end_condition !== undefined) {
       updates.endCondition = req.end_condition;
@@ -167,10 +179,12 @@ export class RecurringTransactionRepo {
       return { isSuccess: false, message: "Recurring transaction not found", item: null as never };
     }
 
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+
     return {
       isSuccess: true,
       message: "Recurring transaction updated",
-      item: rowToItem(row),
+      item: rowToItem(row, toMoneyCategoryItem(cat!)),
     };
   }
 }

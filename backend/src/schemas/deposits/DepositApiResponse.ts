@@ -1,5 +1,5 @@
 import { ApiResponse } from "../common";
-import { DepositCategoryEnum } from "../wallets/WalletEnum";
+import { MoneyCategoryItem } from "../money-categories";
 
 export interface DepositEntry {
   id: number;
@@ -7,7 +7,7 @@ export interface DepositEntry {
   date: string;
   amount: number;
   currency: string;
-  category: DepositCategoryEnum;
+  category: MoneyCategoryItem;
   description: string | null;
 }
 

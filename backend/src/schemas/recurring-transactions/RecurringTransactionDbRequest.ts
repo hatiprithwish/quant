@@ -1,5 +1,4 @@
 import { RecurringTransactionPeriodEnum, RecurringTransactionTypeEnum, RecurringEndConditionEnum } from "./RecurringTransactionEnum";
-import { ExpenseCategoryIntEnum } from "../expenses";
 
 export interface GetRecurringTransactionsDbRequest {
   userId: string;
@@ -18,7 +17,7 @@ export interface CreateRecurringTransactionDbRequest {
   endCondition: RecurringEndConditionEnum;
   endDate: string | null;
   occurrences: number | null;
-  category: ExpenseCategoryIntEnum;
+  categoryId: number;
   description: string | null;
   nextDate: string;
 }
@@ -37,7 +36,7 @@ export interface UpdateRecurringTransactionDbRequest {
   endCondition?: RecurringEndConditionEnum;
   endDate?: string | null;
   occurrences?: number | null;
-  category?: ExpenseCategoryIntEnum;
+  categoryId?: number;
   description?: string | null;
   nextDate?: string;
 }

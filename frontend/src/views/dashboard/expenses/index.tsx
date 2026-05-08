@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useGetExpenses, useGetTransactions, useGetWallets } from "@/api/cachedQueries";
 import DashboardTab from "./components/DashboardTab";
 import TransactionsTab from "./components/TransactionsTab";
+import CategoriesTab from "./components/CategoriesTab";
 import AddEntryModal from "./components/AddEntryModal";
 
 function today() {
@@ -46,7 +47,7 @@ const PRESETS = [
   { label: "Year", from: () => startOfYear(), to: () => today() },
 ];
 
-type Tab = "dashboard" | "transactions";
+type Tab = "dashboard" | "transactions" | "categories";
 
 function DateRangeDropdown({
   from,
@@ -154,8 +155,8 @@ export default function ExpensesPage() {
   const { data: walletsData } = useGetWallets();
 
   const wallets = walletsData?.wallets ?? [];
-  const isLoading = tab === "dashboard" ? expenseLoading : txLoading;
-  const error = tab === "dashboard" ? expenseError : txError;
+  const isLoading = tab === "dashboard" ? expenseLoading : tab === "transactions" ? txLoading : false;
+  const error = tab === "dashboard" ? expenseError : tab === "transactions" ? txError : null;
 
   return (
     <div className="space-y-0">
@@ -200,6 +201,16 @@ export default function ExpensesPage() {
         >
           All Transactions
         </button>
+        <button
+          onClick={() => setTab("categories")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            tab === "categories"
+              ? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
+              : "border-transparent text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
+          }`}
+        >
+          Categories
+        </button>
       </div>
 
       {isLoading && (
@@ -223,6 +234,7 @@ export default function ExpensesPage() {
               to={to}
             />
           )}
+          {tab === "categories" && <CategoriesTab />}
         </>
       )}
 

@@ -1,6 +1,7 @@
 import { DrizzleDb } from "../db";
 import { WalletDAL } from "../data-access-layer/WalletDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   WalletQueryRepoRequest,
   GetWalletsResponse,
@@ -10,7 +11,7 @@ import {
   UpdateWalletResponse,
   WalletRecordCountResponse,
   WalletWithBalance,
-  DepositCategoryEnum,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
 
 function toWalletWithBalance(row: {
@@ -59,18 +60,22 @@ export class WalletRepo {
     );
 
     if (req.initial_balance && req.initial_balance > 0) {
-      await DepositDAL.insert(
-        {
-          userId: req.userId,
-          walletId: row.id,
-          date: new Date().toISOString().split("T")[0],
-          amount: req.initial_balance,
-          currency: "INR",
-          category: DepositCategoryEnum.OpeningBalance,
-          description: "Opening balance",
-        },
-        db,
-      );
+      const incomeCategories = await MoneyCategoryDAL.findByType(req.userId, MoneyCategoryTypeEnum.Income, db);
+      const openingBalanceCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
+      if (openingBalanceCat) {
+        await DepositDAL.insert(
+          {
+            userId: req.userId,
+            walletId: row.id,
+            date: new Date().toISOString().split("T")[0],
+            amount: req.initial_balance,
+            currency: "INR",
+            categoryId: openingBalanceCat.id,
+            description: "Opening balance",
+          },
+          db,
+        );
+      }
     }
 
     const updatedRows = await WalletDAL.findAllWithBalance(

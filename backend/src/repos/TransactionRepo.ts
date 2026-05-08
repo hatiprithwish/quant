@@ -3,30 +3,38 @@ import { ExpenseDAL } from "../data-access-layer/ExpenseDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
 import { TransferDAL } from "../data-access-layer/TransferDAL";
 import { WalletDAL } from "../data-access-layer/WalletDAL";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   TransactionQueryRepoRequest,
   GetTransactionsResponse,
   UnifiedTransaction,
   TransactionDaySummary,
-  expenseCategoryIntToLabel,
+  MoneyCategoryItem,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
+
+function toMoneyCategoryItem(row: { id: number; name: string; display_label: string; color: string; type: string }): MoneyCategoryItem {
+  return { id: row.id, name: row.name, display_label: row.display_label, color: row.color, type: row.type as MoneyCategoryTypeEnum };
+}
 
 export class TransactionRepo {
   static async getTransactions(
     req: TransactionQueryRepoRequest,
     db: DrizzleDb,
   ): Promise<GetTransactionsResponse> {
-    const [expenses, deposits, transfers, walletRows] = await Promise.all([
+    const [expenses, deposits, transfers, walletRows, allCats] = await Promise.all([
       ExpenseDAL.findByDateRange(
-        { userId: req.userId, from: req.from, to: req.to, category: null },
+        { userId: req.userId, from: req.from, to: req.to, categoryId: null },
         db,
       ),
       DepositDAL.findByDateRange(req.userId, req.from, req.to, db),
       TransferDAL.findByDateRange(req.userId, req.from, req.to, db),
       WalletDAL.findAllWithBalance({ userId: req.userId }, db),
+      MoneyCategoryDAL.findAll(req.userId, db),
     ]);
 
     const walletMap = new Map(walletRows.map((w) => [w.id, w.name]));
+    const catMap = new Map(allCats.map((c) => [c.id, toMoneyCategoryItem(c)]));
 
     const items: UnifiedTransaction[] = [
       ...expenses.map((e) => ({
@@ -36,8 +44,7 @@ export class TransactionRepo {
         amount: e.amount,
         currency: e.currency,
         description: e.description,
-        expense_category: expenseCategoryIntToLabel[e.category],
-        income_category: null,
+        category: catMap.get(e.category_id) ?? null,
         wallet_id: e.wallet_id,
         wallet_name: e.wallet_id ? (walletMap.get(e.wallet_id) ?? null) : null,
         from_wallet_id: null,
@@ -52,8 +59,7 @@ export class TransactionRepo {
         amount: d.amount,
         currency: d.currency,
         description: d.description,
-        expense_category: null,
-        income_category: d.category,
+        category: catMap.get(d.category_id) ?? null,
         wallet_id: d.wallet_id,
         wallet_name: walletMap.get(d.wallet_id) ?? null,
         from_wallet_id: null,
@@ -68,8 +74,7 @@ export class TransactionRepo {
         amount: t.amount,
         currency: t.currency,
         description: t.description,
-        expense_category: null,
-        income_category: null,
+        category: null,
         wallet_id: null,
         wallet_name: null,
         from_wallet_id: t.from_wallet_id,

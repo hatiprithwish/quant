@@ -1,10 +1,7 @@
 import { useState } from "react";
-import {
-  ExpenseCategoryLabelEnum,
-  expenseCategoryDisplayLabel,
-  expenseCategoryColor,
-  BudgetPeriodEnum,
-} from "@/schemas";
+import type { MoneyCategoryItem } from "@/schemas";
+import { MoneyCategoryTypeEnum, BudgetPeriodEnum } from "@/schemas";
+import { useGetMoneyCategories } from "@/api/cachedQueries";
 import { useMutationCreateBudget } from "@/api/mutations";
 
 interface Props {
@@ -25,33 +22,34 @@ const PERIOD_LABELS: Record<BudgetPeriodEnum, string> = {
   [BudgetPeriodEnum.Yearly]: "Yearly",
 };
 
-const ALL_CATEGORIES = Object.values(ExpenseCategoryLabelEnum);
-
 export default function AddBudgetModal({ onClose }: Props) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(COLOR_SWATCHES[5]);
-  const [selectedCategories, setSelectedCategories] = useState<ExpenseCategoryLabelEnum[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [allSelected, setAllSelected] = useState(false);
   const [amount, setAmount] = useState("");
   const [period, setPeriod] = useState<BudgetPeriodEnum>(BudgetPeriodEnum.Monthly);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: categoriesData } = useGetMoneyCategories();
+  const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
+
   const mutation = useMutationCreateBudget();
 
-  function toggleCategory(cat: ExpenseCategoryLabelEnum) {
+  function toggleCategory(cat: MoneyCategoryItem) {
     setAllSelected(false);
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    setSelectedCategoryIds((prev) =>
+      prev.includes(cat.id) ? prev.filter((id) => id !== cat.id) : [...prev, cat.id],
     );
   }
 
   function toggleAll() {
     if (allSelected) {
       setAllSelected(false);
-      setSelectedCategories([]);
+      setSelectedCategoryIds([]);
     } else {
       setAllSelected(true);
-      setSelectedCategories([]);
+      setSelectedCategoryIds([]);
     }
   }
 
@@ -66,7 +64,7 @@ export default function AddBudgetModal({ onClose }: Props) {
       await mutation.mutateAsync({
         name: name.trim(),
         color,
-        categories: allSelected ? [] : selectedCategories,
+        category_ids: allSelected ? [] : selectedCategoryIds,
         amount: amt,
         period,
       });
@@ -92,7 +90,6 @@ export default function AddBudgetModal({ onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Name
@@ -107,7 +104,6 @@ export default function AddBudgetModal({ onClose }: Props) {
             />
           </div>
 
-          {/* Amount */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Amount (₹)
@@ -122,13 +118,11 @@ export default function AddBudgetModal({ onClose }: Props) {
             />
           </div>
 
-          {/* Categories */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Categories
             </label>
             <div className="space-y-1 max-h-48 overflow-y-auto border border-gray-200 dark:border-neutral-700 rounded-lg p-2">
-              {/* All Category option */}
               <button
                 type="button"
                 onClick={toggleAll}
@@ -147,7 +141,7 @@ export default function AddBudgetModal({ onClose }: Props) {
                 >
                   {allSelected && (
                     <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                      <path d="M1 4l2.5 2.5L9 1" stroke={`currentColor`} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black" />
+                      <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-black" />
                     </svg>
                   )}
                 </span>
@@ -156,11 +150,11 @@ export default function AddBudgetModal({ onClose }: Props) {
 
               <div className="border-t border-gray-100 dark:border-neutral-800 my-1" />
 
-              {ALL_CATEGORIES.map((cat) => {
-                const checked = !allSelected && selectedCategories.includes(cat);
+              {expenseCategories.map((cat) => {
+                const checked = !allSelected && selectedCategoryIds.includes(cat.id);
                 return (
                   <button
-                    key={cat}
+                    key={cat.id}
                     type="button"
                     onClick={() => toggleCategory(cat)}
                     disabled={allSelected}
@@ -185,10 +179,10 @@ export default function AddBudgetModal({ onClose }: Props) {
                     </span>
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: expenseCategoryColor[cat] }}
+                      style={{ backgroundColor: cat.color }}
                     />
                     <span className="text-gray-700 dark:text-neutral-300">
-                      {expenseCategoryDisplayLabel[cat]}
+                      {cat.display_label}
                     </span>
                   </button>
                 );
@@ -196,7 +190,6 @@ export default function AddBudgetModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Color */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Color
@@ -216,7 +209,6 @@ export default function AddBudgetModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Period */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Period

@@ -1,11 +1,7 @@
 import { useState } from "react";
-import {
-  ExpenseCategoryLabelEnum,
-  expenseCategoryDisplayLabel,
-  expenseCategoryColor,
-  BudgetPeriodEnum,
-  BudgetWithSpent,
-} from "@/schemas";
+import type { MoneyCategoryItem } from "@/schemas";
+import { MoneyCategoryTypeEnum, BudgetPeriodEnum, BudgetWithSpent } from "@/schemas";
+import { useGetMoneyCategories } from "@/api/cachedQueries";
 import { useMutationUpdateBudget, useMutationDeleteBudget } from "@/api/mutations";
 
 interface Props {
@@ -27,15 +23,13 @@ const PERIOD_LABELS: Record<BudgetPeriodEnum, string> = {
   [BudgetPeriodEnum.Yearly]: "Yearly",
 };
 
-const ALL_CATEGORIES = Object.values(ExpenseCategoryLabelEnum);
-
 export default function EditBudgetModal({ budget, onClose }: Props) {
   const isAllCategories = budget.categories.length === 0;
 
   const [name, setName] = useState(budget.name);
   const [color, setColor] = useState(budget.color);
-  const [selectedCategories, setSelectedCategories] = useState<ExpenseCategoryLabelEnum[]>(
-    isAllCategories ? [] : budget.categories,
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>(
+    isAllCategories ? [] : budget.categories.map((c) => c.id),
   );
   const [allSelected, setAllSelected] = useState(isAllCategories);
   const [amount, setAmount] = useState(String(budget.amount));
@@ -43,23 +37,26 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const { data: categoriesData } = useGetMoneyCategories();
+  const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
+
   const updateMutation = useMutationUpdateBudget(budget.id);
   const deleteMutation = useMutationDeleteBudget();
 
-  function toggleCategory(cat: ExpenseCategoryLabelEnum) {
+  function toggleCategory(cat: MoneyCategoryItem) {
     setAllSelected(false);
-    setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    setSelectedCategoryIds((prev) =>
+      prev.includes(cat.id) ? prev.filter((id) => id !== cat.id) : [...prev, cat.id],
     );
   }
 
   function toggleAll() {
     if (allSelected) {
       setAllSelected(false);
-      setSelectedCategories([]);
+      setSelectedCategoryIds([]);
     } else {
       setAllSelected(true);
-      setSelectedCategories([]);
+      setSelectedCategoryIds([]);
     }
   }
 
@@ -74,7 +71,7 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
       await updateMutation.mutateAsync({
         name: name.trim(),
         color,
-        categories: allSelected ? [] : selectedCategories,
+        category_ids: allSelected ? [] : selectedCategoryIds,
         amount: amt,
         period,
       });
@@ -112,7 +109,6 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Name
@@ -126,7 +122,6 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
             />
           </div>
 
-          {/* Amount */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Amount (₹)
@@ -140,7 +135,6 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
             />
           </div>
 
-          {/* Categories */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Categories
@@ -171,11 +165,11 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
 
               <div className="border-t border-gray-100 dark:border-neutral-800 my-1" />
 
-              {ALL_CATEGORIES.map((cat) => {
-                const checked = !allSelected && selectedCategories.includes(cat);
+              {expenseCategories.map((cat) => {
+                const checked = !allSelected && selectedCategoryIds.includes(cat.id);
                 return (
                   <button
-                    key={cat}
+                    key={cat.id}
                     type="button"
                     onClick={() => toggleCategory(cat)}
                     disabled={allSelected}
@@ -198,10 +192,10 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
                     </span>
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: expenseCategoryColor[cat] }}
+                      style={{ backgroundColor: cat.color }}
                     />
                     <span className="text-gray-700 dark:text-neutral-300">
-                      {expenseCategoryDisplayLabel[cat]}
+                      {cat.display_label}
                     </span>
                   </button>
                 );
@@ -209,7 +203,6 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
             </div>
           </div>
 
-          {/* Color */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Color
@@ -229,7 +222,6 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
             </div>
           </div>
 
-          {/* Period */}
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">
               Period

@@ -22,7 +22,7 @@ export class ExpenseDAL {
           date: req.date,
           amount: req.amount,
           currency: req.currency,
-          category: req.category,
+          category_id: req.categoryId,
           description: req.description,
           wallet_id: req.walletId,
         })),
@@ -38,7 +38,7 @@ export class ExpenseDAL {
         date: req.date,
         amount: req.amount,
         currency: req.currency,
-        category: req.category,
+        category_id: req.categoryId,
         description: req.description,
         wallet_id: req.walletId,
       })
@@ -56,7 +56,7 @@ export class ExpenseDAL {
     if (req.date !== undefined) patch.date = req.date;
     if (req.amount !== undefined) patch.amount = req.amount;
     if (req.currency !== undefined) patch.currency = req.currency;
-    if (req.category !== undefined) patch.category = req.category;
+    if (req.categoryId !== undefined) patch.category_id = req.categoryId;
     if (req.description !== undefined) patch.description = req.description;
     if (req.walletId !== undefined) patch.wallet_id = req.walletId;
 
@@ -80,8 +80,8 @@ export class ExpenseDAL {
       between(expenseLogs.date, req.from, req.to),
     ];
 
-    if (req.category !== null) {
-      conditions.push(eq(expenseLogs.category, req.category));
+    if (req.categoryId !== null) {
+      conditions.push(eq(expenseLogs.category_id, req.categoryId));
     }
 
     return db

@@ -1,4 +1,3 @@
-import { ExpenseCategoryIntEnum } from "../expenses";
 import { BudgetPeriodEnum } from "./BudgetEnum";
 
 export interface GetBudgetsDbRequest {
@@ -12,7 +11,7 @@ export interface GetCategoryTotalsDbRequest {
 }
 
 export interface CategoryTotal {
-  category: ExpenseCategoryIntEnum;
+  category_id: number;
   total: number;
 }
 
@@ -20,7 +19,7 @@ export interface InsertBudgetDbRequest {
   userId: string;
   name: string;
   color: string;
-  categories: ExpenseCategoryIntEnum[];
+  categoryIds: number[];
   amount: number;
   period: BudgetPeriodEnum;
 }
@@ -30,7 +29,7 @@ export interface UpdateBudgetDbRequest {
   userId: string;
   name?: string;
   color?: string;
-  categories?: ExpenseCategoryIntEnum[];
+  categoryIds?: number[];
   amount?: number;
   period?: BudgetPeriodEnum;
 }

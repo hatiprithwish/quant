@@ -1,5 +1,5 @@
 import { ApiResponse } from "../common";
-import { ExpenseCategoryLabelEnum } from "../expenses";
+import { MoneyCategoryItem } from "../money-categories";
 import {
   RecurringTransactionPeriodEnum,
   RecurringTransactionTypeEnum,
@@ -18,7 +18,7 @@ export interface RecurringTransactionItem {
   end_condition: RecurringEndConditionEnum;
   end_date: string | null;
   occurrences: number | null;
-  category: ExpenseCategoryLabelEnum;
+  category: MoneyCategoryItem;
   description: string | null;
   wallet_id: number;
   next_date: string;

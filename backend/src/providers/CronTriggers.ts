@@ -7,7 +7,6 @@ import { DepositDAL } from "../data-access-layer/DepositDAL";
 import {
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
-  DepositCategoryEnum,
 } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
@@ -93,7 +92,7 @@ export async function processRecurringTransactions(
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          category: item.category,
+          categoryId: item.category_id,
           description: item.description ?? item.name,
           walletId: item.wallet_id,
         },
@@ -107,7 +106,7 @@ export async function processRecurringTransactions(
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          category: DepositCategoryEnum.Other,
+          categoryId: item.category_id,
           description: item.description ?? item.name,
         },
         db,

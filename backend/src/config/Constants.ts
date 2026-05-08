@@ -18,18 +18,6 @@ export class AppConstants {
     "personal-dev",
   ] as const;
 
-  static readonly EXPENSE_CATEGORIES = [
-    "food-groceries",
-    "eating-out",
-    "transport",
-    "shopping",
-    "entertainment",
-    "health",
-    "subscriptions",
-    "utilities",
-    "other",
-  ] as const;
-
   static readonly LOG_CATEGORIES = {
     HTTP: "HTTP",
     DATABASE: "DATABASE",

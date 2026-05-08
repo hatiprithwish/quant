@@ -24,7 +24,7 @@ export class BudgetDAL {
   static async getCategoryTotals(req: GetCategoryTotalsDbRequest, db: DrizzleDb) {
     return db
       .select({
-        category: expenseLogs.category,
+        category_id: expenseLogs.category_id,
         total: sql<number>`SUM(${expenseLogs.amount})`.as("total"),
       })
       .from(expenseLogs)
@@ -34,7 +34,7 @@ export class BudgetDAL {
           between(expenseLogs.date, req.from, req.to),
         ),
       )
-      .groupBy(expenseLogs.category);
+      .groupBy(expenseLogs.category_id);
   }
 
   static async insert(req: InsertBudgetDbRequest, db: DrizzleDb) {
@@ -49,9 +49,9 @@ export class BudgetDAL {
       })
       .returning({ id: budgets.id });
 
-    if (req.categories.length > 0) {
+    if (req.categoryIds.length > 0) {
       await db.insert(budgetCategories).values(
-        req.categories.map((cat) => ({ budget_id: inserted.id, category: cat })),
+        req.categoryIds.map((catId) => ({ budget_id: inserted.id, category_id: catId })),
       );
     }
 
@@ -72,11 +72,11 @@ export class BudgetDAL {
         .where(and(eq(budgets.id, req.id), eq(budgets.user_id, req.userId)));
     }
 
-    if (req.categories !== undefined) {
+    if (req.categoryIds !== undefined) {
       await db.delete(budgetCategories).where(eq(budgetCategories.budget_id, req.id));
-      if (req.categories.length > 0) {
+      if (req.categoryIds.length > 0) {
         await db.insert(budgetCategories).values(
-          req.categories.map((cat) => ({ budget_id: req.id, category: cat })),
+          req.categoryIds.map((catId) => ({ budget_id: req.id, category_id: catId })),
         );
       }
     }

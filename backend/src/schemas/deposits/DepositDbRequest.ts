@@ -1,12 +1,10 @@
-import { DepositCategoryEnum } from "../wallets/WalletEnum";
-
 export interface InsertDepositDbRequest {
   userId: string;
   walletId: number;
   date: string;
   amount: number;
   currency: string;
-  category: DepositCategoryEnum;
+  categoryId: number;
   description: string | null;
 }
 
@@ -15,6 +13,6 @@ export interface UpdateDepositDbRequest {
   date?: string;
   amount?: number;
   currency?: string;
-  category?: DepositCategoryEnum;
+  categoryId?: number;
   description?: string | null;
 }

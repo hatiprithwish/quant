@@ -1,5 +1,6 @@
 import { DrizzleDb } from "../db";
 import { BudgetDAL } from "../data-access-layer/BudgetDAL";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   BudgetQueryRepoRequest,
   CreateBudgetRepoRequest,
@@ -8,9 +9,8 @@ import {
   CreateBudgetResponse,
   UpdateBudgetResponse,
   DeleteBudgetResponse,
-  ExpenseCategoryIntEnum,
-  expenseCategoryIntToLabel,
-  expenseCategoryLabelToInt,
+  MoneyCategoryItem,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
 import { computeDateRange } from "../utils/periodUtils";
 
@@ -24,22 +24,30 @@ export class BudgetRepo {
     const budgetRows = await BudgetDAL.findAll({ userId: req.userId }, db);
     const budgetIds = budgetRows.map((b) => b.id);
 
-    const [categoryRows, categoryTotals] = await Promise.all([
+    const [categoryRows, categoryTotals, allUserCategories] = await Promise.all([
       BudgetDAL.findCategoriesForBudgets(budgetIds, db),
       BudgetDAL.getCategoryTotals({ userId: req.userId, from, to }, db),
+      MoneyCategoryDAL.findAll(req.userId, db),
     ]);
 
-    const spentMap = new Map<ExpenseCategoryIntEnum, number>();
+    const catItemMap = new Map<number, MoneyCategoryItem>(
+      allUserCategories.map((c) => [
+        c.id,
+        { id: c.id, name: c.name, display_label: c.display_label, color: c.color, type: c.type as MoneyCategoryTypeEnum },
+      ]),
+    );
+
+    const spentMap = new Map<number, number>();
     for (const row of categoryTotals) {
-      spentMap.set(row.category, row.total ?? 0);
+      spentMap.set(row.category_id, row.total ?? 0);
     }
 
     const totalAllCategories = categoryTotals.reduce((sum, r) => sum + (r.total ?? 0), 0);
 
-    const budgetCategoryMap = new Map<number, ExpenseCategoryIntEnum[]>();
+    const budgetCategoryMap = new Map<number, number[]>();
     for (const bc of categoryRows) {
       const arr = budgetCategoryMap.get(bc.budget_id) ?? [];
-      arr.push(bc.category);
+      arr.push(bc.category_id);
       budgetCategoryMap.set(bc.budget_id, arr);
     }
 
@@ -49,17 +57,17 @@ export class BudgetRepo {
       from,
       to,
       budgets: budgetRows.map((b) => {
-        const cats = budgetCategoryMap.get(b.id) ?? [];
+        const catIds = budgetCategoryMap.get(b.id) ?? [];
         const spent =
-          cats.length === 0
+          catIds.length === 0
             ? totalAllCategories
-            : cats.reduce((sum, cat) => sum + (spentMap.get(cat) ?? 0), 0);
+            : catIds.reduce((sum, catId) => sum + (spentMap.get(catId) ?? 0), 0);
 
         return {
           id: b.id,
           name: b.name,
           color: b.color,
-          categories: cats.map((c) => expenseCategoryIntToLabel[c]),
+          categories: catIds.map((id) => catItemMap.get(id)!).filter(Boolean),
           amount: b.amount,
           period: b.period,
           spent,
@@ -72,13 +80,12 @@ export class BudgetRepo {
     req: CreateBudgetRepoRequest,
     db: DrizzleDb,
   ): Promise<CreateBudgetResponse> {
-    const categoryInts = req.categories.map((c) => expenseCategoryLabelToInt[c]);
     await BudgetDAL.insert(
       {
         userId: req.userId,
         name: req.name,
         color: req.color,
-        categories: categoryInts,
+        categoryIds: req.category_ids,
         amount: req.amount,
         period: req.period,
       },
@@ -94,14 +101,13 @@ export class BudgetRepo {
     const existing = await BudgetDAL.findById(req.id, req.userId, db);
     if (!existing) return { isSuccess: false, message: "Budget not found" };
 
-    const categoryInts = req.categories?.map((c) => expenseCategoryLabelToInt[c]);
     await BudgetDAL.update(
       {
         id: req.id,
         userId: req.userId,
         name: req.name,
         color: req.color,
-        categories: categoryInts,
+        categoryIds: req.category_ids,
         amount: req.amount,
         period: req.period,
       },

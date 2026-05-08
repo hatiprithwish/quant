@@ -1,12 +1,7 @@
 import { useState } from "react";
-import {
-  ExpenseCategoryLabelEnum,
-  expenseCategoryDisplayLabel,
-  RecurringTransactionTypeEnum,
-  RecurringTransactionPeriodEnum,
-  RecurringEndConditionEnum,
-} from "@/schemas";
+import { MoneyCategoryTypeEnum, RecurringTransactionTypeEnum, RecurringTransactionPeriodEnum, RecurringEndConditionEnum } from "@/schemas";
 import type { WalletWithBalance } from "@/schemas";
+import { useGetMoneyCategories } from "@/api/cachedQueries";
 import {
   useMutationCreateRecurringTransaction,
   useMutationUpdateRecurringTransaction,
@@ -35,9 +30,7 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
   );
   const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
   const [description, setDescription] = useState(editing?.description ?? "");
-  const [category, setCategory] = useState<ExpenseCategoryLabelEnum>(
-    editing?.category ?? ExpenseCategoryLabelEnum.Other,
-  );
+  const [categoryId, setCategoryId] = useState<number>(editing?.category?.id ?? 0);
   const [walletId, setWalletId] = useState<number | "">(editing?.wallet_id ?? (wallets[0]?.id ?? ""));
   const [period, setPeriod] = useState<RecurringTransactionPeriodEnum>(
     editing?.period ?? RecurringTransactionPeriodEnum.Monthly,
@@ -52,6 +45,14 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
   const [occurrences, setOccurrences] = useState(editing?.occurrences ? String(editing.occurrences) : "");
   const [startDate, setStartDate] = useState(editing?.next_date ?? today());
   const [error, setError] = useState<string | null>(null);
+
+  const { data: categoriesData } = useGetMoneyCategories();
+  const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
+  const incomeCategories = categoriesData?.categories.filter(
+    (c) => c.type === MoneyCategoryTypeEnum.Income && c.name !== "opening_balance",
+  ) ?? [];
+
+  const activeCategories = txType === RecurringTransactionTypeEnum.Expense ? expenseCategories : incomeCategories;
 
   const createMutation = useMutationCreateRecurringTransaction();
   const updateMutation = useMutationUpdateRecurringTransaction(editing?.id ?? 0);
@@ -69,6 +70,7 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
 
     if (!amount || Number(amount) <= 0) return setError("Enter a valid amount.");
     if (!walletId) return setError("Select a wallet.");
+    if (!categoryId) return setError("Select a category.");
     if (period === RecurringTransactionPeriodEnum.Weekly && weekDays.length === 0)
       return setError("Select at least one day of the week.");
     if (endCondition === RecurringEndConditionEnum.Until && !endDate)
@@ -82,7 +84,7 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
           type: txType,
           amount: Number(amount),
           description: description || null,
-          category,
+          category_id: categoryId,
           wallet_id: Number(walletId),
           period,
           interval,
@@ -100,7 +102,7 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
           name: description || `${period} ${txType}`,
           amount: Number(amount),
           description: description || undefined,
-          category,
+          category_id: categoryId,
           wallet_id: Number(walletId),
           period,
           interval,
@@ -149,7 +151,7 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
               <button
                 key={t}
                 type="button"
-                onClick={() => setTxType(t)}
+                onClick={() => { setTxType(t); setCategoryId(0); }}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${
                   txType === t
                     ? t === RecurringTransactionTypeEnum.Expense
@@ -196,13 +198,14 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
           <div>
             <label className={labelCls}>Category</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as ExpenseCategoryLabelEnum)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(Number(e.target.value))}
               className={inputCls}
             >
-              {Object.values(ExpenseCategoryLabelEnum).map((c) => (
-                <option key={c} value={c}>
-                  {expenseCategoryDisplayLabel[c]}
+              <option value={0}>Select category</option>
+              {activeCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.display_label}
                 </option>
               ))}
             </select>

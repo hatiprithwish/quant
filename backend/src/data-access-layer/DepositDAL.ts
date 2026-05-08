@@ -13,7 +13,7 @@ export class DepositDAL {
         date: req.date,
         amount: req.amount,
         currency: req.currency,
-        category: req.category,
+        category_id: req.categoryId,
         description: req.description,
       })
       .returning();
@@ -31,7 +31,7 @@ export class DepositDAL {
     if (req.date !== undefined) patch.date = req.date;
     if (req.amount !== undefined) patch.amount = req.amount;
     if (req.currency !== undefined) patch.currency = req.currency;
-    if (req.category !== undefined) patch.category = req.category;
+    if (req.categoryId !== undefined) patch.category_id = req.categoryId;
     if (req.description !== undefined) patch.description = req.description;
 
     const rows = await db

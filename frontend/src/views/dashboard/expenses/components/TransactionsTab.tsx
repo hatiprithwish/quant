@@ -1,12 +1,5 @@
 import { useState } from "react";
-import type { GetTransactionsResponse, UnifiedTransaction, WalletWithBalance } from "@/schemas";
-import {
-  expenseCategoryDisplayLabel,
-  expenseCategoryColor,
-  ExpenseCategoryLabelEnum,
-  DepositCategoryEnum,
-  depositCategoryDisplayLabel,
-} from "@/schemas";
+import type { GetTransactionsResponse, MoneyCategoryItem, UnifiedTransaction, WalletWithBalance } from "@/schemas";
 import EditEntryModal from "./EditEntryModal";
 
 interface Props {
@@ -16,26 +9,17 @@ interface Props {
   to: string;
 }
 
-type FilterCategory = ExpenseCategoryLabelEnum | DepositCategoryEnum | "transfer" | null;
-
-const INCOME_CATEGORIES = Object.values(DepositCategoryEnum).filter(
-  (c) => c !== DepositCategoryEnum.OpeningBalance,
-);
+type FilterCategory = MoneyCategoryItem | "transfer" | null;
 
 function getTransactionLabel(item: UnifiedTransaction): string {
-  if (item.type === "expense" && item.expense_category) {
-    return expenseCategoryDisplayLabel[item.expense_category];
-  }
-  if (item.type === "income" && item.income_category) {
-    return depositCategoryDisplayLabel[item.income_category];
+  if (item.type !== "transfer" && item.category) {
+    return item.category.display_label;
   }
   return "Transfer";
 }
 
 function getTransactionColor(item: UnifiedTransaction): string {
-  if (item.type === "expense" && item.expense_category) {
-    return expenseCategoryColor[item.expense_category];
-  }
+  if (item.type === "expense" && item.category) return item.category.color;
   if (item.type === "income") return "#10b981";
   return "#6366f1";
 }
@@ -52,9 +36,7 @@ function getTypeLabel(item: UnifiedTransaction): string {
 function matchesFilter(item: UnifiedTransaction, filter: FilterCategory): boolean {
   if (filter === null) return true;
   if (filter === "transfer") return item.type === "transfer";
-  if (item.type === "expense") return item.expense_category === filter;
-  if (item.type === "income") return item.income_category === filter;
-  return false;
+  return item.category?.id === (filter as MoneyCategoryItem).id;
 }
 
 export default function TransactionsTab({ data, wallets, from, to }: Props) {
@@ -70,25 +52,28 @@ export default function TransactionsTab({ data, wallets, from, to }: Props) {
         .filter((day) => day.items.length > 0)
     : [];
 
-  const presentExpenseCategories = data
-    ? Object.values(ExpenseCategoryLabelEnum).filter((cat) =>
-        data.byDay.some((day) => day.items.some((item) => item.expense_category === cat))
-      )
-    : [];
-
-  const presentIncomeCategories = data
-    ? INCOME_CATEGORIES.filter((cat) =>
-        data.byDay.some((day) => day.items.some((item) => item.income_category === cat))
-      )
+  const presentCategories: MoneyCategoryItem[] = data
+    ? (() => {
+        const seen = new Map<number, MoneyCategoryItem>();
+        for (const day of data.byDay) {
+          for (const item of day.items) {
+            if (item.category && !seen.has(item.category.id)) {
+              seen.set(item.category.id, item.category);
+            }
+          }
+        }
+        return Array.from(seen.values());
+      })()
     : [];
 
   const hasTransfers = data
     ? data.byDay.some((day) => day.items.some((item) => item.type === "transfer"))
     : false;
 
+  const activeFilterId = activeFilter === null ? null : activeFilter === "transfer" ? "transfer" : (activeFilter as MoneyCategoryItem).id;
+
   return (
     <div className="space-y-4">
-      {/* Category filter pills */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <button
           onClick={() => setActiveFilter(null)}
@@ -101,39 +86,25 @@ export default function TransactionsTab({ data, wallets, from, to }: Props) {
           All
         </button>
 
-        {presentExpenseCategories.map((cat) => (
+        {presentCategories.map((cat) => (
           <button
-            key={cat}
-            onClick={() => setActiveFilter(activeFilter === cat ? null : cat)}
+            key={cat.id}
+            onClick={() => setActiveFilter(activeFilterId === cat.id ? null : cat)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              activeFilter === cat
+              activeFilterId === cat.id
                 ? "bg-gray-900 dark:bg-white text-white dark:text-black"
                 : "bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400 hover:border-gray-300 dark:hover:border-neutral-600"
             }`}
           >
-            {expenseCategoryDisplayLabel[cat]}
-          </button>
-        ))}
-
-        {presentIncomeCategories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveFilter(activeFilter === cat ? null : cat)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              activeFilter === cat
-                ? "bg-gray-900 dark:bg-white text-white dark:text-black"
-                : "bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400 hover:border-gray-300 dark:hover:border-neutral-600"
-            }`}
-          >
-            {depositCategoryDisplayLabel[cat]}
+            {cat.display_label}
           </button>
         ))}
 
         {hasTransfers && (
           <button
-            onClick={() => setActiveFilter(activeFilter === "transfer" ? null : "transfer")}
+            onClick={() => setActiveFilter(activeFilterId === "transfer" ? null : "transfer")}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              activeFilter === "transfer"
+              activeFilterId === "transfer"
                 ? "bg-gray-900 dark:bg-white text-white dark:text-black"
                 : "bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400 hover:border-gray-300 dark:hover:border-neutral-600"
             }`}
@@ -143,7 +114,6 @@ export default function TransactionsTab({ data, wallets, from, to }: Props) {
         )}
       </div>
 
-      {/* Transaction list */}
       <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 overflow-hidden">
         {!data || days.length === 0 ? (
           <div className="text-center py-10 text-gray-400 dark:text-neutral-500 text-sm">

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { ZBudgetPeriodEnum } from "./BudgetEnum";
-import { ZExpenseCategoryLabelEnum } from "../expenses";
 
 export const ZBudgetQueryRequest = z.object({
   period: ZBudgetPeriodEnum,
@@ -12,7 +11,7 @@ export type BudgetQueryRepoRequest = BudgetQueryRequest & { userId: string };
 export const ZCreateBudgetRequest = z.object({
   name: z.string().min(1).max(100),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  categories: z.array(ZExpenseCategoryLabelEnum).min(0),
+  category_ids: z.array(z.number().int().positive()).min(0),
   amount: z.number().positive(),
   period: ZBudgetPeriodEnum,
 });
@@ -22,7 +21,7 @@ export type CreateBudgetRepoRequest = CreateBudgetRequest & { userId: string };
 export const ZUpdateBudgetRequest = z.object({
   name: z.string().min(1).max(100).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  categories: z.array(ZExpenseCategoryLabelEnum).min(0).optional(),
+  category_ids: z.array(z.number().int().positive()).min(0).optional(),
   amount: z.number().positive().optional(),
   period: ZBudgetPeriodEnum.optional(),
 });

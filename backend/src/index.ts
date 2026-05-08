@@ -22,6 +22,7 @@ import { bodyMutationRoutes } from "./routes/BodyMutationRoutes";
 import { questsRoutes } from "./routes/QuestsRoutes";
 import { questsMutationRoutes } from "./routes/QuestsMutationRoutes";
 import { timeBucketsRoutes } from "./routes/TimeBucketsRoutes";
+import { moneyCategoryRoutes } from "./routes/MoneyCategoryRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
@@ -127,6 +128,7 @@ app.route("/api/body", bodyMutationRoutes);
 app.route("/api/query/quests", questsRoutes);
 app.route("/api/quest", questsMutationRoutes);
 app.route("/api/time-bucket", timeBucketsRoutes);
+app.route("/api/money-category", moneyCategoryRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";

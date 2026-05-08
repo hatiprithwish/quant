@@ -1,11 +1,7 @@
 import { useState } from "react";
 import type { UnifiedTransaction, WalletWithBalance } from "@/schemas";
-import {
-  DepositCategoryEnum,
-  ExpenseCategoryLabelEnum,
-  depositCategoryDisplayLabel,
-  expenseCategoryDisplayLabel,
-} from "@/schemas";
+import { MoneyCategoryTypeEnum } from "@/schemas";
+import { useGetMoneyCategories } from "@/api/cachedQueries";
 import {
   useMutationUpdateExpense,
   useMutationDeleteExpense,
@@ -30,15 +26,21 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategoryLabelEnum>(
-    entry.expense_category ?? ExpenseCategoryLabelEnum.Other,
+  const { data: categoriesData } = useGetMoneyCategories();
+  const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
+  const incomeCategories = categoriesData?.categories.filter(
+    (c) => c.type === MoneyCategoryTypeEnum.Income && c.name !== "opening_balance",
+  ) ?? [];
+
+  const [expenseCategoryId, setExpenseCategoryId] = useState<number>(
+    entry.category?.id ?? 0,
   );
   const [expenseWalletId, setExpenseWalletId] = useState<number>(
     entry.wallet_id ?? wallets[0]?.id ?? 0,
   );
 
-  const [incomeCategory, setIncomeCategory] = useState<DepositCategoryEnum>(
-    entry.income_category ?? DepositCategoryEnum.Other,
+  const [incomeCategoryId, setIncomeCategoryId] = useState<number>(
+    entry.category?.id ?? 0,
   );
   const [incomeWalletId, setIncomeWalletId] = useState<number>(
     entry.wallet_id ?? wallets[0]?.id ?? 0,
@@ -74,7 +76,7 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
         await updateExpense.mutateAsync({
           date,
           amount: amt,
-          category: expenseCategory,
+          category_id: expenseCategoryId,
           description: description || null,
           wallet_id: expenseWalletId,
         });
@@ -82,7 +84,7 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
         await updateIncome.mutateAsync({
           date,
           amount: amt,
-          category: incomeCategory,
+          category_id: incomeCategoryId,
           description: description || null,
           wallet_id: incomeWalletId,
         });
@@ -163,9 +165,10 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
               <>
                 <div>
                   <label className={labelCls}>Category</label>
-                  <select value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value as ExpenseCategoryLabelEnum)} className={selectCls}>
-                    {Object.values(ExpenseCategoryLabelEnum).map((cat) => (
-                      <option key={cat} value={cat}>{expenseCategoryDisplayLabel[cat]}</option>
+                  <select value={expenseCategoryId} onChange={(e) => setExpenseCategoryId(Number(e.target.value))} className={selectCls}>
+                    <option value={0}>Select category</option>
+                    {expenseCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.display_label}</option>
                     ))}
                   </select>
                 </div>
@@ -182,12 +185,11 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
               <>
                 <div>
                   <label className={labelCls}>Category</label>
-                  <select value={incomeCategory} onChange={(e) => setIncomeCategory(e.target.value as DepositCategoryEnum)} className={selectCls}>
-                    {Object.values(DepositCategoryEnum)
-                      .filter((c) => c !== DepositCategoryEnum.OpeningBalance)
-                      .map((cat) => (
-                        <option key={cat} value={cat}>{depositCategoryDisplayLabel[cat]}</option>
-                      ))}
+                  <select value={incomeCategoryId} onChange={(e) => setIncomeCategoryId(Number(e.target.value))} className={selectCls}>
+                    <option value={0}>Select category</option>
+                    {incomeCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.display_label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

@@ -2,8 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { DrizzleDb } from "../db";
 import { ExpenseRepo } from "../repos/ExpenseRepo";
-import { ZExpenseCategoryLabelEnum } from "../schemas";
-import { AppConstants } from "../config/Constants";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
+import { MoneyCategoryTypeEnum } from "../schemas";
 import { WalletDAL } from "../data-access-layer/WalletDAL";
 
 export function registerExpenseTools(
@@ -13,7 +13,7 @@ export function registerExpenseTools(
 ) {
   server.tool(
     "log_expense",
-    "Log one or more expenses in a single call. IMPORTANT: Always call list_wallets first to get valid wallet IDs. Never omit wallet_id — always debit the correct wallet.",
+    "Log one or more expenses in a single call. IMPORTANT: Always call list_money_categories first to get valid category IDs for type 'expense'. Always call list_wallets first to get valid wallet IDs. Never omit wallet_id — always debit the correct wallet.",
     {
       entries: z
         .array(
@@ -27,9 +27,11 @@ export function registerExpenseTools(
               .string()
               .default("INR")
               .describe("Currency code (default INR)"),
-            category: ZExpenseCategoryLabelEnum.describe(
-              `Expense category. Valid values: ${AppConstants.EXPENSE_CATEGORIES.join(", ")}`,
-            ),
+            category_id: z
+              .number()
+              .int()
+              .positive()
+              .describe("Category ID (integer). Call list_money_categories first to resolve the correct ID."),
             description: z.string().optional().describe("What was purchased"),
             wallet_id: z
               .number()
@@ -67,13 +69,16 @@ export function registerExpenseTools(
         .string()
         .regex(/^\d{4}-\d{2}-\d{2}$/)
         .describe("End date YYYY-MM-DD (inclusive)"),
-      category: ZExpenseCategoryLabelEnum.optional().describe(
-        "Optional: filter by a specific category",
-      ),
+      category_id: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe("Optional: filter by a specific category ID"),
     },
-    async ({ start_date, end_date, category }) => {
+    async ({ start_date, end_date, category_id }) => {
       const result = await ExpenseRepo.getSummary(
-        { from: start_date, to: end_date, category, userId },
+        { from: start_date, to: end_date, category_id, userId },
         db,
       );
       return {
@@ -83,17 +88,22 @@ export function registerExpenseTools(
   );
 
   server.tool(
-    "list_expense_categories",
-    "List all valid expense category values.",
-    {},
-    async () => ({
-      content: [
-        {
-          type: "text",
-          text: AppConstants.EXPENSE_CATEGORIES.join(", "),
-        },
-      ],
-    }),
+    "list_money_categories",
+    "List all money categories for the user. Returns id, name, display_label, color, and type ('expense' or 'income'). Call this before log_expense or log_income to resolve the correct category_id.",
+    {
+      type: z
+        .enum(["expense", "income"])
+        .optional()
+        .describe("Filter by type. Omit to get all categories."),
+    },
+    async ({ type }) => {
+      const cats = type
+        ? await MoneyCategoryDAL.findByType(userId, type as MoneyCategoryTypeEnum, db)
+        : await MoneyCategoryDAL.findAll(userId, db);
+      return {
+        content: [{ type: "text", text: JSON.stringify(cats, null, 2) }],
+      };
+    },
   );
 
   server.tool(
