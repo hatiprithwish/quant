@@ -55,3 +55,27 @@ export const expenseCategoryLabelToInt: Record<
   [ExpenseCategoryLabelEnum.Utilities]: ExpenseCategoryIntEnum.Utilities,
   [ExpenseCategoryLabelEnum.Other]: ExpenseCategoryIntEnum.Other,
 };
+
+export const expenseCategoryColor: Record<ExpenseCategoryLabelEnum, string> = {
+  [ExpenseCategoryLabelEnum.FoodGroceries]: "#10b981",
+  [ExpenseCategoryLabelEnum.EatingOut]: "#f59e0b",
+  [ExpenseCategoryLabelEnum.Transport]: "#6366f1",
+  [ExpenseCategoryLabelEnum.Shopping]: "#ec4899",
+  [ExpenseCategoryLabelEnum.Entertainment]: "#8b5cf6",
+  [ExpenseCategoryLabelEnum.Health]: "#ef4444",
+  [ExpenseCategoryLabelEnum.Subscriptions]: "#14b8a6",
+  [ExpenseCategoryLabelEnum.Utilities]: "#64748b",
+  [ExpenseCategoryLabelEnum.Other]: "#9ca3af",
+};
+
+export const expenseCategoryDisplayLabel: Record<ExpenseCategoryLabelEnum, string> = {
+  [ExpenseCategoryLabelEnum.FoodGroceries]: "Food & Groceries",
+  [ExpenseCategoryLabelEnum.EatingOut]: "Eating Out",
+  [ExpenseCategoryLabelEnum.Transport]: "Transport",
+  [ExpenseCategoryLabelEnum.Shopping]: "Shopping",
+  [ExpenseCategoryLabelEnum.Entertainment]: "Entertainment",
+  [ExpenseCategoryLabelEnum.Health]: "Health",
+  [ExpenseCategoryLabelEnum.Subscriptions]: "Subscriptions",
+  [ExpenseCategoryLabelEnum.Utilities]: "Utilities",
+  [ExpenseCategoryLabelEnum.Other]: "Other",
+};

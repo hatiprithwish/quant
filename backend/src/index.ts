@@ -13,6 +13,7 @@ import { walletMutationRoutes } from "./routes/WalletMutationRoutes";
 import { entryRoutes } from "./routes/EntryRoutes";
 import { transactionQueryRoutes } from "./routes/TransactionQueryRoutes";
 import { budgetRoutes } from "./routes/BudgetRoutes";
+import { budgetMutationRoutes } from "./routes/BudgetMutationRoutes";
 import { recurringTransactionRoutes } from "./routes/RecurringTransactionRoutes";
 import { recurringTransactionMutationRoutes } from "./routes/RecurringTransactionMutationRoutes";
 import { debtRoutes } from "./routes/DebtRoutes";
@@ -117,6 +118,7 @@ app.route("/api/wallet", walletMutationRoutes);
 app.route("/api/entry", entryRoutes);
 app.route("/api/query/transactions", transactionQueryRoutes);
 app.route("/api/query/budgets", budgetRoutes);
+app.route("/api/budget", budgetMutationRoutes);
 app.route("/api/query/recurring-transactions", recurringTransactionRoutes);
 app.route("/api/recurring-transaction", recurringTransactionMutationRoutes);
 app.route("/api/query/debts", debtRoutes);
@@ -166,9 +168,10 @@ app.all("/mcp", async (c) => {
   return handleMcpRequest(c.req.raw, userId, c.env, correlationId);
 });
 
-export default app;
-
-export const scheduled: ExportedHandlerScheduledHandler<Env> = async (_controller, env, ctx) => {
-  const db = getDb(env.DB);
-  ctx.waitUntil(processRecurringTransactions(db));
+export default {
+  fetch: app.fetch.bind(app),
+  scheduled: async (_controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+    const db = getDb(env.DB);
+    ctx.waitUntil(processRecurringTransactions(db));
+  },
 };

@@ -4,9 +4,9 @@ import { BudgetPeriodEnum } from "./BudgetEnum";
 
 export interface BudgetWithSpent {
   id: number;
-  label: string;
-  category: ExpenseCategoryLabelEnum;
+  name: string;
   color: string;
+  categories: ExpenseCategoryLabelEnum[];
   amount: number;
   spent: number;
   period: BudgetPeriodEnum;

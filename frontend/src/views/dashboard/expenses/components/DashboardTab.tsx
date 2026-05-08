@@ -10,6 +10,8 @@ import {
 import AddWalletModal from "./AddWalletModal";
 import EditWalletModal from "./EditWalletModal";
 import AddRecurringTransactionModal from "./AddRecurringTransactionModal";
+import AddBudgetModal from "./AddBudgetModal";
+import EditBudgetModal from "./EditBudgetModal";
 
 interface Props {
   data: GetExpenseSummaryResponse | null;
@@ -144,14 +146,14 @@ function StatCard({
   );
 }
 
-function BudgetRow({ budget }: { budget: BudgetWithSpent }) {
+function BudgetRow({ budget, onEdit }: { budget: BudgetWithSpent; onEdit: (b: BudgetWithSpent) => void }) {
   const pct = Math.min((budget.spent / budget.amount) * 100, 100);
   return (
-    <div className="space-y-1.5">
+    <button type="button" onClick={() => onEdit(budget)} className="w-full text-left space-y-1.5 group">
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: budget.color }} />
-          <span className="text-gray-700 dark:text-neutral-200">{budget.label}</span>
+          <span className="text-gray-700 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{budget.name}</span>
         </div>
         <span className="text-gray-400 dark:text-neutral-500">
           ₹{budget.spent.toLocaleString("en-IN")} / ₹{budget.amount.toLocaleString("en-IN")}
@@ -160,7 +162,7 @@ function BudgetRow({ budget }: { budget: BudgetWithSpent }) {
       <div className="w-full h-1.5 bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: budget.color }} />
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -217,6 +219,8 @@ export default function DashboardTab({ data }: Props) {
   const [editingWallet, setEditingWallet] = useState<WalletWithBalance | null>(null);
   const [showAddRecurring, setShowAddRecurring] = useState(false);
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransactionItem | null>(null);
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<BudgetWithSpent | null>(null);
 
   const { data: walletsData } = useGetWallets();
   const { data: budgetsData } = useGetBudgets(budgetPeriod, periodStartDate[budgetPeriod]());
@@ -297,10 +301,13 @@ export default function DashboardTab({ data }: Props) {
             {budgets.length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-neutral-500">No budgets set.</p>
             ) : (
-              budgets.map((b) => <BudgetRow key={b.id} budget={b} />)
+              budgets.map((b) => <BudgetRow key={b.id} budget={b} onEdit={setEditingBudget} />)
             )}
           </div>
-          <button className="w-full py-2 rounded-full border border-dashed border-gray-200 dark:border-neutral-700 text-xs text-gray-400 dark:text-neutral-500 hover:border-gray-300 dark:hover:border-neutral-600 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors">
+          <button
+            onClick={() => setShowAddBudget(true)}
+            className="w-full py-2 rounded-full border border-dashed border-gray-200 dark:border-neutral-700 text-xs text-gray-400 dark:text-neutral-500 hover:border-gray-300 dark:hover:border-neutral-600 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
+          >
             + New Budget
           </button>
         </div>
@@ -362,6 +369,12 @@ export default function DashboardTab({ data }: Props) {
           editing={editingRecurring ?? undefined}
           onClose={() => { setShowAddRecurring(false); setEditingRecurring(null); }}
         />
+      )}
+      {showAddBudget && (
+        <AddBudgetModal onClose={() => setShowAddBudget(false)} />
+      )}
+      {editingBudget && (
+        <EditBudgetModal budget={editingBudget} onClose={() => setEditingBudget(null)} />
       )}
     </div>
   );

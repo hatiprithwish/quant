@@ -16,6 +16,7 @@ import type {
   QuestStatusEnum,
   TaskStatusEnum,
   MilestoneStatusEnum,
+  BudgetPeriodEnum,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -546,6 +547,57 @@ export function useMutationDeleteTask() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/query/quests/detail"] });
       qc.invalidateQueries({ queryKey: ["/api/query/quests/kanban"] });
+    },
+  });
+}
+
+// ── Budget mutations ──────────────────────────────────────────────────────────
+
+export interface CreateBudgetInput {
+  name: string;
+  color: string;
+  categories: ExpenseCategoryLabelEnum[];
+  amount: number;
+  period: BudgetPeriodEnum;
+}
+
+export interface UpdateBudgetInput {
+  name?: string;
+  color?: string;
+  categories?: ExpenseCategoryLabelEnum[];
+  amount?: number;
+  period?: BudgetPeriodEnum;
+}
+
+export function useMutationCreateBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBudgetInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string }>("/api/budget", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
+    },
+  });
+}
+
+export function useMutationUpdateBudget(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateBudgetInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/budget/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
+    },
+  });
+}
+
+export function useMutationDeleteBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/budget/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
     },
   });
 }

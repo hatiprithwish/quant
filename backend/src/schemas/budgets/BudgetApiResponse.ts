@@ -4,9 +4,9 @@ import { BudgetPeriodEnum } from "./BudgetEnum";
 
 export interface BudgetWithSpent {
   id: number;
-  label: string;
-  category: ExpenseCategoryLabelEnum;
+  name: string;
   color: string;
+  categories: ExpenseCategoryLabelEnum[];
   amount: number;
   spent: number;
   period: BudgetPeriodEnum;
@@ -17,3 +17,7 @@ export interface GetBudgetsResponse extends ApiResponse {
   from: string;
   to: string;
 }
+
+export interface CreateBudgetResponse extends ApiResponse {}
+export interface UpdateBudgetResponse extends ApiResponse {}
+export interface DeleteBudgetResponse extends ApiResponse {}

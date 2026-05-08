@@ -178,25 +178,32 @@ export const scratchpads = sqliteTable("scratchpads", {
     .default(sql`(datetime('now'))`),
 });
 
-export const budgets = sqliteTable(
-  "budgets",
+export const budgets = sqliteTable("budgets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  amount: real("amount").notNull(),
+  period: text("period").$type<BudgetPeriodEnum>().notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const budgetCategories = sqliteTable(
+  "budget_categories",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    user_id: text("user_id")
+    budget_id: integer("budget_id")
       .notNull()
-      .references(() => users.id),
-    label: text("label").notNull(),
+      .references(() => budgets.id),
     category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
-    color: text("color").notNull(),
-    amount: real("amount").notNull(),
-    period: text("period").$type<BudgetPeriodEnum>().notNull(),
-    created_at: text("created_at")
-      .notNull()
-      .default(sql`(datetime('now'))`),
   },
   (t) => ({
-    userCategoryUnique: uniqueIndex("budgets_user_category_unique").on(
-      t.user_id,
+    budgetCategoryUnique: uniqueIndex("budget_categories_budget_category_unique").on(
+      t.budget_id,
       t.category,
     ),
   }),
@@ -421,6 +428,7 @@ export type Scratchpad = typeof scratchpads.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type DepositLog = typeof depositLogs.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
 export type RecurringTransactionItem =
   typeof recurringTransactionItems.$inferSelect;
 export type Debt = typeof debts.$inferSelect;
