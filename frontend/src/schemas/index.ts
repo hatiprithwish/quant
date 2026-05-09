@@ -1,4 +1,5 @@
 export * from "./common";
+export * from "./money-categories";
 export * from "./food";
 export * from "./expenses";
 export * from "./time";

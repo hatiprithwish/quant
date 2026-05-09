@@ -8,18 +8,17 @@ import {
 import { sql } from "drizzle-orm";
 import {
   MealTypeIntEnum,
-  ExpenseCategoryIntEnum,
   WalletTypeEnum,
   BudgetPeriodEnum,
   RecurringTransactionPeriodEnum,
   DebtTypeEnum,
   DebtStatusEnum,
-  DepositCategoryEnum,
   QuestStatusEnum,
   QuestCategoryEnum,
   MilestoneStatusEnum,
   TaskStatusEnum,
   XpSourceTypeEnum,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
 
 export const users = sqliteTable("users", {
@@ -47,6 +46,21 @@ export const apiKeys = sqliteTable("api_keys", {
   revoked_at: text("revoked_at"),
 });
 
+export const moneyCategories = sqliteTable("money_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  display_label: text("display_label").notNull(),
+  color: text("color").notNull(),
+  type: text("type").$type<MoneyCategoryTypeEnum>().notNull(),
+  deleted_at: text("deleted_at"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export const wallets = sqliteTable("wallets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   user_id: text("user_id")
@@ -72,7 +86,9 @@ export const depositLogs = sqliteTable("deposit_logs", {
   date: text("date").notNull(),
   amount: real("amount").notNull(),
   currency: text("currency").notNull().default("INR"),
-  category: text("category").$type<DepositCategoryEnum>().notNull(),
+  category_id: integer("category_id")
+    .notNull()
+    .references(() => moneyCategories.id),
   description: text("description"),
   created_at: text("created_at")
     .notNull()
@@ -107,7 +123,9 @@ export const expenseLogs = sqliteTable("expense_logs", {
   date: text("date").notNull(),
   amount: real("amount").notNull(),
   currency: text("currency").notNull().default("INR"),
-  category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
+  category_id: integer("category_id")
+    .notNull()
+    .references(() => moneyCategories.id),
   description: text("description"),
   created_at: text("created_at")
     .notNull()
@@ -178,26 +196,35 @@ export const scratchpads = sqliteTable("scratchpads", {
     .default(sql`(datetime('now'))`),
 });
 
-export const budgets = sqliteTable(
-  "budgets",
+export const budgets = sqliteTable("budgets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  amount: real("amount").notNull(),
+  period: text("period").$type<BudgetPeriodEnum>().notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const budgetCategories = sqliteTable(
+  "budget_categories",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    user_id: text("user_id")
+    budget_id: integer("budget_id")
       .notNull()
-      .references(() => users.id),
-    label: text("label").notNull(),
-    category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
-    color: text("color").notNull(),
-    amount: real("amount").notNull(),
-    period: text("period").$type<BudgetPeriodEnum>().notNull(),
-    created_at: text("created_at")
+      .references(() => budgets.id),
+    category_id: integer("category_id")
       .notNull()
-      .default(sql`(datetime('now'))`),
+      .references(() => moneyCategories.id),
   },
   (t) => ({
-    userCategoryUnique: uniqueIndex("budgets_user_category_unique").on(
-      t.user_id,
-      t.category,
+    budgetCategoryUnique: uniqueIndex("budget_categories_budget_category_unique").on(
+      t.budget_id,
+      t.category_id,
     ),
   }),
 );
@@ -220,7 +247,9 @@ export const recurringTransactionItems = sqliteTable("recurring_transactions", {
   end_condition: text("end_condition").$type<"forever" | "until" | "for">().notNull().default("forever"),
   end_date: text("end_date"),
   occurrences: integer("occurrences"),
-  category: integer("category").$type<ExpenseCategoryIntEnum>().notNull(),
+  category_id: integer("category_id")
+    .notNull()
+    .references(() => moneyCategories.id),
   description: text("description"),
   next_date: text("next_date").notNull(),
   created_at: text("created_at")
@@ -411,6 +440,7 @@ export const userStreaks = sqliteTable("user_streaks", {
     .default(sql`(datetime('now'))`),
 });
 
+export type MoneyCategory = typeof moneyCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
@@ -421,6 +451,7 @@ export type Scratchpad = typeof scratchpads.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type DepositLog = typeof depositLogs.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
 export type RecurringTransactionItem =
   typeof recurringTransactionItems.$inferSelect;
 export type Debt = typeof debts.$inferSelect;

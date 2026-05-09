@@ -7,7 +7,6 @@ import { DepositDAL } from "../data-access-layer/DepositDAL";
 import {
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
-  DepositCategoryEnum,
 } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
@@ -41,7 +40,9 @@ function advanceDate(
     } else {
       const day = d.getUTCDate();
       d.setUTCMonth(d.getUTCMonth() + interval);
-      const maxDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+      const maxDay = new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
+      ).getUTCDate();
       if (day > maxDay) d.setUTCDate(maxDay);
     }
   } else {
@@ -51,7 +52,9 @@ function advanceDate(
   return d.toISOString().split("T")[0];
 }
 
-export async function processRecurringTransactions(db: DrizzleDb): Promise<void> {
+export async function processRecurringTransactions(
+  db: DrizzleDb,
+): Promise<void> {
   const today = new Date().toISOString().split("T")[0];
   const due = await RecurringTransactionDAL.findDue(today, db);
 
@@ -66,11 +69,17 @@ export async function processRecurringTransactions(db: DrizzleDb): Promise<void>
   for (const item of due) {
     const endCondition = item.end_condition as RecurringEndConditionEnum;
     const period = item.period as RecurringTransactionPeriodEnum;
-    const weekDays: number[] | null = item.week_days ? JSON.parse(item.week_days) : null;
+    const weekDays: number[] | null = item.week_days
+      ? JSON.parse(item.week_days)
+      : null;
     const monthEnd = item.month_end === 1;
 
     // Skip if this item is past its end_date (shouldn't normally happen, but guard anyway)
-    if (endCondition === RecurringEndConditionEnum.Until && item.end_date && item.next_date > item.end_date) {
+    if (
+      endCondition === RecurringEndConditionEnum.Until &&
+      item.end_date &&
+      item.next_date > item.end_date
+    ) {
       await RecurringTransactionDAL.delete(item.id, db);
       continue;
     }
@@ -83,9 +92,8 @@ export async function processRecurringTransactions(db: DrizzleDb): Promise<void>
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          category: item.category,
+          categoryId: item.category_id,
           description: item.description ?? item.name,
-          paymentMethod: null,
           walletId: item.wallet_id,
         },
         db,
@@ -98,7 +106,7 @@ export async function processRecurringTransactions(db: DrizzleDb): Promise<void>
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          category: DepositCategoryEnum.Other,
+          categoryId: item.category_id,
           description: item.description ?? item.name,
         },
         db,
@@ -112,7 +120,13 @@ export async function processRecurringTransactions(db: DrizzleDb): Promise<void>
         await RecurringTransactionDAL.delete(item.id, db);
         continue;
       }
-      const nextDate = advanceDate(item.next_date, period, item.interval, weekDays, monthEnd);
+      const nextDate = advanceDate(
+        item.next_date,
+        period,
+        item.interval,
+        weekDays,
+        monthEnd,
+      );
       await db
         .update(recurringTransactionItems)
         .set({ next_date: nextDate, occurrences: remaining })
@@ -120,9 +134,19 @@ export async function processRecurringTransactions(db: DrizzleDb): Promise<void>
       continue;
     }
 
-    const nextDate = advanceDate(item.next_date, period, item.interval, weekDays, monthEnd);
+    const nextDate = advanceDate(
+      item.next_date,
+      period,
+      item.interval,
+      weekDays,
+      monthEnd,
+    );
 
-    if (endCondition === RecurringEndConditionEnum.Until && item.end_date && nextDate > item.end_date) {
+    if (
+      endCondition === RecurringEndConditionEnum.Until &&
+      item.end_date &&
+      nextDate > item.end_date
+    ) {
       await RecurringTransactionDAL.delete(item.id, db);
     } else {
       await RecurringTransactionDAL.updateNextDate(item.id, nextDate, db);

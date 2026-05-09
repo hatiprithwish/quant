@@ -31,7 +31,7 @@ export class RecurringTransactionDAL {
         end_condition: req.endCondition,
         end_date: req.endDate,
         occurrences: req.occurrences,
-        category: req.category,
+        category_id: req.categoryId,
         description: req.description,
         next_date: req.nextDate,
       })
@@ -69,11 +69,10 @@ export class RecurringTransactionDAL {
     if (req.interval !== undefined) updates.interval = req.interval;
     if (req.weekDays !== undefined) updates.week_days = req.weekDays;
     if (req.monthEnd !== undefined) updates.month_end = req.monthEnd;
-    if (req.endCondition !== undefined)
-      updates.end_condition = req.endCondition;
+    if (req.endCondition !== undefined) updates.end_condition = req.endCondition;
     if (req.endDate !== undefined) updates.end_date = req.endDate;
     if (req.occurrences !== undefined) updates.occurrences = req.occurrences;
-    if (req.category !== undefined) updates.category = req.category;
+    if (req.categoryId !== undefined) updates.category_id = req.categoryId;
     if (req.description !== undefined) updates.description = req.description;
     if (req.nextDate !== undefined) updates.next_date = req.nextDate;
 

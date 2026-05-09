@@ -1,12 +1,12 @@
 import { ApiResponse } from "../common";
-import { ExpenseCategoryLabelEnum } from "./ExpenseEnum";
+import { MoneyCategoryItem } from "../money-categories";
 
 export interface ExpenseRow {
   id: number;
   date: string;
   amount: number;
   currency: string;
-  category: ExpenseCategoryLabelEnum;
+  category: MoneyCategoryItem;
   description: string | null;
   wallet_id: number | null;
 }
@@ -18,7 +18,7 @@ export interface ExpenseDaySummary {
 }
 
 export interface ExpenseCategorySummary {
-  category: ExpenseCategoryLabelEnum;
+  category: MoneyCategoryItem;
   total: number;
   count: number;
 }

@@ -16,6 +16,7 @@ import type {
   GetQuestsDashboardResponse,
   GetQuestDetailResponse,
   GetQuestsKanbanResponse,
+  GetMoneyCategoriesResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -149,6 +150,13 @@ export function useGetBodyMetrics() {
   return useQuery({
     queryKey: ["/api/query/body/metrics"],
     queryFn: () => apiClient.get<GetBodyMetricsResponse>("/api/query/body/metrics"),
+  });
+}
+
+export function useGetMoneyCategories() {
+  return useQuery({
+    queryKey: ["/api/money-category"],
+    queryFn: () => apiClient.get<GetMoneyCategoriesResponse>("/api/money-category"),
   });
 }
 

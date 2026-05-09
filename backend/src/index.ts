@@ -13,6 +13,7 @@ import { walletMutationRoutes } from "./routes/WalletMutationRoutes";
 import { entryRoutes } from "./routes/EntryRoutes";
 import { transactionQueryRoutes } from "./routes/TransactionQueryRoutes";
 import { budgetRoutes } from "./routes/BudgetRoutes";
+import { budgetMutationRoutes } from "./routes/BudgetMutationRoutes";
 import { recurringTransactionRoutes } from "./routes/RecurringTransactionRoutes";
 import { recurringTransactionMutationRoutes } from "./routes/RecurringTransactionMutationRoutes";
 import { debtRoutes } from "./routes/DebtRoutes";
@@ -21,6 +22,7 @@ import { bodyMutationRoutes } from "./routes/BodyMutationRoutes";
 import { questsRoutes } from "./routes/QuestsRoutes";
 import { questsMutationRoutes } from "./routes/QuestsMutationRoutes";
 import { timeBucketsRoutes } from "./routes/TimeBucketsRoutes";
+import { moneyCategoryRoutes } from "./routes/MoneyCategoryRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
@@ -117,6 +119,7 @@ app.route("/api/wallet", walletMutationRoutes);
 app.route("/api/entry", entryRoutes);
 app.route("/api/query/transactions", transactionQueryRoutes);
 app.route("/api/query/budgets", budgetRoutes);
+app.route("/api/budget", budgetMutationRoutes);
 app.route("/api/query/recurring-transactions", recurringTransactionRoutes);
 app.route("/api/recurring-transaction", recurringTransactionMutationRoutes);
 app.route("/api/query/debts", debtRoutes);
@@ -125,6 +128,7 @@ app.route("/api/body", bodyMutationRoutes);
 app.route("/api/query/quests", questsRoutes);
 app.route("/api/quest", questsMutationRoutes);
 app.route("/api/time-bucket", timeBucketsRoutes);
+app.route("/api/money-category", moneyCategoryRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
@@ -166,9 +170,10 @@ app.all("/mcp", async (c) => {
   return handleMcpRequest(c.req.raw, userId, c.env, correlationId);
 });
 
-export default app;
-
-export const scheduled: ExportedHandlerScheduledHandler<Env> = async (_controller, env, ctx) => {
-  const db = getDb(env.DB);
-  ctx.waitUntil(processRecurringTransactions(db));
+export default {
+  fetch: app.fetch.bind(app),
+  scheduled: async (_controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+    const db = getDb(env.DB);
+    ctx.waitUntil(processRecurringTransactions(db));
+  },
 };

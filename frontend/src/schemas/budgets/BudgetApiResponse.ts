@@ -1,12 +1,12 @@
 import { ApiResponse } from "../common";
-import { ExpenseCategoryLabelEnum } from "../expenses";
+import { MoneyCategoryItem } from "../money-categories";
 import { BudgetPeriodEnum } from "./BudgetEnum";
 
 export interface BudgetWithSpent {
   id: number;
-  label: string;
-  category: ExpenseCategoryLabelEnum;
+  name: string;
   color: string;
+  categories: MoneyCategoryItem[];
   amount: number;
   spent: number;
   period: BudgetPeriodEnum;

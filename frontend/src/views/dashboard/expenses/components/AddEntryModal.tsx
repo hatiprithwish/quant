@@ -1,11 +1,7 @@
 import { useState } from "react";
 import type { WalletWithBalance } from "@/schemas";
-import {
-  DepositCategoryEnum,
-  ExpenseCategoryLabelEnum,
-  depositCategoryDisplayLabel,
-  expenseCategoryDisplayLabel,
-} from "@/schemas";
+import { MoneyCategoryTypeEnum } from "@/schemas";
+import { useGetMoneyCategories } from "@/api/cachedQueries";
 import {
   useMutationCreateExpense,
   useMutationCreateIncome,
@@ -32,15 +28,18 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Expense
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategoryLabelEnum>(ExpenseCategoryLabelEnum.Other);
+  const { data: categoriesData } = useGetMoneyCategories();
+  const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
+  const incomeCategories = categoriesData?.categories.filter(
+    (c) => c.type === MoneyCategoryTypeEnum.Income && c.name !== "opening_balance",
+  ) ?? [];
+
+  const [expenseCategoryId, setExpenseCategoryId] = useState<number | "">("");
   const [expenseWalletId, setExpenseWalletId] = useState<number | "">(wallets[0]?.id ?? "");
 
-  // Income
-  const [incomeCategory, setIncomeCategory] = useState<DepositCategoryEnum>(DepositCategoryEnum.Salary);
+  const [incomeCategoryId, setIncomeCategoryId] = useState<number | "">("");
   const [incomeWalletId, setIncomeWalletId] = useState<number | "">(wallets[0]?.id ?? "");
 
-  // Transfer
   const [fromWalletId, setFromWalletId] = useState<number | "">(wallets[0]?.id ?? "");
   const [toWalletId, setToWalletId] = useState<number | "">(wallets[1]?.id ?? "");
 
@@ -60,20 +59,22 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
     try {
       if (tab === "expense") {
         if (!expenseWalletId) return setError("Select a wallet.");
+        if (!expenseCategoryId) return setError("Select a category.");
         await createExpense.mutateAsync({
           date,
           amount: amt,
-          category: expenseCategory,
+          category_id: expenseCategoryId as number,
           description: description || undefined,
           wallet_id: expenseWalletId as number,
         });
       } else if (tab === "income") {
         if (!incomeWalletId) return setError("Select a wallet.");
+        if (!incomeCategoryId) return setError("Select a category.");
         await createIncome.mutateAsync({
           wallet_id: incomeWalletId as number,
           date,
           amount: amt,
-          category: incomeCategory,
+          category_id: incomeCategoryId as number,
           description: description || undefined,
         });
       } else {
@@ -117,7 +118,6 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
           </button>
         </div>
 
-        {/* Tab selector */}
         <div className="flex gap-1 p-1 bg-gray-100 dark:bg-neutral-800 rounded-xl mb-5">
           {tabs.map((t) => (
             <button
@@ -136,7 +136,6 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Common fields: date + amount */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Date</label>
@@ -162,18 +161,18 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
             </div>
           </div>
 
-          {/* Tab-specific fields */}
           {tab === "expense" && (
             <>
               <div>
                 <label className={labelCls}>Category</label>
                 <select
-                  value={expenseCategory}
-                  onChange={(e) => setExpenseCategory(e.target.value as ExpenseCategoryLabelEnum)}
+                  value={expenseCategoryId}
+                  onChange={(e) => setExpenseCategoryId(Number(e.target.value))}
                   className={selectCls}
                 >
-                  {Object.values(ExpenseCategoryLabelEnum).map((cat) => (
-                    <option key={cat} value={cat}>{expenseCategoryDisplayLabel[cat]}</option>
+                  <option value="">Select category</option>
+                  {expenseCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.display_label}</option>
                   ))}
                 </select>
               </div>
@@ -197,15 +196,14 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
               <div>
                 <label className={labelCls}>Category</label>
                 <select
-                  value={incomeCategory}
-                  onChange={(e) => setIncomeCategory(e.target.value as DepositCategoryEnum)}
+                  value={incomeCategoryId}
+                  onChange={(e) => setIncomeCategoryId(Number(e.target.value))}
                   className={selectCls}
                 >
-                  {Object.values(DepositCategoryEnum)
-                    .filter((c) => c !== DepositCategoryEnum.OpeningBalance)
-                    .map((cat) => (
-                      <option key={cat} value={cat}>{depositCategoryDisplayLabel[cat]}</option>
-                    ))}
+                  <option value="">Select category</option>
+                  {incomeCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.display_label}</option>
+                  ))}
                 </select>
               </div>
               <div>

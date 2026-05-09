@@ -4,7 +4,6 @@ import {
   ZRecurringTransactionTypeEnum,
   ZRecurringEndConditionEnum,
 } from "./RecurringTransactionEnum";
-import { ZExpenseCategoryLabelEnum } from "../expenses";
 
 export const ZRecurringTransactionQueryRequest = z.object({}).passthrough();
 export type RecurringTransactionQueryRequest = Record<string, unknown>;
@@ -16,7 +15,7 @@ export const ZCreateRecurringTransactionRequest = z.object({
   type: ZRecurringTransactionTypeEnum,
   name: z.string().min(1),
   amount: z.number().positive(),
-  category: ZExpenseCategoryLabelEnum,
+  category_id: z.number().int().positive(),
   wallet_id: z.number().int().positive(),
   period: ZRecurringTransactionPeriodEnum,
   interval: z.number().int().positive().default(1),
@@ -35,7 +34,7 @@ export const ZUpdateRecurringTransactionRequest = z.object({
   type: ZRecurringTransactionTypeEnum.optional(),
   name: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
-  category: ZExpenseCategoryLabelEnum.optional(),
+  category_id: z.number().int().positive().optional(),
   wallet_id: z.number().int().positive().optional(),
   period: ZRecurringTransactionPeriodEnum.optional(),
   interval: z.number().int().positive().optional(),

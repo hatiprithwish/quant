@@ -4,8 +4,6 @@ import type {
   CreateWalletResponse,
   UpdateWalletResponse,
   WalletTypeEnum,
-  DepositCategoryEnum,
-  ExpenseCategoryLabelEnum,
   CreateRecurringTransactionResponse,
   UpdateRecurringTransactionResponse,
   CreateBodyMetricResponse,
@@ -16,6 +14,7 @@ import type {
   QuestStatusEnum,
   TaskStatusEnum,
   MilestoneStatusEnum,
+  BudgetPeriodEnum,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -82,7 +81,7 @@ export interface CreateExpenseInput {
   date: string;
   amount: number;
   currency?: string;
-  category: ExpenseCategoryLabelEnum;
+  category_id: number;
   description?: string;
   wallet_id: number;
 }
@@ -91,7 +90,7 @@ export interface UpdateExpenseInput {
   date?: string;
   amount?: number;
   currency?: string;
-  category?: ExpenseCategoryLabelEnum;
+  category_id?: number;
   description?: string | null;
   wallet_id?: number | null;
 }
@@ -142,7 +141,7 @@ export interface CreateIncomeInput {
   date: string;
   amount: number;
   currency?: string;
-  category: DepositCategoryEnum;
+  category_id: number;
   description?: string;
 }
 
@@ -151,7 +150,7 @@ export interface UpdateIncomeInput {
   date?: string;
   amount?: number;
   currency?: string;
-  category?: DepositCategoryEnum;
+  category_id?: number;
   description?: string | null;
 }
 
@@ -253,7 +252,7 @@ export interface CreateRecurringTransactionInput {
   type: RecurringTransactionTypeEnum;
   name: string;
   amount: number;
-  category: ExpenseCategoryLabelEnum;
+  category_id: number;
   wallet_id: number;
   period: RecurringTransactionPeriodEnum;
   interval: number;
@@ -270,7 +269,7 @@ export interface UpdateRecurringTransactionInput {
   type?: RecurringTransactionTypeEnum;
   name?: string;
   amount?: number;
-  category?: ExpenseCategoryLabelEnum;
+  category_id?: number;
   wallet_id?: number;
   period?: RecurringTransactionPeriodEnum;
   interval?: number;
@@ -546,6 +545,104 @@ export function useMutationDeleteTask() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/query/quests/detail"] });
       qc.invalidateQueries({ queryKey: ["/api/query/quests/kanban"] });
+    },
+  });
+}
+
+// ── Budget mutations ──────────────────────────────────────────────────────────
+
+export interface CreateBudgetInput {
+  name: string;
+  color: string;
+  category_ids: number[];
+  amount: number;
+  period: BudgetPeriodEnum;
+}
+
+export interface UpdateBudgetInput {
+  name?: string;
+  color?: string;
+  category_ids?: number[];
+  amount?: number;
+  period?: BudgetPeriodEnum;
+}
+
+export function useMutationCreateBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateBudgetInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string }>("/api/budget", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
+    },
+  });
+}
+
+export function useMutationUpdateBudget(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateBudgetInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/budget/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
+    },
+  });
+}
+
+export function useMutationDeleteBudget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/budget/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/budgets"] });
+    },
+  });
+}
+
+// ── Money Category mutations ──────────────────────────────────────────────────
+
+export interface CreateMoneyCategoryInput {
+  name: string;
+  display_label: string;
+  color: string;
+  type: "expense" | "income";
+}
+
+export interface UpdateMoneyCategoryInput {
+  display_label?: string;
+  color?: string;
+}
+
+export function useMutationCreateMoneyCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateMoneyCategoryInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string }>("/api/money-category", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/money-category"] });
+    },
+  });
+}
+
+export function useMutationUpdateMoneyCategory(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateMoneyCategoryInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/money-category/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/money-category"] });
+    },
+  });
+}
+
+export function useMutationDeleteMoneyCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/money-category/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/money-category"] });
     },
   });
 }

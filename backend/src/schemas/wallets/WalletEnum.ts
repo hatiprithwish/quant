@@ -7,13 +7,4 @@ export enum WalletTypeEnum {
 }
 export const ZWalletTypeEnum = z.nativeEnum(WalletTypeEnum);
 
-export enum DepositCategoryEnum {
-  Salary = "salary",
-  Transfer = "transfer",
-  Refund = "refund",
-  Freelance = "freelance",
-  Gift = "gift",
-  OpeningBalance = "opening_balance",
-  Other = "other",
-}
-export const ZDepositCategoryEnum = z.nativeEnum(DepositCategoryEnum);
+// Income categories are now user-defined and stored in the money_categories table.

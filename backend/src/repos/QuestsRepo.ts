@@ -39,7 +39,12 @@ export class QuestsRepo {
         QuestsDAL.getTotalXp(req.userId, db),
         QuestsDAL.findStreak(req.userId, db),
         QuestsDAL.findAchievements(req.userId, db),
-        QuestsDAL.getGrowthVsDistractionMinutes(req.userId, req.from, req.to, db),
+        QuestsDAL.getGrowthVsDistractionMinutes(
+          req.userId,
+          req.from,
+          req.to,
+          db,
+        ),
       ]);
 
     const levelInfo = (() => {
@@ -51,7 +56,7 @@ export class QuestsRepo {
         title: LEVEL_TITLES[level] ?? "Initiate",
         xp_in_level: current,
         xp_for_next: needed,
-        next_level_at: (totalXp - current) + needed,
+        next_level_at: totalXp - current + needed,
       };
     })();
 
@@ -64,14 +69,22 @@ export class QuestsRepo {
           QuestsDAL.findTasksByQuest(q.id, db),
           QuestsDAL.getTimeThisWeekForQuest(q.id, req.userId, db),
         ]);
-        const tasksDone = tasks.filter((t) => t.status === TaskStatusEnum.Done).length;
-        const milestonesDone = milestones.filter((m) => m.status === MilestoneStatusEnum.Done).length;
+        const tasksDone = tasks.filter(
+          (t) => t.status === TaskStatusEnum.Done,
+        ).length;
+        const milestonesDone = milestones.filter(
+          (m) => m.status === MilestoneStatusEnum.Done,
+        ).length;
         const totalXpForQuest = tasks
           .filter((t) => t.status === TaskStatusEnum.Done)
           .reduce((s, t) => s + t.xp_reward, 0);
         const totalPossibleXp = tasks.reduce((s, t) => s + t.xp_reward, 0);
-        const activeMilestone = milestones.find((m) => m.status === MilestoneStatusEnum.Active);
-        const nextPending = milestones.find((m) => m.status === MilestoneStatusEnum.Pending);
+        const activeMilestone = milestones.find(
+          (m) => m.status === MilestoneStatusEnum.Active,
+        );
+        const nextPending = milestones.find(
+          (m) => m.status === MilestoneStatusEnum.Pending,
+        );
         const nextMilestone = activeMilestone ?? nextPending ?? null;
 
         return {
@@ -97,8 +110,12 @@ export class QuestsRepo {
       }),
     );
 
-    const totalGrowthDistraction = growthDistraction.growth_minutes + growthDistraction.distraction_minutes || 1;
-    const focusScore = Math.round((growthDistraction.growth_minutes / totalGrowthDistraction) * 100);
+    const totalGrowthDistraction =
+      growthDistraction.growth_minutes +
+        growthDistraction.distraction_minutes || 1;
+    const focusScore = Math.round(
+      (growthDistraction.growth_minutes / totalGrowthDistraction) * 100,
+    );
 
     return {
       isSuccess: true,
@@ -106,7 +123,9 @@ export class QuestsRepo {
       level_info: levelInfo,
       current_streak: streak.current_streak,
       longest_streak: streak.longest_streak,
-      active_quests_count: allQuests.filter((q) => q.status === QuestStatusEnum.Active).length,
+      active_quests_count: allQuests.filter(
+        (q) => q.status === QuestStatusEnum.Active,
+      ).length,
       focus_score: focusScore,
       growth_vs_distraction: growthDistraction,
       quests: questSummaries,
@@ -131,22 +150,37 @@ export class QuestsRepo {
     req: { questId: string; userId: string },
     db: DrizzleDb,
   ): Promise<GetQuestDetailResponse> {
-    const [quest, milestones, tasks, timeByDay, recentXpEvents, growthDistraction] =
-      await Promise.all([
-        QuestsDAL.findById(req.questId, req.userId, db),
-        QuestsDAL.findMilestonesByQuest(req.questId, db),
-        QuestsDAL.findTasksByQuest(req.questId, db),
-        QuestsDAL.getTimeByDayForQuest(req.questId, req.userId, 14, db),
-        QuestsDAL.getRecentXpEvents(req.questId, db),
-        QuestsDAL.getGrowthVsDistractionMinutes(req.userId, "2020-01-01", new Date().toISOString().split("T")[0], db),
-      ]);
+    const [
+      quest,
+      milestones,
+      tasks,
+      timeByDay,
+      recentXpEvents,
+      growthDistraction,
+    ] = await Promise.all([
+      QuestsDAL.findById(req.questId, req.userId, db),
+      QuestsDAL.findMilestonesByQuest(req.questId, db),
+      QuestsDAL.findTasksByQuest(req.questId, db),
+      QuestsDAL.getTimeByDayForQuest(req.questId, req.userId, 14, db),
+      QuestsDAL.getRecentXpEvents(req.questId, db),
+      QuestsDAL.getGrowthVsDistractionMinutes(
+        req.userId,
+        "2020-01-01",
+        new Date().toISOString().split("T")[0],
+        db,
+      ),
+    ]);
 
     if (!quest) {
       throw new Error("Quest not found");
     }
 
-    const tasksDone = tasks.filter((t) => t.status === TaskStatusEnum.Done).length;
-    const milestonesDone = milestones.filter((m) => m.status === MilestoneStatusEnum.Done).length;
+    const tasksDone = tasks.filter(
+      (t) => t.status === TaskStatusEnum.Done,
+    ).length;
+    const milestonesDone = milestones.filter(
+      (m) => m.status === MilestoneStatusEnum.Done,
+    ).length;
     const totalXpForQuest = tasks
       .filter((t) => t.status === TaskStatusEnum.Done)
       .reduce((s, t) => s + t.xp_reward, 0);
@@ -161,7 +195,8 @@ export class QuestsRepo {
         order: m.order,
         status: m.status,
         due_date: m.due_date,
-        task_done: mTasks.filter((t) => t.status === TaskStatusEnum.Done).length,
+        task_done: mTasks.filter((t) => t.status === TaskStatusEnum.Done)
+          .length,
         task_total: mTasks.length,
       };
     });
@@ -200,7 +235,10 @@ export class QuestsRepo {
         due_date: t.due_date,
         created_at: t.created_at,
       })),
-      time_by_day: timeByDay.map((r) => ({ date: r.date, minutes: r.minutes ?? 0 })),
+      time_by_day: timeByDay.map((r) => ({
+        date: r.date,
+        minutes: r.minutes ?? 0,
+      })),
       recent_xp_events: recentXpEvents.map((e) => ({
         id: e.id,
         quest_id: e.quest_id,
@@ -236,7 +274,9 @@ export class QuestsRepo {
       isSuccess: true,
       message: "Kanban retrieved",
       todo: toKanban(allTasks.filter((t) => t.status === TaskStatusEnum.Todo)),
-      doing: toKanban(allTasks.filter((t) => t.status === TaskStatusEnum.Doing)),
+      doing: toKanban(
+        allTasks.filter((t) => t.status === TaskStatusEnum.Doing),
+      ),
       done: toKanban(allTasks.filter((t) => t.status === TaskStatusEnum.Done)),
     };
   }
@@ -260,10 +300,20 @@ export class QuestsRepo {
       db,
     );
     await QuestsRepo._awardXP(
-      { userId: req.userId, questId: id, sourceType: XpSourceTypeEnum.TaskCompleted, sourceId: null, xp: 0 },
+      {
+        userId: req.userId,
+        questId: id,
+        sourceType: XpSourceTypeEnum.TaskCompleted,
+        sourceId: null,
+        xp: 0,
+      },
       db,
     );
-    await QuestsRepo._checkAndGrantAchievement(req.userId, ACHIEVEMENT_KEYS.FIRST_QUEST, db);
+    await QuestsRepo._checkAndGrantAchievement(
+      req.userId,
+      ACHIEVEMENT_KEYS.FIRST_QUEST,
+      db,
+    );
     return { isSuccess: true, message: "Quest created", quest_id: id };
   }
 
@@ -300,7 +350,10 @@ export class QuestsRepo {
       db,
     );
     if (milestones.length === 0) {
-      await QuestsDAL.updateMilestone({ milestoneId: id, status: MilestoneStatusEnum.Active }, db);
+      await QuestsDAL.updateMilestone(
+        { milestoneId: id, status: MilestoneStatusEnum.Active },
+        db,
+      );
     }
     return { isSuccess: true, message: "Milestone created", milestone_id: id };
   }
@@ -312,8 +365,11 @@ export class QuestsRepo {
     const wasDone = req.status === MilestoneStatusEnum.Done;
     await QuestsDAL.updateMilestone(req, db);
     if (wasDone) {
-      const milestoneData = { milestoneId: req.milestoneId };
-      await QuestsRepo._checkAndGrantAchievement(req.userId, ACHIEVEMENT_KEYS.MILESTONE_5, db);
+      await QuestsRepo._checkAndGrantAchievement(
+        req.userId,
+        ACHIEVEMENT_KEYS.MILESTONE_5,
+        db,
+      );
     }
     return { isSuccess: true, message: "Milestone updated" };
   }
@@ -332,7 +388,12 @@ export class QuestsRepo {
       },
       db,
     );
-    return { isSuccess: true, message: "Task created", task_id: id, xp_awarded: 0 };
+    return {
+      isSuccess: true,
+      message: "Task created",
+      task_id: id,
+      xp_awarded: 0,
+    };
   }
 
   static async updateTaskStatus(
@@ -343,14 +404,20 @@ export class QuestsRepo {
     if (!task) throw new Error("Task not found");
 
     const prevStatus = task.status;
-    await QuestsDAL.updateTaskStatus({ taskId: req.taskId, status: req.status }, db);
+    await QuestsDAL.updateTaskStatus(
+      { taskId: req.taskId, status: req.status },
+      db,
+    );
 
     let xpAwarded = 0;
     let levelUp = false;
     let newLevel: number | null = null;
     let achievementUnlocked: string | null = null;
 
-    if (req.status === TaskStatusEnum.Done && prevStatus !== TaskStatusEnum.Done) {
+    if (
+      req.status === TaskStatusEnum.Done &&
+      prevStatus !== TaskStatusEnum.Done
+    ) {
       const xpBefore = await QuestsDAL.getTotalXp(req.userId, db);
       const levelBefore = xpToLevel(xpBefore);
 
@@ -375,7 +442,10 @@ export class QuestsRepo {
 
       await QuestsRepo._updateStreak(req.userId, db);
 
-      const unlockedKey = await QuestsRepo._checkAllAchievements(req.userId, db);
+      const unlockedKey = await QuestsRepo._checkAllAchievements(
+        req.userId,
+        db,
+      );
       achievementUnlocked = unlockedKey;
     }
 
@@ -400,17 +470,26 @@ export class QuestsRepo {
   // ── Private helpers ──────────────────────────────────────────────────────
 
   private static async _awardXP(
-    data: { userId: string; questId: string | null; sourceType: XpSourceTypeEnum; sourceId: number | null; xp: number },
+    data: {
+      userId: string;
+      questId: string | null;
+      sourceType: XpSourceTypeEnum;
+      sourceId: number | null;
+      xp: number;
+    },
     db: DrizzleDb,
   ) {
     if (data.xp <= 0) return;
-    await QuestsDAL.insertXpEvent({
-      user_id: data.userId,
-      quest_id: data.questId,
-      source_type: data.sourceType,
-      source_id: data.sourceId,
-      xp: data.xp,
-    }, db);
+    await QuestsDAL.insertXpEvent(
+      {
+        user_id: data.userId,
+        quest_id: data.questId,
+        source_type: data.sourceType,
+        source_id: data.sourceId,
+        xp: data.xp,
+      },
+      db,
+    );
   }
 
   private static async _updateStreak(userId: string, db: DrizzleDb) {
@@ -418,7 +497,10 @@ export class QuestsRepo {
     const existing = await QuestsDAL.findStreak(userId, db);
 
     if (!existing) {
-      await QuestsDAL.upsertStreak({ userId, today, current: 1, longest: 1 }, db);
+      await QuestsDAL.upsertStreak(
+        { userId, today, current: 1, longest: 1 },
+        db,
+      );
       return;
     }
 
@@ -436,31 +518,64 @@ export class QuestsRepo {
     const longest = Math.max(current, existing.longest_streak);
     await QuestsDAL.upsertStreak({ userId, today, current, longest }, db);
 
-    if (current >= 7) await QuestsRepo._checkAndGrantAchievement(userId, ACHIEVEMENT_KEYS.STREAK_7, db);
-    if (current >= 14) await QuestsRepo._checkAndGrantAchievement(userId, ACHIEVEMENT_KEYS.STREAK_14, db);
-    if (current >= 30) await QuestsRepo._checkAndGrantAchievement(userId, ACHIEVEMENT_KEYS.STREAK_30, db);
+    if (current >= 7)
+      await QuestsRepo._checkAndGrantAchievement(
+        userId,
+        ACHIEVEMENT_KEYS.STREAK_7,
+        db,
+      );
+    if (current >= 14)
+      await QuestsRepo._checkAndGrantAchievement(
+        userId,
+        ACHIEVEMENT_KEYS.STREAK_14,
+        db,
+      );
+    if (current >= 30)
+      await QuestsRepo._checkAndGrantAchievement(
+        userId,
+        ACHIEVEMENT_KEYS.STREAK_30,
+        db,
+      );
   }
 
-  private static async _checkAndGrantAchievement(userId: string, key: string, db: DrizzleDb): Promise<string | null> {
+  private static async _checkAndGrantAchievement(
+    userId: string,
+    key: string,
+    db: DrizzleDb,
+  ): Promise<string | null> {
     const has = await QuestsDAL.hasAchievement(userId, key, db);
     if (!has) {
-      await QuestsDAL.insertAchievement({ user_id: userId, achievement_key: key }, db);
+      await QuestsDAL.insertAchievement(
+        { user_id: userId, achievement_key: key },
+        db,
+      );
       return key;
     }
     return null;
   }
 
-  private static async _checkAllAchievements(userId: string, db: DrizzleDb): Promise<string | null> {
+  private static async _checkAllAchievements(
+    userId: string,
+    db: DrizzleDb,
+  ): Promise<string | null> {
     const [taskCount, milestoneCount] = await Promise.all([
       QuestsDAL.countCompletedTasks(userId, db),
       QuestsDAL.countCompletedMilestones(userId, db),
     ]);
 
     if (taskCount === 1) {
-      return QuestsRepo._checkAndGrantAchievement(userId, ACHIEVEMENT_KEYS.FIRST_TASK, db);
+      return QuestsRepo._checkAndGrantAchievement(
+        userId,
+        ACHIEVEMENT_KEYS.FIRST_TASK,
+        db,
+      );
     }
     if (milestoneCount >= 5) {
-      return QuestsRepo._checkAndGrantAchievement(userId, ACHIEVEMENT_KEYS.MILESTONE_5, db);
+      return QuestsRepo._checkAndGrantAchievement(
+        userId,
+        ACHIEVEMENT_KEYS.MILESTONE_5,
+        db,
+      );
     }
     return null;
   }

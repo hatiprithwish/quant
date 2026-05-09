@@ -2,6 +2,7 @@ import { DrizzleDb } from "../db";
 import { ExpenseDAL } from "../data-access-layer/ExpenseDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
 import { TransferDAL } from "../data-access-layer/TransferDAL";
+import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   CreateExpenseRepoRequest,
   UpdateExpenseRepoRequest,
@@ -9,13 +10,17 @@ import {
   UpdateDepositRepoRequest,
   CreateTransferRepoRequest,
   UpdateTransferRepoRequest,
-  expenseCategoryLabelToInt,
-  expenseCategoryIntToLabel,
   CreateTransferResponse,
   UpdateTransferResponse,
   CreateDepositResponse,
   UpdateDepositResponse,
+  MoneyCategoryItem,
+  MoneyCategoryTypeEnum,
 } from "../schemas";
+
+function toMoneyCategoryItem(row: { id: number; name: string; display_label: string; color: string; type: string }): MoneyCategoryItem {
+  return { id: row.id, name: row.name, display_label: row.display_label, color: row.color, type: row.type as MoneyCategoryTypeEnum };
+}
 
 export class EntryRepo {
   // ── Expense ───────────────────────────────────────────────────────────────
@@ -27,13 +32,13 @@ export class EntryRepo {
         date: req.date,
         amount: req.amount,
         currency: req.currency ?? "INR",
-        category: expenseCategoryLabelToInt[req.category],
+        categoryId: req.category_id,
         description: req.description ?? null,
-        paymentMethod: null,
         walletId: req.wallet_id,
       },
       db,
     );
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
     return {
       isSuccess: true,
       message: "Expense logged",
@@ -42,7 +47,7 @@ export class EntryRepo {
         date: row.date,
         amount: row.amount,
         currency: row.currency,
-        category: expenseCategoryIntToLabel[row.category],
+        category: toMoneyCategoryItem(cat!),
         description: row.description,
         wallet_id: row.wallet_id,
       },
@@ -57,13 +62,14 @@ export class EntryRepo {
         date: req.date,
         amount: req.amount,
         currency: req.currency,
-        category: req.category ? expenseCategoryLabelToInt[req.category] : undefined,
+        categoryId: req.category_id,
         description: req.description,
         walletId: req.wallet_id,
       },
       db,
     );
     if (!row) return { isSuccess: false, message: "Expense not found" };
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
     return {
       isSuccess: true,
       message: "Expense updated",
@@ -72,7 +78,7 @@ export class EntryRepo {
         date: row.date,
         amount: row.amount,
         currency: row.currency,
-        category: expenseCategoryIntToLabel[row.category],
+        category: toMoneyCategoryItem(cat!),
         description: row.description,
         wallet_id: row.wallet_id,
       },
@@ -97,11 +103,12 @@ export class EntryRepo {
         date: req.date,
         amount: req.amount,
         currency: req.currency ?? "INR",
-        category: req.category,
+        categoryId: req.category_id,
         description: req.description ?? null,
       },
       db,
     );
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
     return {
       isSuccess: true,
       message: "Income logged",
@@ -111,7 +118,7 @@ export class EntryRepo {
         date: row.date,
         amount: row.amount,
         currency: row.currency,
-        category: row.category,
+        category: toMoneyCategoryItem(cat!),
         description: row.description,
       },
     };
@@ -129,12 +136,13 @@ export class EntryRepo {
         date: req.date,
         amount: req.amount,
         currency: req.currency,
-        category: req.category,
+        categoryId: req.category_id,
         description: req.description,
       },
       db,
     );
     if (!row) return { isSuccess: false, message: "Income not found", deposit: null as never };
+    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
     return {
       isSuccess: true,
       message: "Income updated",
@@ -144,7 +152,7 @@ export class EntryRepo {
         date: row.date,
         amount: row.amount,
         currency: row.currency,
-        category: row.category,
+        category: toMoneyCategoryItem(cat!),
         description: row.description,
       },
     };
