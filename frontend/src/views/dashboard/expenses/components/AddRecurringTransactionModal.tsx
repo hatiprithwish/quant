@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MoneyCategoryTypeEnum, RecurringTransactionTypeEnum, RecurringTransactionPeriodEnum, RecurringEndConditionEnum } from "@/schemas";
 import type { WalletWithBalance } from "@/schemas";
-import { useGetMoneyCategories } from "@/api/cachedQueries";
+import { useGetMoneyCategories, useGetInvestments } from "@/api/cachedQueries";
 import {
   useMutationCreateRecurringTransaction,
   useMutationUpdateRecurringTransaction,
@@ -46,6 +46,28 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
   const [startDate, setStartDate] = useState(editing?.next_date ?? today());
   const [error, setError] = useState<string | null>(null);
 
+  // Transfer state
+  const [fromType, setFromType] = useState<"wallet" | "asset">(
+    editing?.from_asset_id ? "asset" : "wallet"
+  );
+  const [fromWalletId, setFromWalletId] = useState<number | "">(
+    editing?.wallet_id ?? (wallets[0]?.id ?? "")
+  );
+  const [fromAssetAccountId, setFromAssetAccountId] = useState<number | "">("");
+  const [fromAssetId, setFromAssetId] = useState<number | "">(editing?.from_asset_id ?? "");
+
+  const [toType, setToType] = useState<"wallet" | "asset">(
+    editing?.asset_id ? "asset" : "wallet"
+  );
+  const [toWalletId, setToWalletId] = useState<number | "">(
+    editing?.to_wallet_id ?? (wallets[0]?.id ?? "")
+  );
+  const [toAssetAccountId, setToAssetAccountId] = useState<number | "">("");
+  const [toAssetId, setToAssetId] = useState<number | "">(editing?.asset_id ?? "");
+
+  const { data: investmentsData } = useGetInvestments();
+  const investmentAccounts = investmentsData?.accounts ?? [];
+
   const { data: categoriesData } = useGetMoneyCategories();
   const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];
   const incomeCategories = categoriesData?.categories.filter(
@@ -69,8 +91,19 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
     setError(null);
 
     if (!amount || Number(amount) <= 0) return setError("Enter a valid amount.");
-    if (!walletId) return setError("Select a wallet.");
-    if (!categoryId) return setError("Select a category.");
+
+    if (txType !== RecurringTransactionTypeEnum.Transfer) {
+      if (!walletId) return setError("Select a wallet.");
+      if (!categoryId) return setError("Select a category.");
+    } else {
+      if (fromType === "wallet" && !fromWalletId) return setError("Select source wallet.");
+      if (fromType === "asset" && !fromAssetId) return setError("Select source asset.");
+      if (toType === "wallet" && !toWalletId) return setError("Select destination wallet.");
+      if (toType === "asset" && !toAssetId) return setError("Select destination asset.");
+      if (fromType === "wallet" && toType === "wallet" && fromWalletId === toWalletId)
+        return setError("Source and destination wallets must differ.");
+    }
+
     if (period === RecurringTransactionPeriodEnum.Weekly && weekDays.length === 0)
       return setError("Select at least one day of the week.");
     if (endCondition === RecurringEndConditionEnum.Until && !endDate)
@@ -78,14 +111,22 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
     if (endCondition === RecurringEndConditionEnum.For && (!occurrences || Number(occurrences) < 1))
       return setError("Enter number of occurrences.");
 
+    const transferPayload = txType === RecurringTransactionTypeEnum.Transfer ? {
+      wallet_id: fromType === "wallet" ? Number(fromWalletId) : (toType === "wallet" ? Number(toWalletId) : undefined),
+      to_wallet_id: toType === "wallet" ? Number(toWalletId) : undefined,
+      asset_id: toType === "asset" ? Number(toAssetId) : undefined,
+      from_asset_id: fromType === "asset" ? Number(fromAssetId) : undefined,
+    } : {};
+
     try {
       if (editing) {
         const payload: UpdateRecurringTransactionInput = {
           type: txType,
           amount: Number(amount),
           description: description || null,
-          category_id: categoryId,
-          wallet_id: Number(walletId),
+          ...(txType !== RecurringTransactionTypeEnum.Transfer
+            ? { category_id: categoryId, wallet_id: Number(walletId) }
+            : { category_id: null, ...transferPayload }),
           period,
           interval,
           week_days: period === RecurringTransactionPeriodEnum.Weekly ? weekDays : undefined,
@@ -102,8 +143,9 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
           name: description || `${period} ${txType}`,
           amount: Number(amount),
           description: description || undefined,
-          category_id: categoryId,
-          wallet_id: Number(walletId),
+          ...(txType !== RecurringTransactionTypeEnum.Transfer
+            ? { category_id: categoryId, wallet_id: Number(walletId) }
+            : transferPayload),
           period,
           interval,
           week_days: period === RecurringTransactionPeriodEnum.Weekly ? weekDays : undefined,
@@ -145,25 +187,106 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {/* Income / Expense toggle */}
+          {/* Income / Expense / Transfer toggle */}
           <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-neutral-700">
-            {[RecurringTransactionTypeEnum.Income, RecurringTransactionTypeEnum.Expense].map((t) => (
+            {[
+              { label: "Income", value: RecurringTransactionTypeEnum.Income },
+              { label: "Expense", value: RecurringTransactionTypeEnum.Expense },
+              { label: "Transfer", value: RecurringTransactionTypeEnum.Transfer },
+            ].map((t) => (
               <button
-                key={t}
+                key={t.value}
                 type="button"
-                onClick={() => { setTxType(t); setCategoryId(0); }}
+                onClick={() => { setTxType(t.value); setCategoryId(0); }}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                  txType === t
-                    ? t === RecurringTransactionTypeEnum.Expense
+                  txType === t.value
+                    ? t.value === RecurringTransactionTypeEnum.Expense
                       ? "bg-red-500 text-white"
-                      : "bg-emerald-500 text-white"
+                      : t.value === RecurringTransactionTypeEnum.Income
+                      ? "bg-emerald-500 text-white"
+                      : "bg-blue-500 text-white"
                     : "text-gray-400 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-800"
                 }`}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {t.label}
               </button>
             ))}
           </div>
+
+          {/* Transfer: From / To */}
+          {txType === RecurringTransactionTypeEnum.Transfer && (
+            <>
+              {/* FROM */}
+              <div>
+                <label className={labelCls}>From</label>
+                <div className="flex gap-2 mb-2">
+                  <button type="button" onClick={() => setFromType("wallet")}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${fromType === "wallet" ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-black" : "border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400"}`}>
+                    Wallet
+                  </button>
+                  <button type="button" onClick={() => setFromType("asset")}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${fromType === "asset" ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-black" : "border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400"}`}>
+                    Investment Asset
+                  </button>
+                </div>
+                {fromType === "wallet" ? (
+                  <select value={fromWalletId} onChange={(e) => setFromWalletId(Number(e.target.value))} className={inputCls}>
+                    {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <select value={fromAssetAccountId} onChange={(e) => { setFromAssetAccountId(Number(e.target.value)); setFromAssetId(""); }} className={inputCls}>
+                      <option value="">Select account</option>
+                      {investmentAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    {fromAssetAccountId !== "" && (
+                      <select value={fromAssetId} onChange={(e) => setFromAssetId(Number(e.target.value))} className={inputCls}>
+                        <option value="">Select asset</option>
+                        {(investmentAccounts.find((a) => a.id === Number(fromAssetAccountId))?.assets ?? []).map((ast) => (
+                          <option key={ast.id} value={ast.id}>{ast.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* TO */}
+              <div>
+                <label className={labelCls}>To</label>
+                <div className="flex gap-2 mb-2">
+                  <button type="button" onClick={() => setToType("wallet")}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${toType === "wallet" ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-black" : "border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400"}`}>
+                    Wallet
+                  </button>
+                  <button type="button" onClick={() => setToType("asset")}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors ${toType === "asset" ? "border-gray-900 dark:border-white bg-gray-900 dark:bg-white text-white dark:text-black" : "border-gray-200 dark:border-neutral-700 text-gray-500 dark:text-neutral-400"}`}>
+                    Investment Asset
+                  </button>
+                </div>
+                {toType === "wallet" ? (
+                  <select value={toWalletId} onChange={(e) => setToWalletId(Number(e.target.value))} className={inputCls}>
+                    {wallets.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <select value={toAssetAccountId} onChange={(e) => { setToAssetAccountId(Number(e.target.value)); setToAssetId(""); }} className={inputCls}>
+                      <option value="">Select account</option>
+                      {investmentAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    {toAssetAccountId !== "" && (
+                      <select value={toAssetId} onChange={(e) => setToAssetId(Number(e.target.value))} className={inputCls}>
+                        <option value="">Select asset</option>
+                        {(investmentAccounts.find((a) => a.id === Number(toAssetAccountId))?.assets ?? []).map((ast) => (
+                          <option key={ast.id} value={ast.id}>{ast.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Amount */}
           <div>
@@ -194,38 +317,42 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
             />
           </div>
 
-          {/* Category */}
-          <div>
-            <label className={labelCls}>Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(Number(e.target.value))}
-              className={inputCls}
-            >
-              <option value={0}>Select category</option>
-              {activeCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.display_label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Category — hidden for Transfer */}
+          {txType !== RecurringTransactionTypeEnum.Transfer && (
+            <div>
+              <label className={labelCls}>Category</label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(Number(e.target.value))}
+                className={inputCls}
+              >
+                <option value={0}>Select category</option>
+                {activeCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.display_label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Wallet */}
-          <div>
-            <label className={labelCls}>Wallet</label>
-            <select
-              value={walletId}
-              onChange={(e) => setWalletId(Number(e.target.value))}
-              className={inputCls}
-            >
-              {wallets.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Wallet — hidden for Transfer */}
+          {txType !== RecurringTransactionTypeEnum.Transfer && (
+            <div>
+              <label className={labelCls}>Wallet</label>
+              <select
+                value={walletId}
+                onChange={(e) => setWalletId(Number(e.target.value))}
+                className={inputCls}
+              >
+                {wallets.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Start date */}
           <div>
