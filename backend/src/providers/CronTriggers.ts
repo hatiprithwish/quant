@@ -86,20 +86,28 @@ async function materializeTransfer(
     // Wallet → Investment Asset
     const expCats = await MoneyCategoryDAL.findByType(item.user_id, MoneyCategoryTypeEnum.Expense, db);
     const cat = expCats[0];
-    if (cat) {
-      await ExpenseDAL.insertOne(
-        {
-          userId: item.user_id,
-          date: item.next_date,
-          amount: item.amount,
-          currency: "INR",
-          categoryId: cat.id,
-          description: desc,
-          walletId: item.wallet_id,
-        },
-        db,
-      );
+    if (!cat) {
+      Logger.error({
+        correlationId: "cron",
+        logCategory: AppConstants.LOG_CATEGORIES.CRON,
+        logAction: "RecurringTransferSkipped",
+        message: "No expense category found for wallet debit",
+        metadata: { userId: item.user_id },
+      });
+      return;
     }
+    await ExpenseDAL.insertOne(
+      {
+        userId: item.user_id,
+        date: item.next_date,
+        amount: item.amount,
+        currency: "INR",
+        categoryId: cat.id,
+        description: desc,
+        walletId: item.wallet_id,
+      },
+      db,
+    );
     await db.insert(investmentCashFlows).values({
       asset_id: item.asset_id,
       amount: item.amount,
