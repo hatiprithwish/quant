@@ -163,6 +163,9 @@ export class RecurringTransactionRepo {
     if (req.description !== undefined) updates.description = req.description ?? null;
     if (req.start_date !== undefined) updates.nextDate = req.start_date;
     if (req.category_id !== undefined) updates.categoryId = req.category_id;
+    if (req.to_wallet_id !== undefined) updates.toWalletId = req.to_wallet_id ?? null;
+    if (req.asset_id !== undefined) updates.assetId = req.asset_id ?? null;
+    if (req.from_asset_id !== undefined) updates.fromAssetId = req.from_asset_id ?? null;
 
     if (req.end_condition !== undefined) {
       updates.endCondition = req.end_condition;
