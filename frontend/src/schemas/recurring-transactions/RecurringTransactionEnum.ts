@@ -7,6 +7,7 @@ export enum RecurringTransactionPeriodEnum {
 export enum RecurringTransactionTypeEnum {
   Expense = "expense",
   Income = "income",
+  Transfer = "transfer",
 }
 
 export enum RecurringEndConditionEnum {

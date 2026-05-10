@@ -257,8 +257,8 @@ export interface CreateRecurringTransactionInput {
   type: RecurringTransactionTypeEnum;
   name: string;
   amount: number;
-  category_id: number;
-  wallet_id: number;
+  category_id?: number;
+  wallet_id?: number;
   period: RecurringTransactionPeriodEnum;
   interval: number;
   week_days?: number[];
@@ -268,14 +268,17 @@ export interface CreateRecurringTransactionInput {
   occurrences?: number;
   description?: string;
   start_date: string;
+  to_wallet_id?: number;
+  asset_id?: number;
+  from_asset_id?: number;
 }
 
 export interface UpdateRecurringTransactionInput {
   type?: RecurringTransactionTypeEnum;
   name?: string;
   amount?: number;
-  category_id?: number;
-  wallet_id?: number;
+  category_id?: number | null;
+  wallet_id?: number | null;
   period?: RecurringTransactionPeriodEnum;
   interval?: number;
   week_days?: number[];
@@ -285,6 +288,9 @@ export interface UpdateRecurringTransactionInput {
   occurrences?: number | null;
   description?: string | null;
   start_date?: string;
+  to_wallet_id?: number | null;
+  asset_id?: number | null;
+  from_asset_id?: number | null;
 }
 
 export function useMutationCreateRecurringTransaction() {
