@@ -9,12 +9,15 @@ import ScratchpadPage from "./scratchpad";
 import QuestsPage from "./quests";
 import QuestDetailPage from "./quests/[id]";
 import QuestsBoardPage from "./quests/board";
+import DebtDetailPage from "./money/debt";
 
-const WIDE_PATHS = ["/expenses", "/quests", "/quests/board"];
+const WIDE_PATHS = ["/money", "/quests", "/quests/board", "/money/debt"];
 
 export default function DashboardPage() {
   const location = useLocation();
-  const isWide = WIDE_PATHS.some(p => location.pathname === p || location.pathname.startsWith("/quests/"));
+  const isWide = WIDE_PATHS.some(
+    (p) => location.pathname === p || location.pathname.startsWith("/quests/"),
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -24,7 +27,7 @@ export default function DashboardPage() {
           <Routes>
             <Route path="/" element={<Navigate to="/food" replace />} />
             <Route path="/food" element={<FoodPage />} />
-            <Route path="/expenses" element={<ExpensesPage />} />
+            <Route path="/money" element={<ExpensesPage />} />
             <Route path="/time" element={<TimePage />} />
             <Route path="/body" element={<BodyPage />} />
             <Route path="/scratchpad" element={<ScratchpadPage />} />
@@ -32,6 +35,7 @@ export default function DashboardPage() {
             <Route path="/quests" element={<QuestsPage />} />
             <Route path="/quests/board" element={<QuestsBoardPage />} />
             <Route path="/quests/:id" element={<QuestDetailPage />} />
+            <Route path="/money/debt" element={<DebtDetailPage />} />
           </Routes>
         </div>
       </main>

@@ -11,16 +11,28 @@ interface Props {
 
 type FilterCategory = MoneyCategoryItem | "transfer" | null;
 
+const TRANSACTION_TYPE_LABEL: Record<string, string> = {
+  transfer: "Transfer",
+  income: "Income",
+  expense: "Expense",
+  lent: "Lent",
+  borrowed: "Borrowed",
+  lent_repayment: "Lent Repayment",
+  borrowed_repayment: "Borrowed Repayment",
+};
+
 function getTransactionLabel(item: UnifiedTransaction): string {
-  if (item.type !== "transfer" && item.category) {
-    return item.category.display_label;
-  }
-  return "Transfer";
+  if (item.type === "expense") return item.category?.display_label ?? "Expense";
+  return TRANSACTION_TYPE_LABEL[item.type] ?? item.type;
 }
 
 function getTransactionColor(item: UnifiedTransaction): string {
   if (item.type === "expense" && item.category) return item.category.color;
   if (item.type === "income") return "#10b981";
+  if (item.type === "lent") return "#f59e0b";
+  if (item.type === "lent_repayment") return "#10b981";
+  if (item.type === "borrowed") return "#3b82f6";
+  if (item.type === "borrowed_repayment") return "#ef4444";
   return "#6366f1";
 }
 
@@ -142,7 +154,8 @@ export default function TransactionsTab({ data, wallets, from, to }: Props) {
                 const categoryLabel = getTransactionLabel(item);
                 const walletLabel = getTypeLabel(item);
                 const isExpense = item.type === "expense";
-                const isIncome = item.type === "income";
+                const isIncome = item.type === "income" || item.type === "lent_repayment";
+                const isDebit = item.type === "lent" || item.type === "borrowed_repayment";
 
                 return (
                   <div
@@ -173,12 +186,12 @@ export default function TransactionsTab({ data, wallets, from, to }: Props) {
                         className={`text-sm font-semibold ${
                           isIncome
                             ? "text-emerald-600 dark:text-emerald-400"
-                            : isExpense
+                            : isExpense || isDebit
                             ? "text-gray-900 dark:text-white"
                             : "text-indigo-500 dark:text-indigo-400"
                         }`}
                       >
-                        {isIncome ? "+" : isExpense ? "−" : ""}₹{item.amount.toFixed(0)}
+                        {isIncome ? "+" : isExpense || isDebit ? "−" : ""}₹{item.amount.toFixed(0)}
                       </span>
                       <button
                         onClick={() => setEditingEntry(item)}

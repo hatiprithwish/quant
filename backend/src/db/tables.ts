@@ -270,7 +270,10 @@ export const debts = sqliteTable("debts", {
     .$type<DebtStatusEnum>()
     .notNull()
     .default(DebtStatusEnum.Pending),
-  due_date: text("due_date"),
+  date: text("date").notNull(),
+  color: text("color").notNull().default("#3b82f6"),
+  description: text("description"),
+  wallet_id: integer("wallet_id").references(() => wallets.id),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -304,6 +307,7 @@ export const debtRepayments = sqliteTable("debt_repayments", {
   amount: real("amount").notNull(),
   date: text("date").notNull(),
   note: text("note"),
+  wallet_id: integer("wallet_id").references(() => wallets.id),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -440,6 +444,56 @@ export const userStreaks = sqliteTable("user_streaks", {
     .default(sql`(datetime('now'))`),
 });
 
+export const investmentAccounts = sqliteTable("investment_accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  deleted_at: text("deleted_at"),
+});
+
+export const investmentAssets = sqliteTable("investment_assets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  account_id: integer("account_id")
+    .notNull()
+    .references(() => investmentAccounts.id),
+  name: text("name").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  deleted_at: text("deleted_at"),
+});
+
+export const investmentCashFlows = sqliteTable("investment_cash_flows", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  asset_id: integer("asset_id")
+    .notNull()
+    .references(() => investmentAssets.id),
+  amount: real("amount").notNull(),
+  date: text("date").notNull(),
+  wallet_id: integer("wallet_id").references(() => wallets.id),
+  description: text("description"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const assetValueSnapshots = sqliteTable("asset_value_snapshots", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  asset_id: integer("asset_id")
+    .notNull()
+    .references(() => investmentAssets.id),
+  value: real("value").notNull(),
+  snapshot_date: text("snapshot_date").notNull(),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 export type MoneyCategory = typeof moneyCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
@@ -463,6 +517,10 @@ export type TimeBucket = typeof timeBuckets.$inferSelect;
 export type Quest = typeof quests.$inferSelect;
 export type QuestMilestone = typeof questMilestones.$inferSelect;
 export type QuestTask = typeof questTasks.$inferSelect;
+export type InvestmentAccount = typeof investmentAccounts.$inferSelect;
+export type InvestmentAsset = typeof investmentAssets.$inferSelect;
+export type InvestmentCashFlow = typeof investmentCashFlows.$inferSelect;
+export type AssetValueSnapshot = typeof assetValueSnapshots.$inferSelect;
 export type QuestXpEvent = typeof questXpEvents.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type UserStreak = typeof userStreaks.$inferSelect;

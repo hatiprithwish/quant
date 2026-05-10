@@ -1,6 +1,11 @@
 import { useState } from "react";
-import type { GetExpenseSummaryResponse, WalletWithBalance, BudgetWithSpent, DebtEntry, RecurringTransactionItem } from "@/schemas";
-import { WalletTypeEnum, BudgetPeriodEnum, DebtStatusEnum } from "@/schemas";
+import type {
+  GetExpenseSummaryResponse,
+  WalletWithBalance,
+  BudgetWithSpent,
+  RecurringTransactionItem,
+} from "@/schemas";
+import { WalletTypeEnum, BudgetPeriodEnum } from "@/schemas";
 import {
   useGetWallets,
   useGetBudgets,
@@ -51,7 +56,7 @@ const periodStartDate: Record<BudgetPeriodEnum, () => string> = {
 
 function fmtDate(iso: string) {
   const [, m, d] = iso.split("-");
-  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m) - 1]}`;
+  return `${d} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][parseInt(m) - 1]}`;
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -64,19 +69,23 @@ function WalletCard({
   onEdit: (w: WalletWithBalance) => void;
 }) {
   const typeLabel =
-    wallet.type === WalletTypeEnum.Bank ? "BANK" :
-    wallet.type === WalletTypeEnum.Cash ? "CASH" : "CREDIT";
+    wallet.type === WalletTypeEnum.Bank
+      ? "BANK"
+      : wallet.type === WalletTypeEnum.Cash
+        ? "CASH"
+        : "CREDIT";
 
   const typeColor =
     wallet.type === WalletTypeEnum.Bank
       ? "text-blue-500 dark:text-blue-400"
       : wallet.type === WalletTypeEnum.Cash
-      ? "text-emerald-500 dark:text-emerald-400"
-      : "text-orange-500 dark:text-orange-400";
+        ? "text-emerald-500 dark:text-emerald-400"
+        : "text-orange-500 dark:text-orange-400";
 
-  const usedPct = wallet.credit_limit && wallet.credit_limit > 0
-    ? Math.round((Math.abs(wallet.balance) / wallet.credit_limit) * 100)
-    : null;
+  const usedPct =
+    wallet.credit_limit && wallet.credit_limit > 0
+      ? Math.round((Math.abs(wallet.balance) / wallet.credit_limit) * 100)
+      : null;
 
   return (
     <div className="group relative bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-4 min-w-0">
@@ -85,29 +94,42 @@ function WalletCard({
         className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-neutral-600 hover:text-gray-500 dark:hover:text-neutral-400"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M10 2l2 2-7 7H3v-2l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path
+            d="M10 2l2 2-7 7H3v-2l7-7z"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
-      <div className={`text-[10px] font-bold tracking-widest mb-2 ${typeColor}`}>
+      <div
+        className={`text-[10px] font-bold tracking-widest mb-2 ${typeColor}`}
+      >
         {typeLabel}
       </div>
-      <div className="text-xs text-gray-500 dark:text-neutral-400 mb-1">{wallet.name}</div>
+      <div className="text-xs text-gray-500 dark:text-neutral-400 mb-1">
+        {wallet.name}
+      </div>
       <div className="text-xl font-bold text-gray-900 dark:text-white">
         ₹{wallet.balance.toLocaleString("en-IN")}
       </div>
-      {wallet.type === WalletTypeEnum.Credit && usedPct !== null && wallet.credit_limit && (
-        <div className="mt-2 space-y-1">
-          <div className="w-full h-1 bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-orange-400 rounded-full"
-              style={{ width: `${Math.min(usedPct, 100)}%` }}
-            />
+      {wallet.type === WalletTypeEnum.Credit &&
+        usedPct !== null &&
+        wallet.credit_limit && (
+          <div className="mt-2 space-y-1">
+            <div className="w-full h-1 bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-orange-400 rounded-full"
+                style={{ width: `${Math.min(usedPct, 100)}%` }}
+              />
+            </div>
+            <div className="text-[10px] text-gray-400 dark:text-neutral-500">
+              Used {usedPct}% · Limit ₹{(wallet.credit_limit / 1000).toFixed(0)}
+              k
+            </div>
           </div>
-          <div className="text-[10px] text-gray-400 dark:text-neutral-500">
-            Used {usedPct}% · Limit ₹{(wallet.credit_limit / 1000).toFixed(0)}k
-          </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
@@ -133,78 +155,108 @@ function StatCard({
           positive === true
             ? "text-emerald-500"
             : positive === false
-            ? "text-red-500"
-            : "text-gray-900 dark:text-white"
+              ? "text-red-500"
+              : "text-gray-900 dark:text-white"
         }`}
       >
         {value}
       </div>
       {sub && (
-        <div className="text-[10px] text-gray-400 dark:text-neutral-500 mt-1">{sub}</div>
+        <div className="text-[10px] text-gray-400 dark:text-neutral-500 mt-1">
+          {sub}
+        </div>
       )}
     </div>
   );
 }
 
-function BudgetRow({ budget, onEdit }: { budget: BudgetWithSpent; onEdit: (b: BudgetWithSpent) => void }) {
+function BudgetRow({
+  budget,
+  onEdit,
+}: {
+  budget: BudgetWithSpent;
+  onEdit: (b: BudgetWithSpent) => void;
+}) {
   const pct = Math.min((budget.spent / budget.amount) * 100, 100);
   return (
-    <button type="button" onClick={() => onEdit(budget)} className="w-full text-left space-y-1.5 group">
+    <button
+      type="button"
+      onClick={() => onEdit(budget)}
+      className="w-full text-left space-y-1.5 group"
+    >
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: budget.color }} />
-          <span className="text-gray-700 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{budget.name}</span>
+          <span
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: budget.color }}
+          />
+          <span className="text-gray-700 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+            {budget.name}
+          </span>
         </div>
         <span className="text-gray-400 dark:text-neutral-500">
-          ₹{budget.spent.toLocaleString("en-IN")} / ₹{budget.amount.toLocaleString("en-IN")}
+          ₹{budget.spent.toLocaleString("en-IN")} / ₹
+          {budget.amount.toLocaleString("en-IN")}
         </span>
       </div>
       <div className="w-full h-1.5 bg-gray-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: budget.color }} />
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: budget.color }}
+        />
       </div>
     </button>
   );
 }
 
-function DebtRow({ entry }: { entry: DebtEntry }) {
-  const remaining = entry.amount - entry.paid_amount;
-  const statusLabel =
-    entry.status === DebtStatusEnum.Pending ? "Pending" :
-    entry.status === DebtStatusEnum.InMotion ? "In Motion" : "Settled";
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-sm font-medium text-gray-900 dark:text-white">{entry.counterparty_name}</div>
-        <div className="text-[10px] text-gray-400 dark:text-neutral-500">
-          {statusLabel}{entry.due_date ? ` · ${fmtDate(entry.due_date)}` : ""}
-        </div>
-      </div>
-      <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{remaining.toLocaleString("en-IN")}</div>
-    </div>
-  );
-}
 
-function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit: (item: RecurringTransactionItem) => void }) {
+function RecurringRow({
+  item,
+  onEdit,
+}: {
+  item: RecurringTransactionItem;
+  onEdit: (item: RecurringTransactionItem) => void;
+}) {
   return (
     <div
       className="flex items-center justify-between group cursor-pointer"
       onClick={() => onEdit(item)}
     >
       <div className="flex items-center gap-2.5">
-        <span className={`w-2 h-2 rounded-full ${item.type === "income" ? "bg-emerald-400" : "bg-neutral-400 dark:bg-neutral-600"}`} />
+        <span
+          className={`w-2 h-2 rounded-full ${item.type === "income" ? "bg-emerald-400" : "bg-neutral-400 dark:bg-neutral-600"}`}
+        />
         <div>
-          <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name || item.description}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
+            {item.name || item.description}
+          </div>
           <div className="text-[10px] text-gray-400 dark:text-neutral-500">
-            {item.period.charAt(0).toUpperCase() + item.period.slice(1)} · Next: {fmtDate(item.next_date)}
+            {item.period.charAt(0).toUpperCase() + item.period.slice(1)} · Next:{" "}
+            {fmtDate(item.next_date)}
           </div>
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className={`text-sm font-semibold ${item.type === "income" ? "text-emerald-500" : "text-gray-900 dark:text-white"}`}>
-          {item.type === "income" ? "+" : ""}₹{item.amount.toLocaleString("en-IN")}
+        <span
+          className={`text-sm font-semibold ${item.type === "income" ? "text-emerald-500" : "text-gray-900 dark:text-white"}`}
+        >
+          {item.type === "income" ? "+" : ""}₹
+          {item.amount.toLocaleString("en-IN")}
         </span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="opacity-0 group-hover:opacity-40 transition-opacity">
-          <path d="M8 2l2 2-5.5 5.5H3v-1.5L8 2z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          className="opacity-0 group-hover:opacity-40 transition-opacity"
+        >
+          <path
+            d="M8 2l2 2-5.5 5.5H3v-1.5L8 2z"
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </div>
     </div>
@@ -214,16 +266,26 @@ function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function DashboardTab({ data }: Props) {
-  const [budgetPeriod, setBudgetPeriod] = useState<BudgetPeriodEnum>(BudgetPeriodEnum.Monthly);
+  const [budgetPeriod, setBudgetPeriod] = useState<BudgetPeriodEnum>(
+    BudgetPeriodEnum.Monthly,
+  );
   const [showAddWallet, setShowAddWallet] = useState(false);
-  const [editingWallet, setEditingWallet] = useState<WalletWithBalance | null>(null);
+  const [editingWallet, setEditingWallet] = useState<WalletWithBalance | null>(
+    null,
+  );
   const [showAddRecurring, setShowAddRecurring] = useState(false);
-  const [editingRecurring, setEditingRecurring] = useState<RecurringTransactionItem | null>(null);
+  const [editingRecurring, setEditingRecurring] =
+    useState<RecurringTransactionItem | null>(null);
   const [showAddBudget, setShowAddBudget] = useState(false);
-  const [editingBudget, setEditingBudget] = useState<BudgetWithSpent | null>(null);
+  const [editingBudget, setEditingBudget] = useState<BudgetWithSpent | null>(
+    null,
+  );
 
   const { data: walletsData } = useGetWallets();
-  const { data: budgetsData } = useGetBudgets(budgetPeriod, periodStartDate[budgetPeriod]());
+  const { data: budgetsData } = useGetBudgets(
+    budgetPeriod,
+    periodStartDate[budgetPeriod](),
+  );
   const { data: debtsData } = useGetDebts();
   const { data: recurringData } = useGetRecurringTransactions();
 
@@ -241,9 +303,10 @@ export default function DashboardTab({ data }: Props) {
     borrowed.reduce((s, o) => s + (o.amount - o.paid_amount), 0);
   const recurringTotal = recurring.reduce((s, r) => s + r.amount, 0);
 
-  const vsPreviousSub = data?.vsPrevious != null
-    ? `${data.vsPrevious >= 0 ? "↑" : "↓"} ${Math.abs(data.vsPrevious).toFixed(0)}% vs last period`
-    : undefined;
+  const vsPreviousSub =
+    data?.vsPrevious != null
+      ? `${data.vsPrevious >= 0 ? "↑" : "↓"} ${Math.abs(data.vsPrevious).toFixed(0)}% vs last period`
+      : undefined;
 
   return (
     <div className="space-y-5">
@@ -264,10 +327,31 @@ export default function DashboardTab({ data }: Props) {
 
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-3">
-        <StatCard label="Month Spent" value={`₹${monthSpent.toLocaleString("en-IN")}`} sub={vsPreviousSub} />
-        <StatCard label="Budget Remaining" value={`₹${budgetRemaining.toLocaleString("en-IN")}`} sub={budgetTotal > 0 ? `/ ₹${budgetTotal.toLocaleString("en-IN")} total` : undefined} />
-        <StatCard label="Net Lent" value={`${netLent >= 0 ? "+" : ""}₹${Math.abs(netLent).toLocaleString("en-IN")}`} sub="Awaiting repayment" positive={netLent >= 0} />
-        <StatCard label="Recurring / Mo" value={`₹${recurringTotal.toLocaleString("en-IN")}`} sub={recurring.length > 0 ? `${recurring.length} active` : undefined} />
+        <StatCard
+          label="Month Spent"
+          value={`₹${monthSpent.toLocaleString("en-IN")}`}
+          sub={vsPreviousSub}
+        />
+        <StatCard
+          label="Budget Remaining"
+          value={`₹${budgetRemaining.toLocaleString("en-IN")}`}
+          sub={
+            budgetTotal > 0
+              ? `/ ₹${budgetTotal.toLocaleString("en-IN")} total`
+              : undefined
+          }
+        />
+        <StatCard
+          label="Net Lent"
+          value={`${netLent >= 0 ? "+" : ""}₹${Math.abs(netLent).toLocaleString("en-IN")}`}
+          sub="Awaiting repayment"
+          positive={netLent >= 0}
+        />
+        <StatCard
+          label="Recurring / Mo"
+          value={`₹${recurringTotal.toLocaleString("en-IN")}`}
+          sub={recurring.length > 0 ? `${recurring.length} active` : undefined}
+        />
       </div>
 
       {/* Bottom two-column section */}
@@ -275,7 +359,9 @@ export default function DashboardTab({ data }: Props) {
         {/* Monthly Budgets */}
         <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Budgets</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Budgets
+            </h3>
             <div className="flex items-center gap-1">
               {[
                 { label: "Weekly", value: BudgetPeriodEnum.Weekly },
@@ -299,9 +385,13 @@ export default function DashboardTab({ data }: Props) {
           </div>
           <div className="space-y-3.5">
             {budgets.length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-neutral-500">No budgets set.</p>
+              <p className="text-xs text-gray-400 dark:text-neutral-500">
+                No budgets set.
+              </p>
             ) : (
-              budgets.map((b) => <BudgetRow key={b.id} budget={b} onEdit={setEditingBudget} />)
+              budgets.map((b) => (
+                <BudgetRow key={b.id} budget={b} onEdit={setEditingBudget} />
+              ))
             )}
           </div>
           <button
@@ -312,32 +402,18 @@ export default function DashboardTab({ data }: Props) {
           </button>
         </div>
 
-        {/* Right column: Lending & Recurring */}
+        {/* Right column: Recurring */}
         <div className="space-y-4">
           <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Lending & Borrowing</h3>
-              <button className="text-xs text-gray-400 dark:text-neutral-500 border border-gray-200 dark:border-neutral-700 rounded px-2 py-0.5 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors">
-                + Add
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase mb-2">You Lent</div>
-                {lent.length === 0 ? <p className="text-xs text-gray-400 dark:text-neutral-500">Nothing lent.</p> : lent.map((l) => <DebtRow key={l.id} entry={l} />)}
-              </div>
-              <div>
-                <div className="text-[10px] font-bold tracking-widest text-red-400 uppercase mb-2">You Owe</div>
-                {borrowed.length === 0 ? <p className="text-xs text-gray-400 dark:text-neutral-500">Nothing owed.</p> : borrowed.map((o) => <DebtRow key={o.id} entry={o} />)}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-neutral-800 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recurring</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Recurring
+              </h3>
               <button
-                onClick={() => { setEditingRecurring(null); setShowAddRecurring(true); }}
+                onClick={() => {
+                  setEditingRecurring(null);
+                  setShowAddRecurring(true);
+                }}
                 className="text-xs text-gray-400 dark:text-neutral-500 border border-gray-200 dark:border-neutral-700 rounded px-2 py-0.5 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
               >
                 + Add
@@ -345,13 +421,18 @@ export default function DashboardTab({ data }: Props) {
             </div>
             <div className="space-y-3">
               {recurring.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-neutral-500">No recurring transactions.</p>
+                <p className="text-xs text-gray-400 dark:text-neutral-500">
+                  No recurring transactions.
+                </p>
               ) : (
                 recurring.map((r) => (
                   <RecurringRow
                     key={r.id}
                     item={r}
-                    onEdit={(item) => { setEditingRecurring(item); setShowAddRecurring(true); }}
+                    onEdit={(item) => {
+                      setEditingRecurring(item);
+                      setShowAddRecurring(true);
+                    }}
                   />
                 ))
               )}
@@ -361,20 +442,33 @@ export default function DashboardTab({ data }: Props) {
       </div>
 
       {/* Modals */}
-      {showAddWallet && <AddWalletModal onClose={() => setShowAddWallet(false)} />}
-      {editingWallet && <EditWalletModal wallet={editingWallet} onClose={() => setEditingWallet(null)} />}
+      {showAddWallet && (
+        <AddWalletModal onClose={() => setShowAddWallet(false)} />
+      )}
+      {editingWallet && (
+        <EditWalletModal
+          wallet={editingWallet}
+          onClose={() => setEditingWallet(null)}
+        />
+      )}
       {showAddRecurring && (
         <AddRecurringTransactionModal
           wallets={wallets}
           editing={editingRecurring ?? undefined}
-          onClose={() => { setShowAddRecurring(false); setEditingRecurring(null); }}
+          onClose={() => {
+            setShowAddRecurring(false);
+            setEditingRecurring(null);
+          }}
         />
       )}
       {showAddBudget && (
         <AddBudgetModal onClose={() => setShowAddBudget(false)} />
       )}
-      {editingBudget && (
-        <EditBudgetModal budget={editingBudget} onClose={() => setEditingBudget(null)} />
+{editingBudget && (
+        <EditBudgetModal
+          budget={editingBudget}
+          onClose={() => setEditingBudget(null)}
+        />
       )}
     </div>
   );

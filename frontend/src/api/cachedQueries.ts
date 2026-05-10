@@ -17,6 +17,7 @@ import type {
   GetQuestDetailResponse,
   GetQuestsKanbanResponse,
   GetMoneyCategoriesResponse,
+  GetInvestmentsResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -171,5 +172,12 @@ export function useGetBodyMeasurements(metricId: number, from: string, to: strin
         to,
       }),
     enabled: isEnabled,
+  });
+}
+
+export function useGetInvestments() {
+  return useQuery({
+    queryKey: ["/api/investments"],
+    queryFn: () => apiClient.get<GetInvestmentsResponse>("/api/investments"),
   });
 }

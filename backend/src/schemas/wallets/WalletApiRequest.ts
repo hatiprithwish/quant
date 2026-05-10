@@ -20,6 +20,7 @@ export const ZUpdateWalletRequest = z.object({
   name: z.string().min(1).optional(),
   type: ZWalletTypeEnum.optional(),
   credit_limit: z.number().positive().nullable().optional(),
+  current_balance: z.number().optional(),
 });
 export type UpdateWalletRequest = z.infer<typeof ZUpdateWalletRequest>;
 export type UpdateWalletRepoRequest = UpdateWalletRequest & { userId: string; id: number };

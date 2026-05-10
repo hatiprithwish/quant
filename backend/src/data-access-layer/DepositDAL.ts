@@ -48,6 +48,21 @@ export class DepositDAL {
       .where(and(eq(depositLogs.id, id), eq(depositLogs.user_id, userId)));
   }
 
+  static async findOpeningBalance(walletId: number, userId: string, db: DrizzleDb) {
+    const rows = await db
+      .select()
+      .from(depositLogs)
+      .where(
+        and(
+          eq(depositLogs.wallet_id, walletId),
+          eq(depositLogs.user_id, userId),
+          eq(depositLogs.description, "Opening balance"),
+        ),
+      )
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
   static async findByDateRange(
     userId: string,
     from: string,

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(chmod +x /Users/hprith/Developer/life-tracker/mcp-server/run-backend.sh)",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "Bash(open http://localhost:5174)"
+      "Bash(open http://localhost:5174)",
+      "Bash(bash *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(python3 *)"
     ]
   }
 }

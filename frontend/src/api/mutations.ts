@@ -15,6 +15,10 @@ import type {
   TaskStatusEnum,
   MilestoneStatusEnum,
   BudgetPeriodEnum,
+  CreateDebtResponse,
+  UpdateDebtResponse,
+  AddRepaymentResponse,
+  DebtTypeEnum,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -35,6 +39,7 @@ export interface UpdateWalletInput {
   name?: string;
   type?: WalletTypeEnum;
   credit_limit?: number | null;
+  current_balance?: number;
 }
 
 export function useMutationCreateWallet() {
@@ -644,5 +649,169 @@ export function useMutationDeleteMoneyCategory() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/money-category"] });
     },
+  });
+}
+
+// ── Debt mutations ────────────────────────────────────────────────────────────
+
+export interface CreateDebtInput {
+  type: DebtTypeEnum;
+  counterparty_name: string;
+  amount: number;
+  date: string;
+  color: string;
+  description?: string;
+  wallet_id: number;
+}
+
+export interface UpdateDebtInput {
+  counterparty_name?: string;
+  amount?: number;
+  date?: string;
+  color?: string;
+  description?: string | null;
+}
+
+export interface AddRepaymentInput {
+  amount: number;
+  date: string;
+  note?: string;
+  wallet_id: number;
+}
+
+export function useMutationCreateDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateDebtInput) =>
+      apiClient.post<CreateDebtResponse>("/api/debt", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/debts"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/wallets"] });
+    },
+  });
+}
+
+export function useMutationUpdateDebt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateDebtInput & { id: number }) =>
+      apiClient.put<UpdateDebtResponse>(`/api/debt/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/debts"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/wallets"] });
+    },
+  });
+}
+
+export function useMutationAddRepayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ debtId, ...data }: AddRepaymentInput & { debtId: number }) =>
+      apiClient.post<AddRepaymentResponse>(`/api/debt/${debtId}/repayment`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/debts"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/wallets"] });
+    },
+  });
+}
+
+// ── Investment mutations ─────────────────────────────────────────────────────
+
+import type {
+  CreateInvestmentAccountResponse,
+  UpdateInvestmentAccountResponse,
+  CreateInvestmentAssetResponse,
+  UpdateInvestmentAssetResponse,
+  AddCashFlowResponse,
+  UpdateAssetValueResponse,
+} from "@/schemas";
+
+const INV_KEY = "/api/investments";
+
+export function useMutationCreateInvestmentAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string }) =>
+      apiClient.post<CreateInvestmentAccountResponse>("/api/investments/accounts", data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationUpdateInvestmentAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: number; name?: string }) =>
+      apiClient.patch<UpdateInvestmentAccountResponse>(`/api/investments/accounts/${id}`, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationDeleteInvestmentAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/investments/accounts/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationCreateInvestmentAsset() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ accountId, name }: { accountId: number; name: string }) =>
+      apiClient.post<CreateInvestmentAssetResponse>(`/api/investments/accounts/${accountId}/assets`, { name }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationUpdateInvestmentAsset() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      apiClient.patch<UpdateInvestmentAssetResponse>(`/api/investments/assets/${id}`, { name }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationDeleteInvestmentAsset() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/investments/assets/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+export function useMutationAddCashFlow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ assetId, ...data }: { assetId: number; amount: number; date: string; wallet_id?: number; description?: string }) =>
+      apiClient.post<AddCashFlowResponse>(`/api/investments/assets/${assetId}/cashflows`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [INV_KEY] });
+      qc.invalidateQueries({ queryKey: ["/api/query/wallets"] });
+      qc.invalidateQueries({ queryKey: ["/api/query/transactions"] });
+    },
+  });
+}
+
+export function useMutationDeleteCashFlow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/investments/cashflows/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [INV_KEY] });
+      qc.invalidateQueries({ queryKey: ["/api/query/transactions"] });
+    },
+  });
+}
+
+export function useMutationUpdateAssetValue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ assetId, ...data }: { assetId: number; value: number; snapshot_date: string }) =>
+      apiClient.post<UpdateAssetValueResponse>(`/api/investments/assets/${assetId}/value`, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
   });
 }

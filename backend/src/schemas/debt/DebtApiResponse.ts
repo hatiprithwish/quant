@@ -15,8 +15,23 @@ export interface DebtEntry {
   amount: number;
   paid_amount: number;
   status: DebtStatusEnum;
-  due_date: string | null;
+  date: string;
+  color: string;
+  description: string | null;
+  wallet_id: number | null;
   repayments: DebtRepaymentEntry[];
+}
+
+export interface CreateDebtResponse extends ApiResponse {
+  debt: DebtEntry;
+}
+
+export interface UpdateDebtResponse extends ApiResponse {
+  debt: DebtEntry;
+}
+
+export interface AddRepaymentResponse extends ApiResponse {
+  debt: DebtEntry;
 }
 
 export interface GetDebtsResponse extends ApiResponse {
