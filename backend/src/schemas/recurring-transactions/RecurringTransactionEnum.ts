@@ -10,6 +10,7 @@ export const ZRecurringTransactionPeriodEnum = z.nativeEnum(RecurringTransaction
 export enum RecurringTransactionTypeEnum {
   Expense = "expense",
   Income = "income",
+  Transfer = "transfer",
 }
 export const ZRecurringTransactionTypeEnum = z.nativeEnum(RecurringTransactionTypeEnum);
 
