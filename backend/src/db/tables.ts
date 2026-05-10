@@ -235,9 +235,8 @@ export const recurringTransactionItems = sqliteTable("recurring_transactions", {
     .notNull()
     .references(() => users.id),
   wallet_id: integer("wallet_id")
-    .notNull()
     .references(() => wallets.id),
-  type: text("type").$type<"expense" | "income">().notNull().default("expense"),
+  type: text("type").$type<"expense" | "income" | "transfer">().notNull().default("expense"),
   name: text("name").notNull(),
   amount: real("amount").notNull(),
   period: text("period").$type<RecurringTransactionPeriodEnum>().notNull(),
@@ -248,10 +247,12 @@ export const recurringTransactionItems = sqliteTable("recurring_transactions", {
   end_date: text("end_date"),
   occurrences: integer("occurrences"),
   category_id: integer("category_id")
-    .notNull()
     .references(() => moneyCategories.id),
   description: text("description"),
   next_date: text("next_date").notNull(),
+  to_wallet_id: integer("to_wallet_id").references(() => wallets.id),
+  asset_id: integer("asset_id").references(() => investmentAssets.id),
+  from_asset_id: integer("from_asset_id").references(() => investmentAssets.id),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

@@ -51,9 +51,9 @@ function rowToItem(
     end_condition: string;
     end_date: string | null;
     occurrences: number | null;
-    category_id: number;
+    category_id: number | null;
     description: string | null;
-    wallet_id: number;
+    wallet_id: number | null;
     next_date: string;
   },
   cat: MoneyCategoryItem,
@@ -89,7 +89,7 @@ export class RecurringTransactionRepo {
     return {
       isSuccess: true,
       message: "Recurring transactions retrieved",
-      items: rows.map((row) => rowToItem(row, catMap.get(row.category_id)!)),
+      items: rows.map((row) => rowToItem(row, catMap.get(row.category_id!)!)),
     };
   }
 
@@ -125,7 +125,7 @@ export class RecurringTransactionRepo {
       db,
     );
 
-    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+    const cat = await MoneyCategoryDAL.findById(row.category_id!, req.userId, db);
 
     return {
       isSuccess: true,
@@ -179,7 +179,7 @@ export class RecurringTransactionRepo {
       return { isSuccess: false, message: "Recurring transaction not found", item: null as never };
     }
 
-    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+    const cat = await MoneyCategoryDAL.findById(row.category_id!, req.userId, db);
 
     return {
       isSuccess: true,

@@ -20,7 +20,7 @@ export interface RecurringTransactionItem {
   occurrences: number | null;
   category: MoneyCategoryItem;
   description: string | null;
-  wallet_id: number;
+  wallet_id: number | null;
   next_date: string;
 }
 

@@ -92,9 +92,9 @@ export async function processRecurringTransactions(
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          categoryId: item.category_id,
+          categoryId: item.category_id!,
           description: item.description ?? item.name,
-          walletId: item.wallet_id,
+          walletId: item.wallet_id!,
         },
         db,
       );
@@ -102,11 +102,11 @@ export async function processRecurringTransactions(
       await DepositDAL.insert(
         {
           userId: item.user_id,
-          walletId: item.wallet_id,
+          walletId: item.wallet_id!,
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          categoryId: item.category_id,
+          categoryId: item.category_id!,
           description: item.description ?? item.name,
         },
         db,
