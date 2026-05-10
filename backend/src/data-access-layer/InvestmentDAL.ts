@@ -174,6 +174,35 @@ export class InvestmentDAL {
     return result[0];
   }
 
+  static async findAssetWithLatestSnapshot(id: number, db: DrizzleDb) {
+    const assetRows = await db
+      .select()
+      .from(investmentAssets)
+      .where(and(eq(investmentAssets.id, id), isNull(investmentAssets.deleted_at)));
+    const asset = assetRows[0] ?? null;
+    if (!asset) return null;
+
+    const snapshots = await db
+      .select()
+      .from(assetValueSnapshots)
+      .where(eq(assetValueSnapshots.asset_id, id))
+      .orderBy(assetValueSnapshots.snapshot_date);
+    const latestSnapshot = snapshots.at(-1) ?? null;
+
+    const flows = await db
+      .select()
+      .from(investmentCashFlows)
+      .where(eq(investmentCashFlows.asset_id, id));
+    const investedAmount = flows.reduce((s, f) => s + f.amount, 0);
+
+    return {
+      ...asset,
+      current_value: latestSnapshot?.value ?? null,
+      latest_snapshot_date: latestSnapshot?.snapshot_date ?? null,
+      invested_amount: investedAmount,
+    };
+  }
+
   static async findWalletCashFlowsByDateRange(userId: string, from: string, to: string, db: DrizzleDb) {
     const accountRows = await InvestmentDAL.findAccountsByUserId(userId, db);
     if (accountRows.length === 0) return [];
