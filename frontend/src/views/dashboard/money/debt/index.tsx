@@ -5,6 +5,7 @@ import type { DebtEntry } from "@/schemas";
 import { DebtStatusEnum } from "@/schemas";
 import AddDebtModal from "@/views/dashboard/expenses/components/AddDebtModal";
 import EditDebtModal from "@/views/dashboard/expenses/components/EditDebtModal";
+import Spinner from "@/components/common/Spinner";
 
 type FilterType = "lent" | "borrowed";
 type StatusFilter = "active" | "all";
@@ -95,7 +96,7 @@ export default function DebtDetailPage() {
   const [showAddDebt, setShowAddDebt] = useState(false);
   const [editingDebt, setEditingDebt] = useState<DebtEntry | null>(null);
 
-  const { data } = useGetDebts();
+  const { data, isLoading } = useGetDebts();
   const { data: walletsData } = useGetWallets();
 
   const wallets = walletsData?.wallets ?? [];
@@ -121,6 +122,10 @@ export default function DebtDetailPage() {
   function switchStatus(s: StatusFilter) {
     setStatusFilter(s);
     setSearchParams((prev) => { prev.set("status", s); return prev; });
+  }
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-16"><Spinner /></div>;
   }
 
   return (

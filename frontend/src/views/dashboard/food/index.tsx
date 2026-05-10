@@ -3,6 +3,7 @@ import { useGetFood } from "@/api/cachedQueries";
 import DateRangeSelector from "@/components/common/DateRangeSelector";
 import FoodChart from "./components/FoodChart";
 import MealTable from "./components/MealTable";
+import Spinner from "@/components/common/Spinner";
 
 function today() {
   return new Date().toISOString().split("T")[0];
@@ -27,7 +28,7 @@ export default function FoodPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+        <div className="flex items-center justify-center py-12"><Spinner /></div>
       )}
 
       {error && (

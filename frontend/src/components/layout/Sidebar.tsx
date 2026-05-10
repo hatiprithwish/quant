@@ -1,176 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
 import { useTheme } from "@/context/ThemeContext";
 
-function IconFood() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-      <line x1="6" y1="1" x2="6" y2="4" />
-      <line x1="10" y1="1" x2="10" y2="4" />
-      <line x1="14" y1="1" x2="14" y2="4" />
-    </svg>
-  );
-}
-
-function IconExpenses() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <line x1="2" y1="10" x2="22" y2="10" />
-    </svg>
-  );
-}
-
-function IconTime() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function IconScratchpad() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-    </svg>
-  );
-}
-
-function IconBody() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
-      <path d="M6.5 8a1 1 0 0 0-.96.73L3 17h18l-2.54-8.27A1 1 0 0 0 17.5 8h-11z" />
-      <line x1="12" y1="17" x2="12" y2="22" />
-      <line x1="9" y1="22" x2="15" y2="22" />
-    </svg>
-  );
-}
-
-function IconQuests() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  );
-}
-
-function IconSettings() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
-}
-
 const NAV_ITEMS = [
-  { to: "/food", label: "Food", icon: <IconFood /> },
-  { to: "/money", label: "Money", icon: <IconExpenses /> },
-  { to: "/time", label: "Time", icon: <IconTime /> },
-  { to: "/body", label: "Body", icon: <IconBody /> },
-  { to: "/quests", label: "Quests", icon: <IconQuests /> },
-  { to: "/scratchpad", label: "Scratch Pad", icon: <IconScratchpad /> },
-  { to: "/settings", label: "Settings", icon: <IconSettings /> },
+  { to: "/food",      label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
+  { to: "/money",     label: "MONEY",  sub: "finance",   accent: "#f59e0b", glyph: "◉" },
+  { to: "/time",      label: "TIME",   sub: "tracking",  accent: "#3b82f6", glyph: "◎" },
+  { to: "/body",      label: "BODY",   sub: "metrics",   accent: "#ec4899", glyph: "◍" },
+  { to: "/quests",    label: "QUESTS", sub: "goals",     accent: "#a855f7", glyph: "◆" },
+  { to: "/scratchpad",label: "SCRATCH",sub: "notes",     accent: "#64748b", glyph: "◇" },
 ];
 
-function QuantLogo() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <polygon
-        points="16,2 30,26 2,26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-      />
-      <line
-        x1="16"
-        y1="10"
-        x2="16"
-        y2="22"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="7" r="1.5" fill="currentColor" />
-    </svg>
-  );
+function Clock() {
+  const [time, setTime] = useState(() => new Date().toTimeString().slice(0, 8));
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date().toTimeString().slice(0, 8)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span>{time}</span>;
+}
+
+function DayOfYear() {
+  const now = new Date();
+  const day = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+  return <span>DAY {day}</span>;
 }
 
 export default function Sidebar() {
@@ -178,99 +32,223 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
 
+  const dark = theme === "dark";
+
+  const bg         = dark ? "#0a0a0a" : "#f5f0e8";
+  const border     = dark ? "#1e1e1e" : "#d6cfc0";
+  const dimText    = dark ? "#888888" : "#7a7060";
+  const ghostText  = dark ? "#707070" : "#a09888";
+  const labelColor = dark ? "#b0b0b0" : "#3a3530";
+  const subColor   = dark ? "#666666" : "#9a9080";
+  const hoverBg    = dark ? "#111111" : "#ede8de";
+
   return (
     <aside
-      className={`min-h-screen bg-black border-r border-neutral-800 flex flex-col transition-all duration-200 ${
-        collapsed ? "w-14" : "w-44"
-      }`}
+      style={{
+        position: "sticky",
+        background: bg,
+        borderRight: `1px solid ${border}`,
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+        transition: "background 0.2s, border-color 0.2s, width 0.3s",
+      }}
+      className={`h-screen top-0 shrink-0 flex flex-col overflow-hidden ${collapsed ? "w-14" : "w-52"}`}
     >
-      <div className="px-3 py-5 border-b border-neutral-800 flex items-center justify-between">
-        {!collapsed && (
-          <div className="flex items-center gap-2 text-white">
-            <QuantLogo />
-            <span className="text-sm font-bold tracking-widest uppercase">
-              Quant
-            </span>
+      {/* Scanline texture — dark only */}
+      {dark && (
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
+          backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px)",
+        }} />
+      )}
+
+      {/* Grain texture — light only */}
+      {!dark && (
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.4,
+          backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E\")",
+        }} />
+      )}
+
+      {/* Header */}
+      <div style={{ borderBottom: `1px solid ${border}`, position: "relative", zIndex: 1 }} className="px-3 py-4">
+        {!collapsed ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div style={{
+                  width: 6, height: 6, background: "#22c55e", borderRadius: "50%",
+                  boxShadow: "0 0 6px #22c55e",
+                  animation: "quantPulse 2s infinite",
+                }} />
+                <span style={{ color: dark ? "#ffffff" : "#1a1510", fontSize: 11, letterSpacing: "0.2em", fontWeight: 700 }}>
+                  QUANT
+                </span>
+              </div>
+              <button
+                onClick={() => setCollapsed(true)}
+                style={{
+                  color: dimText, fontSize: 10, padding: "2px 5px",
+                  border: `1px solid ${border}`, background: "transparent",
+                  cursor: "pointer", lineHeight: 1, borderRadius: 2,
+                  fontFamily: "inherit",
+                }}
+                className="hover:opacity-100 transition-opacity"
+              >
+                ‹‹
+              </button>
+            </div>
+            <div style={{ color: ghostText, fontSize: 9, letterSpacing: "0.12em", display: "flex", gap: 8 }}>
+              <Clock />
+              <span>·</span>
+              <DayOfYear />
+            </div>
           </div>
-        )}
-        {collapsed && (
-          <div className="mx-auto text-white">
-            <QuantLogo />
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <div style={{ width: 6, height: 6, background: "#22c55e", borderRadius: "50%", boxShadow: "0 0 6px #22c55e" }} />
+            <button
+              onClick={() => setCollapsed(false)}
+              style={{
+                color: dimText, fontSize: 10, padding: "2px 5px",
+                border: `1px solid ${border}`, background: "transparent",
+                cursor: "pointer", lineHeight: 1, borderRadius: 2,
+                fontFamily: "inherit",
+              }}
+            >
+              ››
+            </button>
           </div>
-        )}
-        {!collapsed && (
-          <button
-            onClick={() => setCollapsed(true)}
-            className="p-1 rounded text-neutral-500 hover:text-white transition-colors"
-            aria-label="Collapse sidebar"
-          >
-            ←
-          </button>
         )}
       </div>
 
-      {collapsed && (
-        <div className="flex justify-center pt-2">
-          <button
-            onClick={() => setCollapsed(false)}
-            className="p-1 rounded text-neutral-500 hover:text-white transition-colors"
-            aria-label="Expand sidebar"
-          >
-            →
-          </button>
-        </div>
-      )}
-
-      <nav className="flex-1 py-4 px-2 space-y-0.5">
-        {NAV_ITEMS.map(({ to, label, icon }) => (
+      {/* Nav */}
+      <nav style={{ position: "relative", zIndex: 1 }} className="flex-1 overflow-y-auto py-3 px-2 space-y-px">
+        {NAV_ITEMS.map(({ to, label, sub, accent, glyph }) => (
           <NavLink
             key={to}
             to={to}
             title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                collapsed ? "justify-center" : ""
-              } ${
-                isActive
-                  ? "bg-neutral-800 text-white"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
-              }`
-            }
+            style={({ isActive }) => ({
+              display: "flex",
+              alignItems: "center",
+              gap: collapsed ? 0 : 10,
+              justifyContent: collapsed ? "center" : "flex-start",
+              padding: "7px 8px",
+              background: isActive ? hoverBg : "transparent",
+              borderLeft: `2px solid ${isActive ? accent : "transparent"}`,
+              paddingLeft: collapsed ? undefined : 6,
+              textDecoration: "none",
+              borderRadius: "0 4px 4px 0",
+              transition: "background 0.15s",
+            })}
           >
-            <span className="shrink-0">{icon}</span>
-            {!collapsed && label}
+            {({ isActive }) => (
+              <>
+                <span style={{
+                  fontSize: 13, color: isActive ? accent : dimText,
+                  flexShrink: 0, lineHeight: 1,
+                  transition: "color 0.15s",
+                }}>
+                  {glyph}
+                </span>
+                {!collapsed && (
+                  <div className="flex flex-col min-w-0">
+                    <span style={{
+                      fontSize: 10, letterSpacing: "0.14em", fontWeight: 700,
+                      color: isActive ? (dark ? "#ffffff" : "#1a1510") : labelColor,
+                      lineHeight: 1.3, transition: "color 0.15s",
+                    }}>
+                      {label}
+                    </span>
+                    <span style={{
+                      fontSize: 8, letterSpacing: "0.1em",
+                      color: isActive ? accent : subColor,
+                      lineHeight: 1.3, transition: "color 0.15s",
+                    }}>
+                      {sub}
+                    </span>
+                  </div>
+                )}
+                {!collapsed && isActive && (
+                  <div style={{
+                    marginLeft: "auto", width: 3, height: 3,
+                    borderRadius: "50%", background: accent,
+                    boxShadow: `0 0 5px ${accent}`, flexShrink: 0,
+                  }} />
+                )}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="px-2 py-4 border-t border-neutral-800 space-y-0.5">
+      {/* Divider */}
+      <div style={{ height: 1, background: border, margin: "0 8px" }} />
+
+      {/* Footer */}
+      <div style={{ position: "relative", zIndex: 1 }} className="px-2 py-3 space-y-px">
         <button
           onClick={toggleTheme}
-          title={
-            collapsed
-              ? theme === "dark"
-                ? "Light mode"
-                : "Dark mode"
-              : undefined
-          }
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors ${
-            collapsed ? "justify-center" : ""
-          }`}
+          style={{
+            width: "100%", display: "flex",
+            alignItems: "center",
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: "6px 8px", background: "transparent",
+            border: "none", cursor: "pointer",
+            borderLeft: "2px solid transparent",
+            fontFamily: "inherit",
+          }}
+          className="group"
+          onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          <span className="text-xs">{theme === "dark" ? "☀" : "☾"}</span>
-          {!collapsed && (theme === "dark" ? "Light mode" : "Dark mode")}
+          <span style={{ fontSize: 10, color: dimText, transition: "color 0.15s" }}>
+            {dark ? "○" : "●"}
+          </span>
+          {!collapsed && (
+            <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>
+              {dark ? "LIGHT" : "DARK"}
+            </span>
+          )}
         </button>
+
         <button
           onClick={() => signOut()}
-          title={collapsed ? "Sign out" : undefined}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-neutral-400 hover:bg-neutral-900 hover:text-white transition-colors ${
-            collapsed ? "justify-center" : ""
-          }`}
+          style={{
+            width: "100%", display: "flex",
+            alignItems: "center",
+            gap: collapsed ? 0 : 10,
+            justifyContent: collapsed ? "center" : "flex-start",
+            padding: "6px 8px", background: "transparent",
+            border: "none", cursor: "pointer",
+            borderLeft: "2px solid transparent",
+            fontFamily: "inherit",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          <span className="text-xs">↩</span>
-          {!collapsed && "Sign out"}
+          <span style={{ fontSize: 10, color: dimText }}>×</span>
+          {!collapsed && (
+            <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>
+              LOGOUT
+            </span>
+          )}
         </button>
+
+        {!collapsed && (
+          <div style={{ fontSize: 7, letterSpacing: "0.12em", color: ghostText, padding: "8px 8px 2px" }}>
+            v2.0.0 · QUANT SYS
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @keyframes quantPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+      `}</style>
     </aside>
   );
 }

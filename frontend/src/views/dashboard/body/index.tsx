@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useGetBodyMetrics } from "@/api/cachedQueries";
 import AddMetricModal from "./components/AddMetricModal";
 import MetricCard from "./components/MetricCard";
+import Spinner from "@/components/common/Spinner";
 
 export default function BodyPage() {
   const [showAdd, setShowAdd] = useState(false);
@@ -24,7 +25,9 @@ export default function BodyPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+        <div className="flex items-center justify-center py-12">
+          <Spinner />
+        </div>
       )}
 
       {error && (

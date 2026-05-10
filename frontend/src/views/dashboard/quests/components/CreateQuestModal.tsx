@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutationCreateQuest } from "@/api/mutations";
 import { QuestCategoryEnum, questCategoryLabel } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 
 const COLORS = ["#6366f1","#8b5cf6","#ec4899","#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#3b82f6","#06b6d4"];
 
@@ -104,9 +105,9 @@ export default function CreateQuestModal({ onClose }: Props) {
             <button
               type="submit"
               disabled={isPending || !name.trim()}
-              className="flex-1 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
             >
-              {isPending ? "Creating…" : "Create Quest"}
+              {isPending ? <><Spinner size="sm" /> Creating…</> : "Create Quest"}
             </button>
           </div>
         </form>

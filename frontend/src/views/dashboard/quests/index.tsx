@@ -7,6 +7,7 @@ import GrowthVsDistractionChart from "./components/GrowthVsDistractionChart";
 import AchievementsSection from "./components/AchievementsSection";
 import CreateQuestModal from "./components/CreateQuestModal";
 import { QuestStatusEnum } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 
 function today() {
   return new Date().toISOString().split("T")[0];
@@ -124,7 +125,7 @@ export default function QuestsPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+        <div className="flex items-center justify-center py-12"><Spinner /></div>
       )}
 
       {error && (

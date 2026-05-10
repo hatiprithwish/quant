@@ -11,6 +11,7 @@ import CategoriesTab from "./components/CategoriesTab";
 import LendingTab from "./components/LendingTab";
 import InvestmentsTab from "./components/InvestmentsTab";
 import AddEntryModal from "./components/AddEntryModal";
+import Spinner from "@/components/common/Spinner";
 
 function today() {
   return new Date().toISOString().split("T")[0];
@@ -312,8 +313,8 @@ export default function ExpensesPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-8 text-gray-400 dark:text-neutral-500 text-sm">
-          Loading…
+        <div className="flex items-center justify-center py-12">
+          <Spinner />
         </div>
       )}
 

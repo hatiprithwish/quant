@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DebtTypeEnum } from "@/schemas";
 import type { WalletWithBalance } from "@/schemas";
 import { useMutationCreateDebt } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 interface Props {
   wallets: WalletWithBalance[];
@@ -177,9 +178,9 @@ export default function AddDebtModal({ wallets, onClose }: Props) {
             <button
               type="submit"
               disabled={createDebt.isPending}
-              className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
-              {createDebt.isPending ? "Saving…" : "Save"}
+              {createDebt.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
             </button>
           </div>
         </form>

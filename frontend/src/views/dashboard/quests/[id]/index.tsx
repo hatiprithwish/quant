@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useGetQuestDetail } from "@/api/cachedQueries";
+import Spinner from "@/components/common/Spinner";
 import {
   useMutationUpdateTaskStatus,
   useMutationCreateTask,
@@ -78,7 +79,7 @@ export default function QuestDetailPage() {
   const [addingMilestone, setAddingMilestone] = useState(false);
 
   if (isLoading) {
-    return <div className="text-center py-16 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>;
+    return <div className="flex items-center justify-center py-16"><Spinner /></div>;
   }
 
   if (error || !data) {

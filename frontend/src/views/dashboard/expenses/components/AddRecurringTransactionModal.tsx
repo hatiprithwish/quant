@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MoneyCategoryTypeEnum, RecurringTransactionTypeEnum, RecurringTransactionPeriodEnum, RecurringEndConditionEnum } from "@/schemas";
 import type { WalletWithBalance } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 import { useGetMoneyCategories, useGetInvestments } from "@/api/cachedQueries";
 import {
   useMutationCreateRecurringTransaction,
@@ -529,9 +530,9 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
-              {isPending ? "Saving…" : editing ? "Save Changes" : "Add Recurring"}
+              {isPending ? <><Spinner size="sm" /> Saving…</> : editing ? "Save Changes" : "Add Recurring"}
             </button>
           </div>
         </form>

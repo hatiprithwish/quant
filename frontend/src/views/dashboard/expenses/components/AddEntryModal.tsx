@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { WalletWithBalance } from "@/schemas";
 import { MoneyCategoryTypeEnum } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 import { useGetMoneyCategories } from "@/api/cachedQueries";
 import {
   useMutationCreateExpense,
@@ -274,9 +275,9 @@ export default function AddEntryModal({ wallets, from, to, onClose }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
-              {isPending ? "Saving…" : "Save"}
+              {isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
             </button>
           </div>
         </form>

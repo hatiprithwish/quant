@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { DebtEntry, WalletWithBalance } from "@/schemas";
 import { useMutationUpdateDebt, useMutationAddRepayment } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 interface Props {
   debt: DebtEntry;
@@ -204,9 +205,9 @@ export default function EditDebtModal({ debt, wallets, onClose }: Props) {
               <button
                 type="submit"
                 disabled={updateDebt.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
               >
-                {updateDebt.isPending ? "Saving…" : "Save"}
+                {updateDebt.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
               </button>
             </div>
           </form>
@@ -292,9 +293,9 @@ export default function EditDebtModal({ debt, wallets, onClose }: Props) {
                   <button
                     type="submit"
                     disabled={addRepayment.isPending}
-                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
                   >
-                    {addRepayment.isPending ? "Saving…" : "Add Repayment"}
+                    {addRepayment.isPending ? <><Spinner size="sm" /> Saving…</> : "Add Repayment"}
                   </button>
                 </div>
               </>

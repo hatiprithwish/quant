@@ -6,6 +6,7 @@ import {
   useMutationDeleteWallet,
   useGetWalletRecordCount,
 } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 interface Props {
   wallet: WalletWithBalance;
@@ -103,9 +104,9 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleteMutation.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {deleteMutation.isPending ? "Deleting…" : "Yes, Delete"}
+                {deleteMutation.isPending ? <><Spinner size="sm" /> Deleting…</> : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -186,9 +187,9 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
               >
-                {updateMutation.isPending ? "Saving…" : "Save"}
+                {updateMutation.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
               </button>
             </div>
           </form>

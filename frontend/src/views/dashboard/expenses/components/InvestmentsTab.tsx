@@ -12,6 +12,7 @@ import {
   useMutationUpdateAssetValue,
 } from "@/api/mutations";
 import type { AccountEntry, AssetEntry } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 import {
   LineChart,
   Line,
@@ -280,9 +281,9 @@ function AddCashFlowModal({
           <button
             onClick={submit}
             disabled={addFlow.isPending}
-            className="px-4 py-2 text-sm bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
           >
-            {addFlow.isPending ? "Saving…" : "Add"}
+            {addFlow.isPending ? <><Spinner size="sm" /> Saving…</> : "Add"}
           </button>
         </div>
       </div>
@@ -342,9 +343,9 @@ function EditValueModal({
           <button
             onClick={submit}
             disabled={updateValue.isPending}
-            className="px-4 py-2 text-sm bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-gray-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
           >
-            {updateValue.isPending ? "Saving…" : "Save"}
+            {updateValue.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
           </button>
         </div>
       </div>

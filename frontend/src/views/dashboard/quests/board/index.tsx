@@ -3,6 +3,7 @@ import { useGetQuestsKanban } from "@/api/cachedQueries";
 import { useMutationUpdateTaskStatus } from "@/api/mutations";
 import { TaskStatusEnum, questCategoryIcon } from "@/schemas";
 import type { KanbanTask } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 
 function TaskCard({ task }: { task: KanbanTask }) {
   const update = useMutationUpdateTaskStatus();
@@ -94,7 +95,7 @@ export default function QuestsBoardPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-sm">Loading…</div>
+        <div className="flex items-center justify-center py-12"><Spinner /></div>
       )}
 
       {error && (
