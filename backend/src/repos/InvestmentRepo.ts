@@ -22,39 +22,6 @@ import {
   UpdateAssetValueRequest,
 } from "../schemas";
 
-function computeXirr(
-  cashFlows: { amount: number; date: string }[],
-  terminalValue: number,
-  terminalDate: string,
-): number | null {
-  if (cashFlows.length === 0 || terminalValue <= 0) return null;
-
-  const allFlows = [
-    ...cashFlows.map((cf) => ({ amount: -cf.amount, date: cf.date })),
-    { amount: terminalValue, date: terminalDate },
-  ];
-
-  const dates = allFlows.map((f) => new Date(f.date).getTime());
-  const t0 = dates[0];
-  const amounts = allFlows.map((f) => f.amount);
-  const years = dates.map((d) => (d - t0) / (365.25 * 24 * 3600 * 1000));
-
-  function npv(rate: number): number {
-    return amounts.reduce((sum, amt, i) => sum + amt / Math.pow(1 + rate, years[i]), 0);
-  }
-
-  let lo = -0.999;
-  let hi = 100;
-  for (let i = 0; i < 200; i++) {
-    const mid = (lo + hi) / 2;
-    if (npv(mid) > 0) lo = mid;
-    else hi = mid;
-    if (hi - lo < 1e-8) break;
-  }
-  const result = (lo + hi) / 2;
-  if (!isFinite(result) || isNaN(result)) return null;
-  return Math.round(result * 10000) / 100;
-}
 
 function buildAssetEntry(
   asset: { id: number; name: string },
@@ -65,17 +32,12 @@ function buildAssetEntry(
   const latestSnapshot = sortedSnapshots.at(-1) ?? null;
   const investedAmount = flows.reduce((s, f) => s + f.amount, 0);
 
-  const xirr = latestSnapshot
-    ? computeXirr(flows, latestSnapshot.value, latestSnapshot.snapshot_date)
-    : null;
-
   return {
     id: asset.id,
     name: asset.name,
     current_value: latestSnapshot?.value ?? null,
     last_snapshot_date: latestSnapshot?.snapshot_date ?? null,
     invested_amount: investedAmount,
-    xirr,
     cash_flows: flows.map((f) => ({
       id: f.id,
       amount: f.amount,
@@ -99,7 +61,7 @@ export class InvestmentRepo {
       return {
         isSuccess: true,
         message: "Investments retrieved",
-        summary: { total_current_value: 0, total_invested: 0, xirr: null },
+        summary: { total_current_value: 0, total_invested: 0 },
         accounts: [],
       };
     }
@@ -139,48 +101,21 @@ export class InvestmentRepo {
       const accountCurrentValue = assetEntries.reduce((s, a) => s + (a.current_value ?? 0), 0);
       const accountInvested = assetEntries.reduce((s, a) => s + a.invested_amount, 0);
 
-      const allAccFlows = assetEntries.flatMap((a) =>
-        a.cash_flows.map((cf) => ({ amount: cf.amount, date: cf.date })),
-      );
-      const latestSnapDate = assetEntries
-        .map((a) => a.last_snapshot_date)
-        .filter(Boolean)
-        .sort()
-        .at(-1) ?? null;
-
-      const accountXirr = latestSnapDate
-        ? computeXirr(allAccFlows, accountCurrentValue, latestSnapDate)
-        : null;
-
       return {
         id: acc.id,
         name: acc.name,
         current_value: accountCurrentValue,
         invested_amount: accountInvested,
-        xirr: accountXirr,
         assets: assetEntries,
       };
     });
 
     const totalCurrentValue = accounts.reduce((s, a) => s + a.current_value, 0);
     const totalInvested = accounts.reduce((s, a) => s + a.invested_amount, 0);
-    const allPortfolioFlows = accounts.flatMap((a) =>
-      a.assets.flatMap((asset) => asset.cash_flows.map((cf) => ({ amount: cf.amount, date: cf.date }))),
-    );
-    const latestPortfolioDate = accounts
-      .flatMap((a) => a.assets.map((asset) => asset.last_snapshot_date))
-      .filter(Boolean)
-      .sort()
-      .at(-1) ?? null;
-
-    const portfolioXirr = latestPortfolioDate
-      ? computeXirr(allPortfolioFlows, totalCurrentValue, latestPortfolioDate)
-      : null;
 
     const summary: PortfolioSummary = {
       total_current_value: totalCurrentValue,
       total_invested: totalInvested,
-      xirr: portfolioXirr,
     };
 
     return { isSuccess: true, message: "Investments retrieved", summary, accounts };
@@ -191,7 +126,7 @@ export class InvestmentRepo {
     return {
       isSuccess: true,
       message: "Account created",
-      account: { id: acc.id, name: acc.name, current_value: 0, invested_amount: 0, xirr: null },
+      account: { id: acc.id, name: acc.name, current_value: 0, invested_amount: 0 },
     };
   }
 
@@ -201,7 +136,7 @@ export class InvestmentRepo {
     return {
       isSuccess: true,
       message: "Account updated",
-      account: { id: acc.id, name: acc.name, current_value: 0, invested_amount: 0, xirr: null },
+      account: { id: acc.id, name: acc.name, current_value: 0, invested_amount: 0 },
     };
   }
 

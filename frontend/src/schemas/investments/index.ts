@@ -21,7 +21,6 @@ export interface AssetEntry {
   current_value: number | null;
   last_snapshot_date: string | null;
   invested_amount: number;
-  xirr: number | null;
   cash_flows: CashFlowEntry[];
   snapshots: ValueSnapshotEntry[];
 }
@@ -31,14 +30,12 @@ export interface AccountEntry {
   name: string;
   current_value: number;
   invested_amount: number;
-  xirr: number | null;
   assets: AssetEntry[];
 }
 
 export interface PortfolioSummary {
   total_current_value: number;
   total_invested: number;
-  xirr: number | null;
 }
 
 export interface GetInvestmentsResponse extends ApiResponse {

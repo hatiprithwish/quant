@@ -26,15 +26,13 @@ function fmt(n: number) {
   return "₹" + n.toLocaleString("en-IN");
 }
 
-function xirrColor(x: number | null) {
-  if (x === null) return "text-gray-400 dark:text-neutral-500";
-  if (x >= 0) return "text-emerald-500";
-  return "text-red-400";
-}
-
-function xirrLabel(x: number | null) {
-  if (x === null) return "—";
-  return (x >= 0 ? "+" : "") + x.toFixed(1) + "%";
+function pctReturn(currentValue: number | null, invested: number): { label: string; color: string } {
+  if (currentValue === null || invested === 0) return { label: "—", color: "text-gray-400 dark:text-neutral-500" };
+  const pct = ((currentValue - invested) / invested) * 100;
+  return {
+    label: (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%",
+    color: pct >= 0 ? "text-emerald-500" : "text-red-400",
+  };
 }
 
 // ── Graph helpers ─────────────────────────────────────────────────────────────
@@ -384,27 +382,34 @@ function AssetDetail({
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-5">
-        <StatCard
-          label="Current Value"
-          value={asset.current_value !== null ? fmt(asset.current_value) : "—"}
-          sub={asset.last_snapshot_date ? `as of ${asset.last_snapshot_date}` : undefined}
-        />
+        <div className="bg-gray-50 dark:bg-neutral-800/60 rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-neutral-500 uppercase">Current Value</div>
+            <button
+              onClick={() => setShowEditValue(true)}
+              className="text-gray-400 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-white transition-colors"
+              title="Edit current value"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+          </div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">{asset.current_value !== null ? fmt(asset.current_value) : "—"}</div>
+          {asset.last_snapshot_date && <div className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">as of {asset.last_snapshot_date}</div>}
+        </div>
         <StatCard label="Invested" value={fmt(asset.invested_amount)} />
         <div className="bg-gray-50 dark:bg-neutral-800/60 rounded-xl px-4 py-3">
-          <div className="flex items-center gap-1 text-[10px] font-bold tracking-widest text-gray-400 dark:text-neutral-500 uppercase mb-1">
-            XIRR
-            <span title="XIRR is computed as of the last time current value was updated" className="cursor-help text-gray-300 dark:text-neutral-600">ⓘ</span>
-          </div>
-          <div className={`text-lg font-bold ${xirrColor(asset.xirr)}`}>{xirrLabel(asset.xirr)}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-neutral-500 uppercase mb-1">Return</div>
+          {(() => {
+            if (asset.current_value === null || asset.invested_amount === 0) return <div className="text-lg font-bold text-gray-400 dark:text-neutral-500">—</div>;
+            const pct = ((asset.current_value - asset.invested_amount) / asset.invested_amount) * 100;
+            const color = pct >= 0 ? "text-emerald-500" : "text-red-400";
+            return <div className={`text-lg font-bold ${color}`}>{(pct >= 0 ? "+" : "") + pct.toFixed(1) + "%"}</div>;
+          })()}
         </div>
       </div>
-
-      <button
-        onClick={() => setShowEditValue(true)}
-        className="mb-5 px-4 py-2 text-sm bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors font-medium"
-      >
-        ✏️ Edit Current Value
-      </button>
 
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Cash Flows</h3>
@@ -504,8 +509,8 @@ function AccountDetail({
         <StatCard label="Value" value={fmt(account.current_value)} />
         <StatCard label="Invested" value={fmt(account.invested_amount)} />
         <div className="bg-gray-50 dark:bg-neutral-800/60 rounded-xl px-4 py-3">
-          <div className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-neutral-500 uppercase mb-1">XIRR</div>
-          <div className={`text-lg font-bold ${xirrColor(account.xirr)}`}>{xirrLabel(account.xirr)}</div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-neutral-500 uppercase mb-1">Return</div>
+          {(() => { const r = pctReturn(account.current_value, account.invested_amount); return <div className={`text-lg font-bold ${r.color}`}>{r.label}</div>; })()}
         </div>
       </div>
 
@@ -542,7 +547,7 @@ function AccountDetail({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-sm font-semibold ${xirrColor(asset.xirr)}`}>{xirrLabel(asset.xirr)}</span>
+                {(() => { const r = pctReturn(asset.current_value, asset.invested_amount); return <span className={`text-sm font-semibold ${r.color}`}>{r.label}</span>; })()}
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteAsset.mutate(asset.id); }}
                   className="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-neutral-600 hover:text-red-400 text-xs transition-all"
@@ -588,7 +593,7 @@ export default function InvestmentsTab() {
     return <div className="text-center py-8 text-gray-400 dark:text-neutral-500 text-sm">Loading…</div>;
   }
 
-  const summary = data?.summary ?? { total_current_value: 0, total_invested: 0, xirr: null };
+  const summary = data?.summary ?? { total_current_value: 0, total_invested: 0 };
   const accounts = data?.accounts ?? [];
 
   // If drilling into account, show account detail
@@ -616,7 +621,7 @@ export default function InvestmentsTab() {
         <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{fmt(summary.total_current_value)}</div>
         <div className="flex gap-4 text-xs text-gray-500 dark:text-neutral-400 mb-4">
           <span>Invested {fmt(summary.total_invested)}</span>
-          <span className={xirrColor(summary.xirr)}>XIRR {xirrLabel(summary.xirr)}</span>
+          {(() => { const r = pctReturn(summary.total_current_value, summary.total_invested); return <span className={r.color}>{r.label}</span>; })()}
         </div>
         {portfolioData.length >= 2 && <MiniGraph data={portfolioData} />}
       </div>
@@ -649,7 +654,7 @@ export default function InvestmentsTab() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-sm font-semibold ${xirrColor(account.xirr)}`}>{xirrLabel(account.xirr)}</span>
+                {(() => { const r = pctReturn(account.current_value, account.invested_amount); return <span className={`text-sm font-semibold ${r.color}`}>{r.label}</span>; })()}
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteAccount.mutate(account.id); }}
                   className="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-neutral-600 hover:text-red-400 text-xs transition-all"

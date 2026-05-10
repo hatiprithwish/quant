@@ -85,10 +85,13 @@ export default function DebtDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const typeParam = searchParams.get("type") as FilterType | null;
+  const statusParam = searchParams.get("status") as StatusFilter | null;
   const [activeFilter, setActiveFilter] = useState<FilterType>(
     typeParam ?? "lent",
   );
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    statusParam === "all" ? "all" : "active",
+  );
   const [showAddDebt, setShowAddDebt] = useState(false);
   const [editingDebt, setEditingDebt] = useState<DebtEntry | null>(null);
 
@@ -112,7 +115,12 @@ export default function DebtDetailPage() {
 
   function switchFilter(f: FilterType) {
     setActiveFilter(f);
-    setSearchParams({ type: f });
+    setSearchParams((prev) => { prev.set("type", f); return prev; });
+  }
+
+  function switchStatus(s: StatusFilter) {
+    setStatusFilter(s);
+    setSearchParams((prev) => { prev.set("status", s); return prev; });
   }
 
   return (
@@ -178,7 +186,7 @@ export default function DebtDetailPage() {
           {(["active", "all"] as const).map((s) => (
             <button
               key={s}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => switchStatus(s)}
               className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors ${
                 statusFilter === s
                   ? "bg-gray-900 dark:bg-white text-white dark:text-black"

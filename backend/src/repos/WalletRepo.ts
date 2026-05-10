@@ -59,7 +59,7 @@ export class WalletRepo {
       db,
     );
 
-    if (req.initial_balance && req.initial_balance > 0) {
+    if (req.initial_balance !== undefined && req.initial_balance !== null) {
       const incomeCategories = await MoneyCategoryDAL.findByType(req.userId, MoneyCategoryTypeEnum.Income, db);
       const openingBalanceCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
       if (openingBalanceCat) {
@@ -128,7 +128,7 @@ export class WalletRepo {
         } else {
           const incomeCategories = await MoneyCategoryDAL.findByType(req.userId, MoneyCategoryTypeEnum.Income, db);
           const openingBalanceCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
-          if (openingBalanceCat && adjustment > 0) {
+          if (openingBalanceCat && adjustment !== 0) {
             await DepositDAL.insert(
               {
                 userId: req.userId,

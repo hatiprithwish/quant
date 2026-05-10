@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   useGetExpenses,
   useGetTransactions,
@@ -176,8 +177,17 @@ function DateRangeDropdown({
   );
 }
 
+const VALID_TABS: Tab[] = ["dashboard", "transactions", "categories", "lending", "investments"];
+
 export default function ExpensesPage() {
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const tab: Tab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : "dashboard";
+
+  function setTab(t: Tab) {
+    setSearchParams((prev) => { prev.set("tab", t); return prev; });
+  }
+
   const [from, setFrom] = useState(startOfMonth());
   const [to, setTo] = useState(today());
   const [showAddEntry, setShowAddEntry] = useState(false);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useGetQuestsDashboard } from "@/api/cachedQueries";
 import QuestCard from "./components/QuestCard";
 import XpHeroStrip from "./components/XpHeroStrip";
@@ -52,10 +52,24 @@ const STATUS_FILTERS = [
   { label: "Done", value: QuestStatusEnum.Done },
 ];
 
+const VALID_QUEST_STATUSES = [QuestStatusEnum.Active, QuestStatusEnum.Paused, QuestStatusEnum.Done] as const;
+
 export default function QuestsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusParam = searchParams.get("status") as QuestStatusEnum | null;
+  const statusFilter: QuestStatusEnum | null =
+    statusParam && (VALID_QUEST_STATUSES as readonly string[]).includes(statusParam) ? statusParam : null;
+
+  function setStatusFilter(s: QuestStatusEnum | null) {
+    setSearchParams((prev) => {
+      if (s === null) prev.delete("status");
+      else prev.set("status", s);
+      return prev;
+    });
+  }
+
   const [from, setFrom] = useState(daysAgo(6));
   const [to, setTo] = useState(today());
-  const [statusFilter, setStatusFilter] = useState<QuestStatusEnum | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
   const { data, isLoading, error } = useGetQuestsDashboard(from, to);

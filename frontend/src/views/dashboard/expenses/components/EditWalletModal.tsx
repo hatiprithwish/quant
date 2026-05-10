@@ -17,6 +17,7 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
   const [type, setType] = useState<WalletTypeEnum>(wallet.type);
   const [creditLimit, setCreditLimit] = useState(wallet.credit_limit?.toString() ?? "");
   const [currentBalance, setCurrentBalance] = useState(wallet.balance.toString());
+  const [balanceChanged, setBalanceChanged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteStep, setDeleteStep] = useState<"idle" | "checking" | "confirm">("idle");
   const [recordCount, setRecordCount] = useState(0);
@@ -35,7 +36,7 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
         name: name.trim(),
         type,
         credit_limit: type === WalletTypeEnum.Credit && creditLimit ? Number(creditLimit) : null,
-        current_balance: isNaN(desiredBalance) ? undefined : desiredBalance,
+        current_balance: balanceChanged && !isNaN(desiredBalance) ? desiredBalance : undefined,
       });
       onClose();
     } catch {
@@ -145,7 +146,7 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
               <input
                 type="number"
                 value={currentBalance}
-                onChange={(e) => setCurrentBalance(e.target.value)}
+                onChange={(e) => { setCurrentBalance(e.target.value); setBalanceChanged(true); }}
                 className="w-full text-sm border border-gray-200 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-neutral-500"
               />
               <p className="mt-1 text-xs text-gray-400 dark:text-neutral-500">Adjust to match your actual balance. Difference added/subtracted from opening balance.</p>
