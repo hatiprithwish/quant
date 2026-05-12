@@ -386,6 +386,7 @@ export interface UpdateTimeBucketInput {
   name?: string;
   color?: string;
   is_distraction?: boolean;
+  is_archived?: boolean;
   quest_id?: string | null;
 }
 
@@ -418,6 +419,56 @@ export function useMutationDeleteTimeBucket() {
       apiClient.delete<{ isSuccess: boolean; message: string }>(`/api/time-bucket/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/time-bucket"] });
+    },
+  });
+}
+
+// ── Time entry mutations (backend pending) ────────────────────────────────────
+
+export interface CreateTimeEntryInput {
+  bucket_id: number;
+  activity: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface UpdateTimeEntryInput {
+  bucket_id?: number;
+  activity?: string;
+  start_time?: string;
+  end_time?: string;
+}
+
+export function useMutationCreateTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateTimeEntryInput) =>
+      apiClient.post<{ isSuccess: boolean; id: number }>("/api/time-entry", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/time"] });
+    },
+  });
+}
+
+export function useMutationUpdateTimeEntry(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateTimeEntryInput) =>
+      apiClient.patch<{ isSuccess: boolean }>(`/api/time-entry/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/time"] });
+    },
+  });
+}
+
+export function useMutationDeleteTimeEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<{ isSuccess: boolean }>(`/api/time-entry/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/query/time"] });
     },
   });
 }

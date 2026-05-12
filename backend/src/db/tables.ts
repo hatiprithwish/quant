@@ -140,6 +140,7 @@ export const timeBuckets = sqliteTable("time_buckets", {
   name: text("name").notNull(),
   color: text("color").notNull(),
   is_distraction: integer("is_distraction").notNull().default(0),
+  is_archived: integer("is_archived").notNull().default(0),
   quest_id: text("quest_id"),
   created_at: text("created_at")
     .notNull()
@@ -165,6 +166,7 @@ export const timeLogs = sqliteTable("time_logs", {
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
+  deleted_at: text("deleted_at"),
 });
 
 export const oauthAuthCodes = sqliteTable("oauth_auth_codes", {

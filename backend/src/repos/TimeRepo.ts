@@ -3,8 +3,13 @@ import { TimeDAL } from "../data-access-layer/TimeDAL";
 import {
   LogTimeRepoRequest,
   TimeQueryRepoRequest,
+  CreateTimeEntryRepoRequest,
+  UpdateTimeEntryRepoRequest,
   LogTimeResponse,
   GetTimeSummaryResponse,
+  CreateTimeEntryResponse,
+  UpdateTimeEntryResponse,
+  DeleteTimeEntryResponse,
   DayTimeSummary,
   BucketSummary,
   TimeActivity,
@@ -110,5 +115,43 @@ export class TimeRepo {
       totalMinutes,
       byBucket,
     };
+  }
+
+  static async createEntry(
+    req: CreateTimeEntryRepoRequest,
+    db: DrizzleDb,
+  ): Promise<CreateTimeEntryResponse> {
+    const rows = await TimeDAL.insertOne(
+      {
+        user_id: req.userId,
+        date: req.date,
+        bucket_id: req.bucket_id,
+        activity: req.activity,
+        start_time: req.start_time,
+        end_time: req.end_time,
+      },
+      db,
+    );
+    return { isSuccess: true, message: "Entry created", id: rows[0].id };
+  }
+
+  static async updateEntry(
+    req: UpdateTimeEntryRepoRequest,
+    db: DrizzleDb,
+  ): Promise<UpdateTimeEntryResponse> {
+    await TimeDAL.update(
+      { id: req.id, userId: req.userId, bucket_id: req.bucket_id, activity: req.activity, start_time: req.start_time, end_time: req.end_time },
+      db,
+    );
+    return { isSuccess: true, message: "Entry updated" };
+  }
+
+  static async deleteEntry(
+    id: number,
+    userId: string,
+    db: DrizzleDb,
+  ): Promise<DeleteTimeEntryResponse> {
+    await TimeDAL.softDelete(id, userId, db);
+    return { isSuccess: true, message: "Entry deleted" };
   }
 }

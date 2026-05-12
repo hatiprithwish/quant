@@ -22,6 +22,7 @@ import { bodyMutationRoutes } from "./routes/BodyMutationRoutes";
 import { questsRoutes } from "./routes/QuestsRoutes";
 import { questsMutationRoutes } from "./routes/QuestsMutationRoutes";
 import { timeBucketsRoutes } from "./routes/TimeBucketsRoutes";
+import { timeEntryRoutes } from "./routes/TimeEntryRoutes";
 import { moneyCategoryRoutes } from "./routes/MoneyCategoryRoutes";
 import { investmentRoutes } from "./routes/InvestmentRoutes";
 import { handleMcpRequest } from "./mcp";
@@ -130,6 +131,7 @@ app.route("/api/body", bodyMutationRoutes);
 app.route("/api/query/quests", questsRoutes);
 app.route("/api/quest", questsMutationRoutes);
 app.route("/api/time-bucket", timeBucketsRoutes);
+app.route("/api/time-entry", timeEntryRoutes);
 app.route("/api/money-category", moneyCategoryRoutes);
 app.route("/api/investments", investmentRoutes);
 

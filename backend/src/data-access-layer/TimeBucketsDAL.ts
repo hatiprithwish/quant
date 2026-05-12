@@ -31,6 +31,7 @@ export class TimeBucketsDAL {
       name?: string;
       color?: string;
       is_distraction?: number;
+      is_archived?: number;
       quest_id?: string | null;
     },
     db: DrizzleDb,

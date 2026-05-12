@@ -6,7 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 const NAV_ITEMS = [
   { to: "/food",      label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
   { to: "/money",     label: "MONEY",  sub: "finance",   accent: "#f59e0b", glyph: "◉" },
-  { to: "/time",      label: "TIME",   sub: "tracking",  accent: "#3b82f6", glyph: "◎" },
+  { to: "/time",      label: "TIME",   sub: "tracking",  accent: "#06b6d4", glyph: "◎" },
   { to: "/body",      label: "BODY",   sub: "metrics",   accent: "#ec4899", glyph: "◍" },
   { to: "/quests",    label: "QUESTS", sub: "goals",     accent: "#a855f7", glyph: "◆" },
   { to: "/scratchpad",label: "SCRATCH",sub: "notes",     accent: "#64748b", glyph: "◇" },

@@ -13,3 +13,12 @@ export interface GetTimeLogsDbRequest {
   to: string;
   bucket_id: number | null;
 }
+
+export interface UpdateTimeLogDbRequest {
+  id: number;
+  userId: string;
+  bucket_id?: number;
+  activity?: string;
+  start_time?: string;
+  end_time?: string;
+}

@@ -5,6 +5,7 @@ export interface TimeBucketItem {
   name: string;
   color: string;
   is_distraction: boolean;
+  is_archived: boolean;
   quest_id: string | null;
   quest_name: string | null;
 }
