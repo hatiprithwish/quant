@@ -8,6 +8,7 @@ import {
   UpdateDebtDbRequest,
   AddRepaymentDbRequest,
 } from "../schemas";
+import { DebtStatusEnum } from "../schemas/debt/DebtEnum";
 
 export class DebtDAL {
   static async findAll(req: GetDebtsDbRequest, db: DrizzleDb) {
@@ -88,11 +89,11 @@ export class DebtDAL {
 
     const debtRow = await db.select().from(debts).where(eq(debts.id, req.debtId));
     const debtAmount = debtRow[0]?.amount ?? 0;
-    const newStatus = totalPaid >= debtAmount ? "settled" : totalPaid > 0 ? "in_motion" : "pending";
+    const newStatus = totalPaid >= debtAmount ? DebtStatusEnum.Settled : totalPaid > 0 ? DebtStatusEnum.InMotion : DebtStatusEnum.Pending;
 
     const updated = await db
       .update(debts)
-      .set({ paid_amount: totalPaid, status: newStatus as "pending" | "in_motion" | "settled" })
+      .set({ paid_amount: totalPaid, status: newStatus })
       .where(eq(debts.id, req.debtId))
       .returning();
 
