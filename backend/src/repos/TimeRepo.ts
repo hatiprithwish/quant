@@ -5,11 +5,13 @@ import {
   TimeQueryRepoRequest,
   CreateTimeEntryRepoRequest,
   UpdateTimeEntryRepoRequest,
+  GetBucketEntriesRepoRequest,
   LogTimeResponse,
   GetTimeSummaryResponse,
   CreateTimeEntryResponse,
   UpdateTimeEntryResponse,
   DeleteTimeEntryResponse,
+  GetBucketEntriesResponse,
   DayTimeSummary,
   BucketSummary,
   TimeActivity,
@@ -153,5 +155,45 @@ export class TimeRepo {
   ): Promise<DeleteTimeEntryResponse> {
     await TimeDAL.softDelete(id, userId, db);
     return { isSuccess: true, message: "Entry deleted" };
+  }
+
+  static async getBucketEntries(
+    req: GetBucketEntriesRepoRequest,
+    db: DrizzleDb,
+  ): Promise<GetBucketEntriesResponse> {
+    const { rows, total } = await TimeDAL.findByBucketPaginated(
+      {
+        userId: req.userId,
+        bucket_id: req.bucket_id,
+        search: req.search ?? null,
+        page: req.page,
+        page_size: req.page_size,
+      },
+      db,
+    );
+
+    const entries: TimeActivity[] = rows.map((row) => ({
+      id: row.id,
+      date: row.date,
+      bucket_id: row.bucket_id,
+      bucket_name: row.bucket_name,
+      bucket_color: row.bucket_color,
+      activity: row.activity,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      duration_minutes: computeDurationMinutes(row.start_time, row.end_time),
+    }));
+
+    const total_pages = Math.max(1, Math.ceil(total / req.page_size));
+
+    return {
+      isSuccess: true,
+      message: "Entries retrieved",
+      entries,
+      total,
+      page: req.page,
+      page_size: req.page_size,
+      total_pages,
+    };
   }
 }

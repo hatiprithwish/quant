@@ -22,3 +22,11 @@ export interface UpdateTimeLogDbRequest {
   start_time?: string;
   end_time?: string;
 }
+
+export interface GetBucketEntriesDbRequest {
+  userId: string;
+  bucket_id: number;
+  search: string | null;
+  page: number;
+  page_size: number;
+}

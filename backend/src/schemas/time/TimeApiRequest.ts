@@ -53,3 +53,12 @@ export const ZUpdateTimeEntryRequest = z.object({
 });
 export type UpdateTimeEntryRequest = z.infer<typeof ZUpdateTimeEntryRequest>;
 export type UpdateTimeEntryRepoRequest = UpdateTimeEntryRequest & { id: number; userId: string };
+
+export const ZGetBucketEntriesRequest = z.object({
+  bucket_id: z.coerce.number().int().positive(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).default(25),
+});
+export type GetBucketEntriesRequest = z.infer<typeof ZGetBucketEntriesRequest>;
+export type GetBucketEntriesRepoRequest = GetBucketEntriesRequest & { userId: string };

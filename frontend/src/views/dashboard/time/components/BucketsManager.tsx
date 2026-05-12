@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   useMutationCreateTimeBucket,
   useMutationUpdateTimeBucket,
@@ -223,6 +224,7 @@ interface BucketCardProps {
 function BucketCard({ bucket, questNames }: BucketCardProps) {
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const navigate = useNavigate();
 
   const update = useMutationUpdateTimeBucket(bucket.id);
   const del = useMutationDeleteTimeBucket();
@@ -283,6 +285,7 @@ function BucketCard({ bucket, questNames }: BucketCardProps) {
           />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
+              onClick={() => navigate(`/time/bucket/${bucket.id}`)}
               style={{
                 fontFamily: G,
                 fontSize: 12,
@@ -291,7 +294,11 @@ function BucketCard({ bucket, questNames }: BucketCardProps) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
+                cursor: "pointer",
+                transition: "color 0.15s",
               }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.color = A; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.color = bucket.is_archived ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.85)"; }}
             >
               {bucket.name}
             </div>

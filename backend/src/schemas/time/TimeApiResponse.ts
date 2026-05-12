@@ -43,3 +43,11 @@ export interface CreateTimeEntryResponse extends ApiResponse {
 export interface UpdateTimeEntryResponse extends ApiResponse {}
 
 export interface DeleteTimeEntryResponse extends ApiResponse {}
+
+export interface GetBucketEntriesResponse extends ApiResponse {
+  entries: TimeActivity[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

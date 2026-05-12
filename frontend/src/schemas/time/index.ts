@@ -45,3 +45,11 @@ export interface GetTimeSummaryResponse extends ApiResponse {
   totalMinutes: number;
   byBucket: { bucket_id: number; bucket_name: string; bucket_color: string; total_minutes: number }[];
 }
+
+export interface GetBucketEntriesResponse extends ApiResponse {
+  entries: TimeActivity[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

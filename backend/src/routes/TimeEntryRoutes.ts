@@ -4,12 +4,33 @@ import { Env, Variables } from "../types";
 import { getDb } from "../db";
 import { TimeRepo } from "../repos/TimeRepo";
 import { clerkAuthMiddleware } from "../middlewares/clerkAuth";
-import { ZCreateTimeEntryRequest, ZUpdateTimeEntryRequest } from "../schemas";
+import { ZCreateTimeEntryRequest, ZUpdateTimeEntryRequest, ZGetBucketEntriesRequest } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
 import { generalRateLimiter } from "../middlewares/rateLimiter";
 
 const timeEntryRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+timeEntryRoutes.get(
+  "/",
+  clerkAuthMiddleware,
+  generalRateLimiter,
+  zValidator("query", ZGetBucketEntriesRequest),
+  async (c) => {
+    const correlationId = c.get("correlationId") ?? "unknown";
+    const userId = c.get("userId");
+    const query = c.req.valid("query");
+    const db = getDb(c.env.DB);
+    try {
+      const result = await TimeRepo.getBucketEntries({ ...query, userId }, db);
+      Logger.info({ correlationId, logCategory: AppConstants.LOG_CATEGORIES.HTTP, logAction: "GetBucketEntriesSuccess", message: "Bucket entries retrieved", metadata: { userId, bucket_id: query.bucket_id } });
+      return c.json(result, 200);
+    } catch (err) {
+      Logger.error({ correlationId, logCategory: AppConstants.LOG_CATEGORIES.DATABASE, logAction: "GetBucketEntriesFailure", message: "Failed to get bucket entries", error: err });
+      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+    }
+  },
+);
 
 timeEntryRoutes.post(
   "/",
