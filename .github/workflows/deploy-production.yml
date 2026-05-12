@@ -5,6 +5,9 @@ on:
     branches:
       - production
 
+permissions:
+  contents: read
+
 jobs:
   deploy-backend:
     name: Deploy Backend (Production)
