@@ -20,7 +20,7 @@ import {
 function computeDurationMinutes(started_at: string, ended_at: string): number {
   const start = new Date(started_at).getTime();
   const end = new Date(ended_at).getTime();
-  return Math.round((end - start) / 60000);
+  return Math.max(0, Math.round((end - start) / 60000));
 }
 
 export class TimeRepo {

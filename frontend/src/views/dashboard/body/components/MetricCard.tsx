@@ -2,29 +2,18 @@ import { useState } from "react";
 import type { BodyMetricItem } from "@/schemas";
 import { useGetBodyMeasurements } from "@/api/cachedQueries";
 import { useMutationDeleteBodyMetric } from "@/api/mutations";
-import DateRangeSelector from "@/components/common/DateRangeSelector";
+import DateRangeDropdown, { getPresetRange } from "@/components/common/DateRangeDropdown";
 import BodyChart from "./BodyChart";
 import EditMetricModal from "./EditMetricModal";
 import LogMeasurementModal from "./LogMeasurementModal";
-
-function defaultRange() {
-  const to = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - 29);
-  return {
-    from: from.toISOString().split("T")[0],
-    to: to.toISOString().split("T")[0],
-  };
-}
 
 interface Props {
   metric: BodyMetricItem;
 }
 
 export default function MetricCard({ metric }: Props) {
-  const range = defaultRange();
-  const [from, setFrom] = useState(range.from);
-  const [to, setTo] = useState(range.to);
+  const [from, setFrom] = useState(() => getPresetRange("thisMonth").from);
+  const [to, setTo] = useState(() => getPresetRange("thisMonth").to);
   const [showEdit, setShowEdit] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -106,8 +95,9 @@ export default function MetricCard({ metric }: Props) {
         )}
 
         {/* Date range */}
-        <DateRangeSelector
-          group="body"
+        <DateRangeDropdown
+          accent="#818cf8"
+          panelBg="#0a0a14"
           from={from}
           to={to}
           onChange={(f, t) => { setFrom(f); setTo(t); }}

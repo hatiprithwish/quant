@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   PieChart,
   Pie,
@@ -14,28 +14,11 @@ import {
 } from "recharts";
 import { useGetTime, useGetTimeBuckets } from "@/api/cachedQueries";
 import Spinner from "@/components/common/Spinner";
+import DateRangeDropdown, { getPresetRange } from "@/components/common/DateRangeDropdown";
 
 const G = "'JetBrains Mono','Fira Code',monospace";
 const A = "#06b6d4";
 
-function today() {
-  return new Date().toISOString().split("T")[0];
-}
-function daysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().split("T")[0];
-}
-function startOfMonth() {
-  const d = new Date();
-  d.setDate(1);
-  return d.toISOString().split("T")[0];
-}
-function startOfYear() {
-  const d = new Date();
-  d.setMonth(0, 1);
-  return d.toISOString().split("T")[0];
-}
 function fmtMins(mins: number) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -48,65 +31,412 @@ function fmtDate(iso: string) {
   return `${d}/${m}`;
 }
 
-const PRESETS = [
-  { label: "7D",     from: () => daysAgo(6),     to: () => today() },
-  { label: "30D",    from: () => daysAgo(29),    to: () => today() },
-  { label: "MONTH",  from: () => startOfMonth(),  to: () => today() },
-  { label: "YEAR",   from: () => startOfYear(),   to: () => today() },
-];
+// ── Pie legend ────────────────────────────────────────────────────────────────
 
-// ── Date range dropdown ───────────────────────────────────────────────────────
-
-function DateRangeDropdown({
-  from,
-  to,
-  onChange,
+function PieLegend({
+  data,
 }: {
-  from: string;
-  to: string;
-  onChange: (f: string, t: string) => void;
+  data: { name: string; color: string; mins: number }[];
+}) {
+  const total = data.reduce((s, d) => s + d.mins, 0);
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 5,
+        marginTop: 10,
+      }}
+    >
+      {data.map((d) => (
+        <div
+          key={d.name}
+          style={{ display: "flex", alignItems: "center", gap: 7 }}
+        >
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 2,
+              background: d.color,
+              flexShrink: 0,
+            }}
+          />
+          <div
+            style={{
+              flex: 1,
+              fontFamily: G,
+              fontSize: 9,
+              color: "rgba(255,255,255,0.65)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {d.name}
+          </div>
+          <div
+            style={{
+              fontFamily: G,
+              fontSize: 8,
+              color: "rgba(255,255,255,0.35)",
+              flexShrink: 0,
+            }}
+          >
+            {fmtMins(d.mins)}
+          </div>
+          <div
+            style={{
+              fontFamily: G,
+              fontSize: 8,
+              color: "rgba(255,255,255,0.25)",
+              width: 30,
+              textAlign: "right",
+              flexShrink: 0,
+            }}
+          >
+            {total > 0 ? Math.round((d.mins / total) * 100) : 0}%
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Entries grouped by bucket ─────────────────────────────────────────────────
+
+type EntryItem = {
+  id: number;
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
+  activity: string;
+  started_at: string;
+  ended_at: string;
+  duration_minutes: number;
+};
+
+interface BucketGroup {
+  bucket_id: number;
+  bucket_name: string;
+  bucket_color: string;
+  total_mins: number;
+  activities: EntryItem[];
+}
+
+function EntriesByBucket({ activities }: { activities: EntryItem[] }) {
+  const groups = useMemo((): BucketGroup[] => {
+    const map = new Map<number, BucketGroup>();
+    for (const a of activities) {
+      const dur = Math.max(0, a.duration_minutes);
+      if (!map.has(a.bucket_id)) {
+        map.set(a.bucket_id, {
+          bucket_id: a.bucket_id,
+          bucket_name: a.bucket_name,
+          bucket_color: a.bucket_color,
+          total_mins: 0,
+          activities: [],
+        });
+      }
+      const g = map.get(a.bucket_id)!;
+      g.total_mins += dur;
+      g.activities.push(a);
+    }
+    return Array.from(map.values()).sort((a, b) => b.total_mins - a.total_mins);
+  }, [activities]);
+
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const toggle = useCallback((id: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const totalCount = activities.length;
+
+  return (
+    <div
+      style={{
+        border: "1px solid rgba(6,182,212,0.1)",
+        borderRadius: 8,
+        overflow: "hidden",
+      }}
+    >
+      {/* Table header */}
+      <div
+        style={{
+          padding: "10px 16px",
+          borderBottom: "1px solid rgba(6,182,212,0.08)",
+          background: "rgba(6,182,212,0.04)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: G,
+            fontSize: 8,
+            letterSpacing: "0.18em",
+            fontWeight: 700,
+            color: "rgba(6,182,212,0.55)",
+          }}
+        >
+          ENTRIES
+        </div>
+        <div
+          style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.3)" }}
+        >
+          {totalCount} result{totalCount !== 1 ? "s" : ""}
+        </div>
+      </div>
+
+      {groups.length === 0 ? (
+        <div
+          style={{
+            padding: "40px 0",
+            textAlign: "center",
+            fontFamily: G,
+            fontSize: 9,
+            color: "rgba(6,182,212,0.3)",
+          }}
+        >
+          NO MATCHING ENTRIES
+        </div>
+      ) : (
+        groups.map((g) => {
+          const open = expanded.has(g.bucket_id);
+          return (
+            <div
+              key={g.bucket_id}
+              style={{ borderTop: "1px solid rgba(6,182,212,0.07)" }}
+            >
+              {/* Bucket header row */}
+              <button
+                onClick={() => toggle(g.bucket_id)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 16px",
+                  background: "rgba(6,182,212,0.04)",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "rgba(6,182,212,0.07)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "rgba(6,182,212,0.04)";
+                }}
+              >
+                <div
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: g.bucket_color,
+                    flexShrink: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    flex: 1,
+                    fontFamily: G,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    color: g.bucket_color,
+                  }}
+                >
+                  {g.bucket_name}
+                </div>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 8,
+                    color: "rgba(255,255,255,0.3)",
+                    marginRight: 6,
+                  }}
+                >
+                  {g.activities.length} session
+                  {g.activities.length !== 1 ? "s" : ""}
+                </div>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    color: "rgba(255,255,255,0.5)",
+                    width: 52,
+                    textAlign: "right",
+                    flexShrink: 0,
+                  }}
+                >
+                  {fmtMins(g.total_mins)}
+                </div>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 9,
+                    color: "rgba(6,182,212,0.4)",
+                    width: 14,
+                    textAlign: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {open ? "▾" : "▸"}
+                </div>
+              </button>
+
+              {/* Activity rows */}
+              {open &&
+                g.activities.map((a) => (
+                  <div
+                    key={a.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "7px 16px 7px 32px",
+                      borderTop: "1px solid rgba(6,182,212,0.04)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.background =
+                        "rgba(6,182,212,0.025)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.background =
+                        "transparent";
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontFamily: G,
+                        fontSize: 8,
+                        color: "rgba(6,182,212,0.3)",
+                        width: 40,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {a.started_at.slice(5, 10).replace("-", "/")}
+                    </div>
+                    <div
+                      style={{
+                        flex: 1,
+                        fontFamily: G,
+                        fontSize: 10,
+                        color: "rgba(255,255,255,0.7)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {a.activity}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: G,
+                        fontSize: 8,
+                        color: "rgba(6,182,212,0.35)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {a.started_at.slice(11, 16)} – {a.ended_at.slice(11, 16)}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: G,
+                        fontSize: 9,
+                        fontWeight: 700,
+                        color: "rgba(255,255,255,0.35)",
+                        width: 42,
+                        textAlign: "right",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {fmtMins(Math.max(0, a.duration_minutes))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+// ── BucketFilterDropdown ──────────────────────────────────────────────────────
+
+interface BucketOption { id: number; name: string; color: string }
+
+function BucketFilterDropdown({
+  buckets,
+  selected,
+  onToggle,
+  onClear,
+}: {
+  buckets: BucketOption[];
+  selected: number[];
+  onToggle: (id: number) => void;
+  onClear: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [lf, setLf] = useState(from);
-  const [lt, setLt] = useState(to);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setLf(from); }, [from]);
-  useEffect(() => { setLt(to); }, [to]);
   useEffect(() => {
-    function h(e: MouseEvent) {
+    function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const label =
-    from === to
-      ? from.slice(5).replace("-", "/")
-      : `${from.slice(5).replace("-", "/")} – ${to.slice(5).replace("-", "/")}`;
+    selected.length === 0
+      ? "All buckets"
+      : selected.length === 1
+        ? buckets.find((b) => b.id === selected[0])?.name ?? "1 bucket"
+        : `${selected.length} buckets`;
 
   return (
-    <div style={{ position: "relative" }} ref={ref}>
+    <div ref={ref} style={{ position: "relative" }}>
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((v) => !v)}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 6,
           padding: "5px 10px",
-          background: "rgba(6,182,212,0.07)",
-          border: "1px solid rgba(6,182,212,0.22)",
           borderRadius: 4,
+          border: "1px solid rgba(6,182,212,0.22)",
+          background: "rgba(6,182,212,0.07)",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
           fontFamily: G,
           fontSize: 10,
           letterSpacing: "0.08em",
           color: A,
-          cursor: "pointer",
-          whiteSpace: "nowrap",
         }}
       >
-        <span style={{ opacity: 0.55 }}>◷</span>
+        {selected.length > 0 && (
+          <div style={{ display: "flex", gap: 3 }}>
+            {selected.slice(0, 3).map((id) => {
+              const b = buckets.find((x) => x.id === id);
+              return b ? (
+                <div key={id} style={{ width: 6, height: 6, borderRadius: "50%", background: b.color }} />
+              ) : null;
+            })}
+          </div>
+        )}
         {label}
         <span style={{ opacity: 0.4, fontSize: 8 }}>▾</span>
       </button>
@@ -115,132 +445,85 @@ function DateRangeDropdown({
         <div
           style={{
             position: "absolute",
+            top: "calc(100% + 4px)",
             left: 0,
-            top: "calc(100% + 6px)",
-            zIndex: 50,
-            background: "#020c10",
+            zIndex: 100,
+            background: "#0a1015",
             border: "1px solid rgba(6,182,212,0.18)",
-            borderRadius: 6,
-            padding: 12,
-            minWidth: "15rem",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-            fontFamily: G,
+            borderRadius: 4,
+            minWidth: 180,
+            maxHeight: 280,
+            overflowY: "auto",
+            padding: "4px 0",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
           }}
         >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-            {PRESETS.map((p) => {
-              const pf = p.from();
-              const pt = p.to();
-              const active = from === pf && to === pt;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => { onChange(pf, pt); setOpen(false); }}
-                  style={{
-                    padding: "3px 8px",
-                    borderRadius: 3,
-                    fontSize: 9,
-                    letterSpacing: "0.1em",
-                    fontFamily: "inherit",
-                    cursor: "pointer",
-                    border: "1px solid",
-                    background: active ? A : "transparent",
-                    borderColor: active ? A : "rgba(6,182,212,0.2)",
-                    color: active ? "#000" : "rgba(6,182,212,0.6)",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input
-              type="date"
-              value={lf}
-              max={lt}
-              onChange={(e) => {
-                setLf(e.target.value);
-                if (e.target.value && lt && e.target.value <= lt) onChange(e.target.value, lt);
-              }}
+          {selected.length > 0 && (
+            <button
+              onClick={() => { onClear(); setOpen(false); }}
               style={{
-                flex: 1,
-                minWidth: 0,
-                fontSize: 9,
-                border: "1px solid rgba(6,182,212,0.2)",
-                borderRadius: 3,
-                padding: "4px 6px",
-                background: "#020c10",
-                color: A,
-                fontFamily: "inherit",
-                outline: "none",
-                colorScheme: "dark",
-              } as React.CSSProperties}
-            />
-            <span style={{ color: "rgba(6,182,212,0.3)", fontSize: 10 }}>→</span>
-            <input
-              type="date"
-              value={lt}
-              min={lf}
-              max={today()}
-              onChange={(e) => {
-                setLt(e.target.value);
-                if (e.target.value && lf && lf <= e.target.value) onChange(lf, e.target.value);
+                width: "100%",
+                padding: "6px 12px",
+                background: "transparent",
+                border: "none",
+                borderBottom: "1px solid rgba(6,182,212,0.08)",
+                cursor: "pointer",
+                textAlign: "left",
+                fontFamily: G,
+                fontSize: 8,
+                letterSpacing: "0.18em",
+                color: "rgba(6,182,212,0.5)",
               }}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                fontSize: 9,
-                border: "1px solid rgba(6,182,212,0.2)",
-                borderRadius: 3,
-                padding: "4px 6px",
-                background: "#020c10",
-                color: A,
-                fontFamily: "inherit",
-                outline: "none",
-                colorScheme: "dark",
-              } as React.CSSProperties}
-            />
-          </div>
+            >
+              CLEAR ALL
+            </button>
+          )}
+          {buckets.map((b) => {
+            const active = selected.includes(b.id);
+            return (
+              <button
+                key={b.id}
+                onClick={() => onToggle(b.id)}
+                style={{
+                  width: "100%",
+                  padding: "7px 12px",
+                  background: active ? "rgba(6,182,212,0.07)" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: b.color, opacity: active ? 1 : 0.35, flexShrink: 0 }} />
+                <span style={{ fontFamily: G, fontSize: 9, letterSpacing: "0.08em", color: active ? A : "rgba(6,182,212,0.45)", flex: 1, textAlign: "left" }}>
+                  {b.name}
+                </span>
+                {active && (
+                  <span style={{ fontSize: 9, color: A, opacity: 0.7 }}>✓</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-// ── Custom pie label ──────────────────────────────────────────────────────────
-
-function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: {
-  cx: number; cy: number; midAngle: number;
-  innerRadius: number; outerRadius: number;
-  percent: number;
-}) {
-  if (percent < 0.06) return null;
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  return (
-    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central"
-      style={{ fontFamily: G, fontSize: 9, fontWeight: 700 }}>
-      {Math.round(percent * 100)}%
-    </text>
-  );
-}
-
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function TimeReports() {
-  const [from, setFrom] = useState(daysAgo(29));
-  const [to, setTo] = useState(today());
+  const [from, setFrom] = useState(() => getPresetRange("thisWeek").from);
+  const [to, setTo] = useState(() => getPresetRange("thisWeek").to);
   const [selectedBuckets, setSelectedBuckets] = useState<number[]>([]);
   const [search, setSearch] = useState("");
 
   const { data, isLoading, error } = useGetTime(from, to);
   const { data: bucketsData } = useGetTimeBuckets();
 
-  const activeBuckets = bucketsData?.buckets.filter((b) => !b.is_archived) ?? [];
+  const activeBuckets =
+    bucketsData?.buckets.filter((b) => !b.is_archived) ?? [];
 
   function toggleBucket(id: number) {
     setSelectedBuckets((prev) =>
@@ -257,8 +540,13 @@ export default function TimeReports() {
         ),
       )
       .filter((a) => {
-        if (selectedBuckets.length > 0 && !selectedBuckets.includes(a.bucket_id)) return false;
-        if (search && !a.activity.toLowerCase().includes(search.toLowerCase())) return false;
+        if (
+          selectedBuckets.length > 0 &&
+          !selectedBuckets.includes(a.bucket_id)
+        )
+          return false;
+        if (search && !a.activity.toLowerCase().includes(search.toLowerCase()))
+          return false;
         return true;
       })
       .sort((a, b) => b.started_at.localeCompare(a.started_at));
@@ -266,26 +554,46 @@ export default function TimeReports() {
 
   const pieData = useMemo(() => {
     if (!data) return [];
-    const bucketMap: Record<number, { name: string; color: string; mins: number }> = {};
+    const bucketMap: Record<
+      number,
+      { name: string; color: string; mins: number }
+    > = {};
     filteredActivities.forEach((a) => {
+      const dur = Math.max(0, a.duration_minutes);
       if (!bucketMap[a.bucket_id]) {
-        bucketMap[a.bucket_id] = { name: a.bucket_name, color: a.bucket_color, mins: 0 };
+        bucketMap[a.bucket_id] = {
+          name: a.bucket_name,
+          color: a.bucket_color,
+          mins: 0,
+        };
       }
-      bucketMap[a.bucket_id].mins += a.duration_minutes;
+      bucketMap[a.bucket_id].mins += dur;
     });
-    return Object.values(bucketMap).sort((a, b) => b.mins - a.mins);
+    return Object.values(bucketMap)
+      .filter((b) => b.mins > 0)
+      .sort((a, b) => b.mins - a.mins);
   }, [filteredActivities, data]);
 
-  const barData = useMemo((): { rows: Record<string, string | number>[]; bucketNames: string[]; bucketColorMap: Record<string, string> } => {
-    const bucketNames = [...new Set(filteredActivities.map((a) => a.bucket_name))];
+  const barData = useMemo((): {
+    rows: Record<string, string | number>[];
+    bucketNames: string[];
+    bucketColorMap: Record<string, string>;
+  } => {
+    const bucketNames = [
+      ...new Set(filteredActivities.map((a) => a.bucket_name)),
+    ];
     const bucketColorMap: Record<string, string> = {};
-    filteredActivities.forEach((a) => { bucketColorMap[a.bucket_name] = a.bucket_color; });
+    filteredActivities.forEach((a) => {
+      bucketColorMap[a.bucket_name] = a.bucket_color;
+    });
 
     const dayMap: Record<string, Record<string, number>> = {};
     filteredActivities.forEach((a) => {
       const date = a.started_at.slice(0, 10);
       if (!dayMap[date]) dayMap[date] = {};
-      dayMap[date][a.bucket_name] = (dayMap[date][a.bucket_name] ?? 0) + a.duration_minutes / 60;
+      dayMap[date][a.bucket_name] =
+        (dayMap[date][a.bucket_name] ?? 0) +
+        Math.max(0, a.duration_minutes) / 60;
     });
 
     return {
@@ -297,7 +605,10 @@ export default function TimeReports() {
     };
   }, [filteredActivities]);
 
-  const totalFiltered = filteredActivities.reduce((s, a) => s + a.duration_minutes, 0);
+  const totalFiltered = filteredActivities.reduce(
+    (s, a) => s + Math.max(0, a.duration_minutes),
+    0,
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -314,51 +625,24 @@ export default function TimeReports() {
           borderRadius: 8,
         }}
       >
-        <DateRangeDropdown from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+        <DateRangeDropdown
+          accent={A}
+          panelBg="#020c10"
+          from={from}
+          to={to}
+          onChange={(f, t) => {
+            setFrom(f);
+            setTo(t);
+          }}
+        />
 
-        {/* Bucket filter chips */}
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", flex: 1 }}>
-          {activeBuckets.map((b) => {
-            const active = selectedBuckets.includes(b.id);
-            return (
-              <button
-                key={b.id}
-                onClick={() => toggleBucket(b.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                  padding: "3px 8px",
-                  borderRadius: 20,
-                  border: `1px solid ${active ? b.color : "rgba(255,255,255,0.1)"}`,
-                  background: active ? `${b.color}18` : "transparent",
-                  cursor: "pointer",
-                  transition: "all 0.12s",
-                }}
-              >
-                <div
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: b.color,
-                    opacity: active ? 1 : 0.4,
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: G,
-                    fontSize: 8,
-                    letterSpacing: "0.08em",
-                    color: active ? b.color : "rgba(255,255,255,0.3)",
-                  }}
-                >
-                  {b.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Bucket filter dropdown */}
+        <BucketFilterDropdown
+          buckets={activeBuckets}
+          selected={selectedBuckets}
+          onToggle={toggleBucket}
+          onClear={() => setSelectedBuckets([])}
+        />
 
         {/* Search */}
         <div style={{ position: "relative" }}>
@@ -380,27 +664,51 @@ export default function TimeReports() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search description…"
-            style={{
-              background: "rgba(6,182,212,0.04)",
-              border: "1px solid rgba(6,182,212,0.15)",
-              borderRadius: 4,
-              padding: "5px 10px 5px 24px",
-              fontFamily: G,
-              fontSize: 10,
-              color: "#fff",
-              outline: "none",
-              width: 180,
-            } as React.CSSProperties}
-            onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = A; }}
-            onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "rgba(6,182,212,0.15)"; }}
+            style={
+              {
+                background: "rgba(6,182,212,0.04)",
+                border: "1px solid rgba(6,182,212,0.15)",
+                borderRadius: 4,
+                padding: "5px 10px 5px 24px",
+                fontFamily: G,
+                fontSize: 10,
+                color: "#fff",
+                outline: "none",
+                width: 180,
+              } as React.CSSProperties
+            }
+            onFocus={(e) => {
+              (e.currentTarget as HTMLInputElement).style.borderColor = A;
+            }}
+            onBlur={(e) => {
+              (e.currentTarget as HTMLInputElement).style.borderColor =
+                "rgba(6,182,212,0.15)";
+            }}
           />
         </div>
       </div>
 
       {isLoading && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "64px 0", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: "64px 0",
+            gap: 12,
+          }}
+        >
           <Spinner />
-          <div style={{ fontFamily: G, fontSize: 9, letterSpacing: "0.2em", color: "rgba(6,182,212,0.4)" }}>LOADING…</div>
+          <div
+            style={{
+              fontFamily: G,
+              fontSize: 9,
+              letterSpacing: "0.2em",
+              color: "rgba(6,182,212,0.4)",
+            }}
+          >
+            LOADING…
+          </div>
         </div>
       )}
 
@@ -444,32 +752,153 @@ export default function TimeReports() {
                   padding: "12px 14px",
                 }}
               >
-                <div style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.15em", color: "rgba(6,182,212,0.4)", marginBottom: 4 }}>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 8,
+                    letterSpacing: "0.15em",
+                    color: "rgba(6,182,212,0.4)",
+                    marginBottom: 4,
+                  }}
+                >
                   {s.label}
                 </div>
-                <div style={{ fontFamily: G, fontSize: 20, fontWeight: 700, color: A, textShadow: "0 0 14px rgba(6,182,212,0.3)" }}>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: A,
+                    textShadow: "0 0 14px rgba(6,182,212,0.3)",
+                  }}
+                >
                   {s.value}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Charts */}
+          {/* Row 1: bar chart full width */}
           {pieData.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div
+              style={{
+                background: "rgba(6,182,212,0.03)",
+                border: "1px solid rgba(6,182,212,0.1)",
+                borderRadius: 8,
+                padding: "16px",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: G,
+                  fontSize: 8,
+                  letterSpacing: "0.18em",
+                  fontWeight: 700,
+                  color: "rgba(6,182,212,0.5)",
+                  marginBottom: 14,
+                }}
+              >
+                DAILY HOURS BY BUCKET
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={barData.rows} barSize={14}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(6,182,212,0.06)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tick={{
+                      fontFamily: G,
+                      fontSize: 9,
+                      fill: "rgba(255,255,255,0.3)",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{
+                      fontFamily: G,
+                      fontSize: 9,
+                      fill: "rgba(255,255,255,0.3)",
+                    }}
+                    unit="h"
+                    axisLine={false}
+                    tickLine={false}
+                    width={28}
+                    domain={[0, "auto"]}
+                    allowDataOverflow={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#020c10",
+                      border: "1px solid rgba(6,182,212,0.2)",
+                      borderRadius: 6,
+                      fontFamily: G,
+                      fontSize: 11,
+                      color: "#fff",
+                    }}
+                    formatter={(v) => [`${Number(v ?? 0).toFixed(1)}h`, ""]}
+                  />
+                  <Legend
+                    formatter={(value) => (
+                      <span
+                        style={{
+                          fontFamily: G,
+                          fontSize: 9,
+                          color: "rgba(255,255,255,0.6)",
+                        }}
+                      >
+                        {value}
+                      </span>
+                    )}
+                  />
+                  {barData.bucketNames.map((name) => (
+                    <Bar
+                      key={name}
+                      dataKey={name}
+                      stackId="a"
+                      fill={barData.bucketColorMap[name]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Row 2: entries (left, flex-1) + pie (right, fixed width) */}
+          {pieData.length > 0 && (
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+              {/* Entries grouped by bucket */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <EntriesByBucket activities={filteredActivities} />
+              </div>
+
               {/* Pie chart */}
               <div
                 style={{
+                  width: 280,
+                  flexShrink: 0,
                   background: "rgba(6,182,212,0.03)",
                   border: "1px solid rgba(6,182,212,0.1)",
                   borderRadius: 8,
                   padding: "16px",
                 }}
               >
-                <div style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.18em", fontWeight: 700, color: "rgba(6,182,212,0.5)", marginBottom: 14 }}>
+                <div
+                  style={{
+                    fontFamily: G,
+                    fontSize: 8,
+                    letterSpacing: "0.18em",
+                    fontWeight: 700,
+                    color: "rgba(6,182,212,0.5)",
+                    marginBottom: 14,
+                  }}
+                >
                   TIME BY BUCKET
                 </div>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={pieData}
@@ -478,10 +907,8 @@ export default function TimeReports() {
                       cx="50%"
                       cy="50%"
                       outerRadius={90}
+                      label={false}
                       labelLine={false}
-                      label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) =>
-                      PieLabel({ cx: cx ?? 0, cy: cy ?? 0, midAngle: midAngle ?? 0, innerRadius: innerRadius ?? 0, outerRadius: outerRadius ?? 0, percent: percent ?? 0 })
-                    }
                     >
                       {pieData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -496,139 +923,19 @@ export default function TimeReports() {
                         fontSize: 11,
                         color: "#fff",
                       }}
-                      formatter={(v) => [`${fmtMins(Number(v))}`, ""]}
-                    />
-                    <Legend
-                      formatter={(value) => (
-                        <span style={{ fontFamily: G, fontSize: 9, color: "rgba(255,255,255,0.6)" }}>{value}</span>
-                      )}
+                      formatter={(v, name) => [`${fmtMins(Number(v))}`, name]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
-
-              {/* Bar chart */}
-              <div
-                style={{
-                  background: "rgba(6,182,212,0.03)",
-                  border: "1px solid rgba(6,182,212,0.1)",
-                  borderRadius: 8,
-                  padding: "16px",
-                }}
-              >
-                <div style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.18em", fontWeight: 700, color: "rgba(6,182,212,0.5)", marginBottom: 14 }}>
-                  DAILY HOURS BY BUCKET
-                </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={barData.rows} barSize={14}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(6,182,212,0.06)" vertical={false} />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontFamily: G, fontSize: 9, fill: "rgba(255,255,255,0.3)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontFamily: G, fontSize: 9, fill: "rgba(255,255,255,0.3)" }}
-                      unit="h"
-                      axisLine={false}
-                      tickLine={false}
-                      width={28}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "#020c10",
-                        border: "1px solid rgba(6,182,212,0.2)",
-                        borderRadius: 6,
-                        fontFamily: G,
-                        fontSize: 11,
-                        color: "#fff",
-                      }}
-                      formatter={(v) => [`${Number(v ?? 0).toFixed(1)}h`, ""]}
-                    />
-                    <Legend
-                      formatter={(value) => (
-                        <span style={{ fontFamily: G, fontSize: 9, color: "rgba(255,255,255,0.6)" }}>{value}</span>
-                      )}
-                    />
-                    {barData.bucketNames.map((name) => (
-                      <Bar
-                        key={name}
-                        dataKey={name}
-                        stackId="a"
-                        fill={barData.bucketColorMap[name]}
-                      />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
+                <PieLegend data={pieData} />
               </div>
             </div>
           )}
 
-          {/* Activity table */}
-          <div
-            style={{
-              border: "1px solid rgba(6,182,212,0.1)",
-              borderRadius: 8,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "10px 16px",
-                borderBottom: "1px solid rgba(6,182,212,0.08)",
-                background: "rgba(6,182,212,0.04)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.18em", fontWeight: 700, color: "rgba(6,182,212,0.55)" }}>
-                ENTRIES
-              </div>
-              <div style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.3)" }}>
-                {filteredActivities.length} result{filteredActivities.length !== 1 ? "s" : ""}
-              </div>
-            </div>
-
-            {filteredActivities.length === 0 ? (
-              <div style={{ padding: "40px 0", textAlign: "center", fontFamily: G, fontSize: 9, color: "rgba(6,182,212,0.3)" }}>
-                NO MATCHING ENTRIES
-              </div>
-            ) : (
-              filteredActivities.slice(0, 100).map((a) => (
-                <div
-                  key={a.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 16px",
-                    borderTop: "1px solid rgba(6,182,212,0.05)",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(6,182,212,0.03)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                >
-                  <div style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.3)", width: 40, flexShrink: 0 }}>
-                    {a.started_at.slice(5, 10).replace("-", "/")}
-                  </div>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.bucket_color, flexShrink: 0 }} />
-                  <div style={{ fontFamily: G, fontSize: 8, color: a.bucket_color, opacity: 0.75, width: 72, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {a.bucket_name}
-                  </div>
-                  <div style={{ flex: 1, fontFamily: G, fontSize: 10, color: "rgba(255,255,255,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {a.activity}
-                  </div>
-                  <div style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.35)", flexShrink: 0 }}>
-                    {a.started_at.slice(11, 16)} – {a.ended_at.slice(11, 16)}
-                  </div>
-                  <div style={{ fontFamily: G, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", width: 42, textAlign: "right", flexShrink: 0 }}>
-                    {fmtMins(a.duration_minutes)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          {/* Fallback entries when no pie data (all filtered) */}
+          {pieData.length === 0 && filteredActivities.length > 0 && (
+            <EntriesByBucket activities={filteredActivities} />
+          )}
         </>
       )}
     </div>

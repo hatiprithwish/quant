@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useGetFood } from "@/api/cachedQueries";
 import { MealTypeLabelEnum } from "@/schemas";
 import type { DailyFoodSummary } from "@/schemas";
@@ -6,25 +6,10 @@ import NutritionHero from "./components/NutritionHero";
 import MacroChart from "./components/MacroChart";
 import MealLog from "./components/MealLog";
 import Spinner from "@/components/common/Spinner";
+import DateRangeDropdown, { drToday } from "@/components/common/DateRangeDropdown";
 
 const G = "'JetBrains Mono','Fira Code',monospace";
 const A = "#10b981";
-
-function today() { return new Date().toISOString().split("T")[0]; }
-function daysAgo(n: number) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split("T")[0]; }
-function startOfMonth() { const d = new Date(); d.setDate(1); return d.toISOString().split("T")[0]; }
-function startOfYear() { const d = new Date(); d.setMonth(0, 1); return d.toISOString().split("T")[0]; }
-function fmtDate(iso: string) {
-  const [, m, d] = iso.split("-");
-  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1]}`;
-}
-
-const PRESETS = [
-  { label: "Today",  from: () => today(),       to: () => today() },
-  { label: "7d",     from: () => daysAgo(6),    to: () => today() },
-  { label: "Month",  from: () => startOfMonth(), to: () => today() },
-  { label: "Year",   from: () => startOfYear(),  to: () => today() },
-];
 
 type MealFilter = MealTypeLabelEnum | null;
 
@@ -42,92 +27,6 @@ const MEAL_COLORS: Record<MealTypeLabelEnum, string> = {
   [MealTypeLabelEnum.Dinner]:    "#818cf8",
   [MealTypeLabelEnum.Snack]:     "#ec4899",
 };
-
-// ── Date Range Dropdown ──────────────────────────────────────────────────────────
-
-function DateRangeDropdown({ from, to, onChange }: { from: string; to: string; onChange: (f: string, t: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [localFrom, setLocalFrom] = useState(from);
-  const [localTo, setLocalTo] = useState(to);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setLocalFrom(from); }, [from]);
-  useEffect(() => { setLocalTo(to); }, [to]);
-  useEffect(() => {
-    function h(e: MouseEvent) { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); }
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-
-  const label = from === to ? fmtDate(from) : `${fmtDate(from)} – ${fmtDate(to)}`;
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "5px 10px",
-          background: `rgba(16,185,129,0.07)`,
-          border: `1px solid rgba(16,185,129,0.22)`,
-          borderRadius: 4,
-          fontFamily: G, fontSize: 10, letterSpacing: "0.08em",
-          color: A, cursor: "pointer", whiteSpace: "nowrap",
-          transition: "border-color 0.15s, background 0.15s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(16,185,129,0.13)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(16,185,129,0.07)"; }}
-      >
-        <span style={{ opacity: 0.55 }}>◷</span>
-        {label}
-        <span style={{ opacity: 0.4, fontSize: 8 }}>▾</span>
-      </button>
-
-      {open && (
-        <div style={{
-          position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 50,
-          background: "#05100a",
-          border: "1px solid rgba(16,185,129,0.18)",
-          borderRadius: 6, padding: 12, minWidth: "15rem",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.04)",
-          fontFamily: G,
-        }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-            {PRESETS.map(p => {
-              const pFrom = p.from(); const pTo = p.to();
-              const active = from === pFrom && to === pTo;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => { onChange(pFrom, pTo); setOpen(false); }}
-                  style={{
-                    padding: "3px 8px", borderRadius: 3, fontSize: 9, letterSpacing: "0.1em",
-                    fontFamily: "inherit", cursor: "pointer", border: "1px solid",
-                    background: active ? A : "transparent",
-                    borderColor: active ? A : "rgba(16,185,129,0.2)",
-                    color: active ? "#000" : "rgba(16,185,129,0.6)",
-                    transition: "all 0.15s",
-                  }}
-                >{p.label}</button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input type="date" value={localFrom} max={localTo}
-              onChange={e => { setLocalFrom(e.target.value); if (e.target.value && localTo && e.target.value <= localTo) onChange(e.target.value, localTo); }}
-              style={{ flex: 1, minWidth: 0, fontSize: 9, border: "1px solid rgba(16,185,129,0.2)", borderRadius: 3, padding: "4px 6px", background: "#061009", color: A, fontFamily: "inherit", outline: "none", colorScheme: "dark" } as React.CSSProperties}
-            />
-            <span style={{ color: "rgba(16,185,129,0.3)", fontSize: 10 }}>→</span>
-            <input type="date" value={localTo} min={localFrom} max={today()}
-              onChange={e => { setLocalTo(e.target.value); if (e.target.value && localFrom && localFrom <= e.target.value) onChange(localFrom, e.target.value); }}
-              style={{ flex: 1, minWidth: 0, fontSize: 9, border: "1px solid rgba(16,185,129,0.2)", borderRadius: 3, padding: "4px 6px", background: "#061009", color: A, fontFamily: "inherit", outline: "none", colorScheme: "dark" } as React.CSSProperties}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Left Rail ──────────────────────────────────────────────────────────────────
 
@@ -236,8 +135,8 @@ function applyMealFilter(days: DailyFoodSummary[], filter: MealFilter): DailyFoo
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function FoodPage() {
-  const [from, setFrom] = useState(today());
-  const [to, setTo] = useState(today());
+  const [from, setFrom] = useState(drToday);
+  const [to, setTo] = useState(drToday);
   const [filter, setFilter] = useState<MealFilter>(null);
 
   const { data, isLoading, error } = useGetFood(from, to);
@@ -273,7 +172,7 @@ export default function FoodPage() {
           min-height: 0;
           background: #030a06;
           position: relative;
-          overflow: hidden;
+          overflow: visible;
         }
         .fuel-shell::before {
           content: '';
@@ -304,8 +203,6 @@ export default function FoodPage() {
           display: flex;
           flex-direction: column;
           min-width: 0;
-          position: relative;
-          z-index: 1;
           overflow: visible;
         }
         .fuel-header {
@@ -315,10 +212,12 @@ export default function FoodPage() {
           align-items: center;
           justify-content: space-between;
           background: rgba(3,10,6,0.45);
-          backdrop-filter: blur(2px);
           flex-shrink: 0;
           flex-wrap: wrap;
           gap: 10px;
+          position: relative;
+          z-index: 100;
+          overflow: visible;
         }
         .fuel-body {
           flex: 1;
@@ -375,7 +274,7 @@ export default function FoodPage() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <DateRangeDropdown from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
+              <DateRangeDropdown accent={A} panelBg="#05100a" align="right" from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
               <button
                 style={{
                   display: "flex", alignItems: "center", gap: 6,

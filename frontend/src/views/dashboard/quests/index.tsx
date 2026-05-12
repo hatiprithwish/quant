@@ -8,20 +8,7 @@ import AchievementsSection from "./components/AchievementsSection";
 import CreateQuestModal from "./components/CreateQuestModal";
 import { QuestStatusEnum } from "@/schemas";
 import Spinner from "@/components/common/Spinner";
-
-function today() { return new Date().toISOString().split("T")[0]; }
-function daysAgo(n: number) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split("T")[0]; }
-function startOfMonth() { const d = new Date(); d.setDate(1); return d.toISOString().split("T")[0]; }
-function startOfQuarter() { const d = new Date(); const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); return d.toISOString().split("T")[0]; }
-function startOfYear() { const d = new Date(); d.setMonth(0, 1); return d.toISOString().split("T")[0]; }
-
-const PRESETS = [
-  { label: "TODAY", from: () => today(), to: () => today() },
-  { label: "WEEK", from: () => daysAgo(6), to: () => today() },
-  { label: "MONTH", from: () => startOfMonth(), to: () => today() },
-  { label: "QUARTER", from: () => startOfQuarter(), to: () => today() },
-  { label: "YEAR", from: () => startOfYear(), to: () => today() },
-];
+import DateRangeDropdown, { getPresetRange } from "@/components/common/DateRangeDropdown";
 
 const QUEST_NAV = [
   { label: "ALL QUESTS", sub: "full roster", glyph: "◈", value: null },
@@ -184,8 +171,8 @@ export default function QuestsPage() {
     });
   }
 
-  const [from, setFrom] = useState(daysAgo(6));
-  const [to, setTo] = useState(today());
+  const [from, setFrom] = useState(() => getPresetRange("thisWeek").from);
+  const [to, setTo] = useState(() => getPresetRange("thisWeek").to);
   const [showCreate, setShowCreate] = useState(false);
 
   const { data, isLoading, error } = useGetQuestsDashboard(from, to);
@@ -342,28 +329,14 @@ export default function QuestsPage() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", gap: 3 }}>
-                {PRESETS.map(p => {
-                  const pFrom = p.from(); const pTo = p.to();
-                  const active = from === pFrom && to === pTo;
-                  return (
-                    <button
-                      key={p.label}
-                      onClick={() => { setFrom(pFrom); setTo(pTo); }}
-                      style={{
-                        padding: "3px 8px", borderRadius: 3,
-                        fontFamily: "'JetBrains Mono','Fira Code',monospace",
-                        fontSize: 8, letterSpacing: "0.1em",
-                        cursor: "pointer", border: "1px solid",
-                        background: active ? "#8b5cf6" : "transparent",
-                        borderColor: active ? "#8b5cf6" : "rgba(139,92,246,0.2)",
-                        color: active ? "#fff" : "rgba(139,92,246,0.5)",
-                        transition: "all 0.15s",
-                      }}
-                    >{p.label}</button>
-                  );
-                })}
-              </div>
+              <DateRangeDropdown
+                accent="#a78bfa"
+                panelBg="#07050f"
+                align="right"
+                from={from}
+                to={to}
+                onChange={(f, t) => { setFrom(f); setTo(t); }}
+              />
 
               <button
                 onClick={() => setShowCreate(true)}

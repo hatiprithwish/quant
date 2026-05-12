@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   useGetExpenses,
@@ -12,34 +12,8 @@ import LendingTab from "./components/LendingTab";
 import InvestmentsTab from "./components/InvestmentsTab";
 import AddEntryModal from "./components/AddEntryModal";
 import Spinner from "@/components/common/Spinner";
+import DateRangeDropdown, { drToday, getPresetRange } from "@/components/common/DateRangeDropdown";
 
-// ── Date helpers ────────────────────────────────────────────────────────────────
-
-function today() { return new Date().toISOString().split("T")[0]; }
-function daysAgo(n: number) {
-  const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split("T")[0];
-}
-function startOfMonth() {
-  const d = new Date(); d.setDate(1); return d.toISOString().split("T")[0];
-}
-function startOfQuarter() {
-  const d = new Date(); const q = Math.floor(d.getMonth() / 3); d.setMonth(q * 3, 1); return d.toISOString().split("T")[0];
-}
-function startOfYear() {
-  const d = new Date(); d.setMonth(0, 1); return d.toISOString().split("T")[0];
-}
-function fmtDate(iso: string) {
-  const [, m, d] = iso.split("-");
-  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m)-1]}`;
-}
-
-const PRESETS = [
-  { label: "Today",   from: () => today(),        to: () => today() },
-  { label: "7d",      from: () => daysAgo(6),     to: () => today() },
-  { label: "Month",   from: () => startOfMonth(),  to: () => today() },
-  { label: "Quarter", from: () => startOfQuarter(),to: () => today() },
-  { label: "Year",    from: () => startOfYear(),   to: () => today() },
-];
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
@@ -55,98 +29,6 @@ const MONEY_SECTIONS: { tab: Tab; label: string; sub: string; glyph: string; xp:
   { tab: "lending",      label: "DEBTS",        sub: "lent & owed",    glyph: "⇄", xp: 45  },
   { tab: "investments",  label: "PORTFOLIO",    sub: "assets & growth",glyph: "△", xp: 90  },
 ];
-
-// ── DateRange ──────────────────────────────────────────────────────────────────
-
-function DateRangeDropdown({ from, to, onChange }: { from: string; to: string; onChange: (f: string, t: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [localFrom, setLocalFrom] = useState(from);
-  const [localTo, setLocalTo] = useState(to);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setLocalFrom(from); }, [from]);
-  useEffect(() => { setLocalTo(to); }, [to]);
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const label = from === to ? fmtDate(from) : `${fmtDate(from)} – ${fmtDate(to)}`;
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "5px 10px",
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.25)",
-          borderRadius: 4,
-          fontFamily: "'JetBrains Mono','Fira Code',monospace",
-          fontSize: 10, letterSpacing: "0.08em",
-          color: "#f59e0b", cursor: "pointer",
-          whiteSpace: "nowrap",
-          transition: "border-color 0.15s, background 0.15s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,158,11,0.14)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,158,11,0.08)"; }}
-      >
-        <span style={{ opacity: 0.6 }}>◷</span>
-        {label}
-        <span style={{ opacity: 0.4, fontSize: 8 }}>▾</span>
-      </button>
-
-      {open && (
-        <div style={{
-          position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 50,
-          background: "#0d0d0d",
-          border: "1px solid rgba(245,158,11,0.2)",
-          borderRadius: 6,
-          padding: 12,
-          minWidth: "15rem",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.05)",
-          fontFamily: "'JetBrains Mono','Fira Code',monospace",
-        }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-            {PRESETS.map(p => {
-              const pFrom = p.from(); const pTo = p.to();
-              const active = from === pFrom && to === pTo;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => { onChange(pFrom, pTo); setOpen(false); }}
-                  style={{
-                    padding: "3px 8px", borderRadius: 3, fontSize: 9, letterSpacing: "0.1em",
-                    fontFamily: "inherit", cursor: "pointer", border: "1px solid",
-                    background: active ? "#f59e0b" : "transparent",
-                    borderColor: active ? "#f59e0b" : "rgba(245,158,11,0.2)",
-                    color: active ? "#000" : "rgba(245,158,11,0.6)",
-                    transition: "all 0.15s",
-                  }}
-                >{p.label}</button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input type="date" value={localFrom} max={localTo}
-              onChange={e => { setLocalFrom(e.target.value); if (e.target.value && localTo && e.target.value <= localTo) onChange(e.target.value, localTo); }}
-              style={{ flex: 1, minWidth: 0, fontSize: 9, border: "1px solid rgba(245,158,11,0.2)", borderRadius: 3, padding: "4px 6px", background: "#111", color: "#f59e0b", fontFamily: "inherit", outline: "none", colorScheme: "dark" } as React.CSSProperties}
-            />
-            <span style={{ color: "rgba(245,158,11,0.3)", fontSize: 10 }}>→</span>
-            <input type="date" value={localTo} min={localFrom} max={today()}
-              onChange={e => { setLocalTo(e.target.value); if (e.target.value && localFrom && localFrom <= e.target.value) onChange(localFrom, e.target.value); }}
-              style={{ flex: 1, minWidth: 0, fontSize: 9, border: "1px solid rgba(245,158,11,0.2)", borderRadius: 3, padding: "4px 6px", background: "#111", color: "#f59e0b", fontFamily: "inherit", outline: "none", colorScheme: "dark" } as React.CSSProperties}
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Inner Sidebar ──────────────────────────────────────────────────────────────
 
@@ -314,7 +196,7 @@ function PageHeader({
 
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {showDateFilter && (
-          <DateRangeDropdown from={from} to={to} onChange={onChange} />
+          <DateRangeDropdown accent="#f59e0b" panelBg="#0d0d0d" align="right" from={from} to={to} onChange={onChange} />
         )}
         {tab !== "lending" && tab !== "investments" && (
           <button
@@ -359,8 +241,8 @@ export default function ExpensesPage() {
     setSearchParams(prev => { prev.set("tab", t); return prev; });
   }
 
-  const [from, setFrom] = useState(startOfMonth());
-  const [to, setTo] = useState(today());
+  const [from, setFrom] = useState(() => getPresetRange("thisMonth").from);
+  const [to, setTo] = useState(drToday);
   const [showAddEntry, setShowAddEntry] = useState(false);
 
   const { data: expenseData, isLoading: expenseLoading, error: expenseError } = useGetExpenses(from, to);
