@@ -116,16 +116,26 @@ export default function DebtDetailPage() {
 
   function switchFilter(f: FilterType) {
     setActiveFilter(f);
-    setSearchParams((prev) => { prev.set("type", f); return prev; });
+    setSearchParams((prev) => {
+      prev.set("type", f);
+      return prev;
+    });
   }
 
   function switchStatus(s: StatusFilter) {
     setStatusFilter(s);
-    setSearchParams((prev) => { prev.set("status", s); return prev; });
+    setSearchParams((prev) => {
+      prev.set("status", s);
+      return prev;
+    });
   }
 
   if (isLoading) {
-    return <div className="flex items-center justify-center py-16"><Spinner /></div>;
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Spinner />
+      </div>
+    );
   }
 
   return (
@@ -135,17 +145,11 @@ export default function DebtDetailPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <button
-              onClick={() => navigate("/money")}
+              onClick={() => navigate(-1)}
               className="text-xs text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors"
             >
-              ← Money
+              ←
             </button>
-            <span className="text-gray-300 dark:text-neutral-700 text-xs">
-              /
-            </span>
-            <span className="text-xs text-gray-600 dark:text-neutral-400">
-              Lending & Borrowing
-            </span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {activeFilter === "lent" ? "Money You Lent" : "Money You Owe"}
