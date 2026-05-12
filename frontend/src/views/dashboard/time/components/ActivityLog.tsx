@@ -91,7 +91,7 @@ function ActivityRow({ activity, onEdit }: { activity: TimeActivity; onEdit: (a:
           whiteSpace: "nowrap",
         }}
       >
-        {activity.start_time.slice(11, 16)} – {activity.end_time.slice(11, 16)}
+        {activity.started_at.slice(11, 16)} – {activity.ended_at.slice(11, 16)}
       </div>
       <div
         style={{
@@ -209,7 +209,7 @@ interface DayGroupProps {
 function DayGroup({ day, onEdit }: DayGroupProps) {
   const { day: dayLabel, weekday } = fmtDate(day.date);
   const allActivities = day.buckets.flatMap((b) => b.activities);
-  const sorted = [...allActivities].sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const sorted = [...allActivities].sort((a, b) => a.started_at.localeCompare(b.started_at));
 
   if (sorted.length === 0) return null;
 

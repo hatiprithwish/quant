@@ -156,13 +156,12 @@ export const timeLogs = sqliteTable("time_logs", {
   user_id: text("user_id")
     .notNull()
     .references(() => users.id),
-  date: text("date").notNull(),
   bucket_id: integer("bucket_id")
     .notNull()
     .references(() => timeBuckets.id),
   activity: text("activity").notNull(),
-  start_time: text("start_time").notNull(),
-  end_time: text("end_time").notNull(),
+  started_at: text("started_at").notNull(),
+  ended_at: text("ended_at").notNull(),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

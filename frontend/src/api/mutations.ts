@@ -428,16 +428,15 @@ export function useMutationDeleteTimeBucket() {
 export interface CreateTimeEntryInput {
   bucket_id: number;
   activity: string;
-  date: string;
-  start_time: string;
-  end_time: string;
+  started_at: string;
+  ended_at: string;
 }
 
 export interface UpdateTimeEntryInput {
   bucket_id?: number;
   activity?: string;
-  start_time?: string;
-  end_time?: string;
+  started_at?: string;
+  ended_at?: string;
 }
 
 export function useMutationCreateTimeEntry() {

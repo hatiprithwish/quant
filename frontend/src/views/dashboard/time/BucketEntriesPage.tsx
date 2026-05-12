@@ -206,11 +206,11 @@ function EntryRow({ entry, selected, onSelect, onEdit, onDelete, isDeleting }: E
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: entry.bucket_color, flexShrink: 0 }} />
           <span style={{ fontFamily: G, fontSize: 9, letterSpacing: "0.08em", color: "rgba(255,255,255,0.5)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.bucket_name}</span>
-          <span style={{ fontFamily: G, fontSize: 8, color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>{fmtDate(entry.date)}</span>
+          <span style={{ fontFamily: G, fontSize: 8, color: "rgba(255,255,255,0.2)", flexShrink: 0 }}>{fmtDate(entry.started_at.slice(0, 10))}</span>
         </div>
         <div style={{ fontFamily: G, fontSize: 11, color: "rgba(255,255,255,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.activity}</div>
         <div style={{ display: "flex", gap: 10, marginTop: 3, fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.4)" }}>
-          <span>{fmtTime(entry.start_time)} → {fmtTime(entry.end_time)}</span>
+          <span>{fmtTime(entry.started_at)} → {fmtTime(entry.ended_at)}</span>
           <span style={{ color: A }}>{fmtDuration(entry.duration_minutes)}</span>
         </div>
       </div>

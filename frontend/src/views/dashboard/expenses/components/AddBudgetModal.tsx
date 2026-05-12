@@ -4,17 +4,13 @@ import { MoneyCategoryTypeEnum, BudgetPeriodEnum } from "@/schemas";
 import Spinner from "@/components/common/Spinner";
 import { useGetMoneyCategories } from "@/api/cachedQueries";
 import { useMutationCreateBudget } from "@/api/mutations";
+import { AppConstants } from "@/config/Constants";
 
 interface Props {
   onClose: () => void;
 }
 
-const COLOR_SWATCHES = [
-  "#ef4444", "#f97316", "#f59e0b", "#eab308",
-  "#84cc16", "#22c55e", "#10b981", "#14b8a6",
-  "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6",
-  "#a855f7", "#ec4899", "#f43f5e", "#64748b",
-];
+const COLOR_SWATCHES = AppConstants.PALETTE;
 
 const PERIOD_LABELS: Record<BudgetPeriodEnum, string> = {
   [BudgetPeriodEnum.Weekly]: "Weekly",
@@ -25,7 +21,7 @@ const PERIOD_LABELS: Record<BudgetPeriodEnum, string> = {
 
 export default function AddBudgetModal({ onClose }: Props) {
   const [name, setName] = useState("");
-  const [color, setColor] = useState(COLOR_SWATCHES[5]);
+  const [color, setColor] = useState<string>(COLOR_SWATCHES[6]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [allSelected, setAllSelected] = useState(false);
   const [amount, setAmount] = useState("");

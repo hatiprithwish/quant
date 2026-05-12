@@ -6,26 +6,28 @@ import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import { AppConstants } from "../config/Constants";
 import { AuthSyncRepoRequest, AuthSyncResponse, MoneyCategoryTypeEnum } from "../schemas";
 
+const P = AppConstants.PALETTE;
+
 const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: "food-groceries", display_label: "Food & Groceries", color: "#10b981" },
-  { name: "eating-out", display_label: "Eating Out", color: "#f59e0b" },
-  { name: "transport", display_label: "Transport", color: "#6366f1" },
-  { name: "shopping", display_label: "Shopping", color: "#ec4899" },
-  { name: "entertainment", display_label: "Entertainment", color: "#8b5cf6" },
-  { name: "health", display_label: "Health", color: "#ef4444" },
-  { name: "subscriptions", display_label: "Subscriptions", color: "#0ea5e9" },
-  { name: "utilities", display_label: "Utilities", color: "#14b8a6" },
-  { name: "other", display_label: "Other", color: "#94a3b8" },
+  { name: "food-groceries", display_label: "Food & Groceries", color: P[7] },
+  { name: "eating-out", display_label: "Eating Out", color: P[5] },
+  { name: "transport", display_label: "Transport", color: P[8] },
+  { name: "shopping", display_label: "Shopping", color: P[2] },
+  { name: "entertainment", display_label: "Entertainment", color: P[1] },
+  { name: "health", display_label: "Health", color: P[3] },
+  { name: "subscriptions", display_label: "Subscriptions", color: P[0] },
+  { name: "utilities", display_label: "Utilities", color: P[6] },
+  { name: "other", display_label: "Other", color: P[9] },
 ];
 
 const DEFAULT_INCOME_CATEGORIES = [
-  { name: "salary", display_label: "Salary", color: "#10b981" },
-  { name: "transfer", display_label: "Transfer", color: "#6366f1" },
-  { name: "refund", display_label: "Refund", color: "#f59e0b" },
-  { name: "freelance", display_label: "Freelance", color: "#8b5cf6" },
-  { name: "gift", display_label: "Gift", color: "#ec4899" },
-  { name: "opening_balance", display_label: "Opening Balance", color: "#64748b" },
-  { name: "other", display_label: "Other", color: "#94a3b8" },
+  { name: "salary", display_label: "Salary", color: P[7] },
+  { name: "transfer", display_label: "Transfer", color: P[8] },
+  { name: "refund", display_label: "Refund", color: P[5] },
+  { name: "freelance", display_label: "Freelance", color: P[1] },
+  { name: "gift", display_label: "Gift", color: P[2] },
+  { name: "opening_balance", display_label: "Opening Balance", color: P[9] },
+  { name: "other", display_label: "Other", color: P[9] },
 ];
 
 function generateApiKey(): string {

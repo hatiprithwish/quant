@@ -17,9 +17,9 @@ import {
   TimeActivity,
 } from "../schemas";
 
-function computeDurationMinutes(startTime: string, endTime: string): number {
-  const start = new Date(startTime).getTime();
-  const end = new Date(endTime).getTime();
+function computeDurationMinutes(started_at: string, ended_at: string): number {
+  const start = new Date(started_at).getTime();
+  const end = new Date(ended_at).getTime();
   return Math.round((end - start) / 60000);
 }
 
@@ -31,11 +31,10 @@ export class TimeRepo {
     await TimeDAL.insertMany(
       req.entries.map((entry) => ({
         userId: req.userId,
-        date: entry.date,
         bucket_id: entry.bucket_id,
         activity: entry.activity,
-        startTime: entry.start_time,
-        endTime: entry.end_time,
+        started_at: entry.started_at,
+        ended_at: entry.ended_at,
       })),
       db,
     );
@@ -57,21 +56,21 @@ export class TimeRepo {
     let totalMinutes = 0;
 
     for (const row of rows) {
-      const duration = computeDurationMinutes(row.start_time, row.end_time);
+      const duration = computeDurationMinutes(row.started_at, row.ended_at);
+      const date = row.started_at.slice(0, 10);
 
-      if (!dayMap.has(row.date)) dayMap.set(row.date, new Map());
-      const bMap = dayMap.get(row.date)!;
+      if (!dayMap.has(date)) dayMap.set(date, new Map());
+      const bMap = dayMap.get(date)!;
       if (!bMap.has(row.bucket_id)) bMap.set(row.bucket_id, []);
 
       bMap.get(row.bucket_id)!.push({
         id: row.id,
-        date: row.date,
         bucket_id: row.bucket_id,
         bucket_name: row.bucket_name,
         bucket_color: row.bucket_color,
         activity: row.activity,
-        start_time: row.start_time,
-        end_time: row.end_time,
+        started_at: row.started_at,
+        ended_at: row.ended_at,
         duration_minutes: duration,
       });
 
@@ -126,11 +125,10 @@ export class TimeRepo {
     const rows = await TimeDAL.insertOne(
       {
         user_id: req.userId,
-        date: req.date,
         bucket_id: req.bucket_id,
         activity: req.activity,
-        start_time: req.start_time,
-        end_time: req.end_time,
+        started_at: req.started_at,
+        ended_at: req.ended_at,
       },
       db,
     );
@@ -142,7 +140,7 @@ export class TimeRepo {
     db: DrizzleDb,
   ): Promise<UpdateTimeEntryResponse> {
     await TimeDAL.update(
-      { id: req.id, userId: req.userId, bucket_id: req.bucket_id, activity: req.activity, start_time: req.start_time, end_time: req.end_time },
+      { id: req.id, userId: req.userId, bucket_id: req.bucket_id, activity: req.activity, started_at: req.started_at, ended_at: req.ended_at },
       db,
     );
     return { isSuccess: true, message: "Entry updated" };
@@ -174,14 +172,13 @@ export class TimeRepo {
 
     const entries: TimeActivity[] = rows.map((row) => ({
       id: row.id,
-      date: row.date,
       bucket_id: row.bucket_id,
       bucket_name: row.bucket_name,
       bucket_color: row.bucket_color,
       activity: row.activity,
-      start_time: row.start_time,
-      end_time: row.end_time,
-      duration_minutes: computeDurationMinutes(row.start_time, row.end_time),
+      started_at: row.started_at,
+      ended_at: row.ended_at,
+      duration_minutes: computeDurationMinutes(row.started_at, row.ended_at),
     }));
 
     const total_pages = Math.max(1, Math.ceil(total / req.page_size));

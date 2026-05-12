@@ -1,6 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { DrizzleDb } from "../db";
 import { timeBuckets } from "../db/tables";
+import { AppConstants } from "../config/Constants";
 
 export class TimeBucketsDAL {
   static async findByUserId(userId: string, db: DrizzleDb) {
@@ -50,15 +51,16 @@ export class TimeBucketsDAL {
   }
 
   static async insertDefaultBuckets(userId: string, db: DrizzleDb) {
+    const P = AppConstants.PALETTE;
     const defaults = [
-      { name: "Career", color: "#3b82f6", is_distraction: 0 },
-      { name: "Sleep", color: "#8b5cf6", is_distraction: 0 },
-      { name: "Maintenance", color: "#6b7280", is_distraction: 0 },
-      { name: "Fitness", color: "#10b981", is_distraction: 0 },
-      { name: "Learning", color: "#f59e0b", is_distraction: 0 },
-      { name: "Social", color: "#ec4899", is_distraction: 0 },
-      { name: "Entertainment", color: "#ef4444", is_distraction: 1 },
-      { name: "Personal Dev", color: "#06b6d4", is_distraction: 0 },
+      { name: "Career", color: P[8], is_distraction: 0 },
+      { name: "Sleep", color: P[1], is_distraction: 0 },
+      { name: "Maintenance", color: P[9], is_distraction: 0 },
+      { name: "Fitness", color: P[7], is_distraction: 0 },
+      { name: "Learning", color: P[5], is_distraction: 0 },
+      { name: "Social", color: P[2], is_distraction: 0 },
+      { name: "Entertainment", color: P[3], is_distraction: 1 },
+      { name: "Personal Dev", color: P[0], is_distraction: 0 },
     ];
     await db.insert(timeBuckets).values(
       defaults.map((d) => ({ ...d, user_id: userId, quest_id: null })),

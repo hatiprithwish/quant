@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useMutationCreateQuest } from "@/api/mutations";
 import { QuestCategoryEnum, questCategoryLabel } from "@/schemas";
 import Spinner from "@/components/common/Spinner";
+import { AppConstants } from "@/config/Constants";
 
-const COLORS = ["#6366f1","#8b5cf6","#ec4899","#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#3b82f6","#06b6d4"];
+const COLORS = AppConstants.PALETTE;
 
 interface Props {
   onClose: () => void;
@@ -13,7 +14,7 @@ export default function CreateQuestModal({ onClose }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<QuestCategoryEnum>(QuestCategoryEnum.Skill);
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState<string>(COLORS[0]);
   const [deadline, setDeadline] = useState("");
   const { mutate, isPending } = useMutationCreateQuest();
 

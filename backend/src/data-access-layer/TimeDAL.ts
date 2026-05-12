@@ -15,11 +15,10 @@ export class TimeDAL {
       await db.insert(timeLogs).values(
         chunk.map((req) => ({
           user_id: req.userId,
-          date: req.date,
           bucket_id: req.bucket_id,
           activity: req.activity,
-          start_time: req.startTime,
-          end_time: req.endTime,
+          started_at: req.started_at,
+          ended_at: req.ended_at,
         })),
       );
     }
@@ -28,11 +27,10 @@ export class TimeDAL {
   static async insertOne(
     data: {
       user_id: string;
-      date: string;
       bucket_id: number;
       activity: string;
-      start_time: string;
-      end_time: string;
+      started_at: string;
+      ended_at: string;
     },
     db: DrizzleDb,
   ) {
@@ -43,8 +41,8 @@ export class TimeDAL {
     const patch: Record<string, unknown> = {};
     if (req.bucket_id !== undefined) patch.bucket_id = req.bucket_id;
     if (req.activity !== undefined) patch.activity = req.activity;
-    if (req.start_time !== undefined) patch.start_time = req.start_time;
-    if (req.end_time !== undefined) patch.end_time = req.end_time;
+    if (req.started_at !== undefined) patch.started_at = req.started_at;
+    if (req.ended_at !== undefined) patch.ended_at = req.ended_at;
 
     return db
       .update(timeLogs)
@@ -79,18 +77,17 @@ export class TimeDAL {
       db
         .select({
           id: timeLogs.id,
-          date: timeLogs.date,
           bucket_id: timeLogs.bucket_id,
           bucket_name: timeBuckets.name,
           bucket_color: timeBuckets.color,
           activity: timeLogs.activity,
-          start_time: timeLogs.start_time,
-          end_time: timeLogs.end_time,
+          started_at: timeLogs.started_at,
+          ended_at: timeLogs.ended_at,
         })
         .from(timeLogs)
         .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
         .where(where)
-        .orderBy(sql`${timeLogs.start_time} desc`)
+        .orderBy(sql`${timeLogs.started_at} desc`)
         .limit(req.page_size)
         .offset(offset),
     ]);
@@ -101,7 +98,7 @@ export class TimeDAL {
   static async findByDateRange(req: GetTimeLogsDbRequest, db: DrizzleDb) {
     const conditions = [
       eq(timeLogs.user_id, req.userId),
-      between(timeLogs.date, req.from, req.to),
+      between(timeLogs.started_at, `${req.from}T00:00:00`, `${req.to}T23:59:59`),
       isNull(timeLogs.deleted_at),
     ];
 
@@ -112,17 +109,16 @@ export class TimeDAL {
     return db
       .select({
         id: timeLogs.id,
-        date: timeLogs.date,
         bucket_id: timeLogs.bucket_id,
         bucket_name: timeBuckets.name,
         bucket_color: timeBuckets.color,
         activity: timeLogs.activity,
-        start_time: timeLogs.start_time,
-        end_time: timeLogs.end_time,
+        started_at: timeLogs.started_at,
+        ended_at: timeLogs.ended_at,
       })
       .from(timeLogs)
       .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
       .where(and(...conditions))
-      .orderBy(timeLogs.date, timeLogs.start_time);
+      .orderBy(timeLogs.started_at);
   }
 }

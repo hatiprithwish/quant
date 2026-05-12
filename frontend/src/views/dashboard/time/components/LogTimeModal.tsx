@@ -12,11 +12,11 @@ function today() {
   return new Date().toISOString().split("T")[0];
 }
 
-function calcDuration(start: string, end: string): string {
-  if (!start || !end) return "—";
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  const mins = eh * 60 + em - (sh * 60 + sm);
+function calcDuration(startDate: string, startTime: string, endDate: string, endTime: string): string {
+  if (!startDate || !startTime || !endDate || !endTime) return "—";
+  const start = new Date(`${startDate}T${startTime}:00`).getTime();
+  const end = new Date(`${endDate}T${endTime}:00`).getTime();
+  const mins = Math.round((end - start) / 60000);
   if (mins <= 0) return "—";
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -36,15 +36,18 @@ export default function LogTimeModal({ entry, buckets, defaultDate, onClose }: P
   const isEdit = !!entry;
   const activeBuckets = buckets.filter((b) => !b.is_archived);
 
-  const [date, setDate] = useState(
-    entry ? entry.start_time.slice(0, 10) : (defaultDate ?? today()),
+  const [startDate, setStartDate] = useState(
+    entry ? entry.started_at.slice(0, 10) : (defaultDate ?? today()),
+  );
+  const [endDate, setEndDate] = useState(
+    entry ? entry.ended_at.slice(0, 10) : (defaultDate ?? today()),
   );
   const [bucketId, setBucketId] = useState<string>(
     entry ? String(entry.bucket_id) : (activeBuckets[0]?.id ? String(activeBuckets[0].id) : ""),
   );
   const [activity, setActivity] = useState(entry?.activity ?? "");
-  const [startTime, setStartTime] = useState(entry ? entry.start_time.slice(11, 16) : "");
-  const [endTime, setEndTime] = useState(entry ? entry.end_time.slice(11, 16) : "");
+  const [startTime, setStartTime] = useState(entry ? entry.started_at.slice(11, 16) : "");
+  const [endTime, setEndTime] = useState(entry ? entry.ended_at.slice(11, 16) : "");
   const [error, setError] = useState("");
 
   const createMut = useMutationCreateTimeEntry();
@@ -69,39 +72,26 @@ export default function LogTimeModal({ entry, buckets, defaultDate, onClose }: P
     if (!startTime) return setError("Start time is required.");
     if (!endTime) return setError("End time is required.");
 
-    const [sh, sm] = startTime.split(":").map(Number);
-    const [eh, em] = endTime.split(":").map(Number);
-    if (eh * 60 + em <= sh * 60 + sm) return setError("End time must be after start time.");
+    const started_at = `${startDate}T${startTime}:00`;
+    const ended_at = `${endDate}T${endTime}:00`;
 
-    const startIso = `${date}T${startTime}:00`;
-    const endIso = `${date}T${endTime}:00`;
+    if (new Date(ended_at) <= new Date(started_at)) return setError("End must be after start.");
 
     if (isEdit) {
       updateMut.mutate(
-        {
-          bucket_id: Number(bucketId),
-          activity: activity.trim(),
-          start_time: startIso,
-          end_time: endIso,
-        },
+        { bucket_id: Number(bucketId), activity: activity.trim(), started_at, ended_at },
         { onSuccess: () => onClose(), onError: () => setError("Failed to update entry.") },
       );
     } else {
       createMut.mutate(
-        {
-          bucket_id: Number(bucketId),
-          activity: activity.trim(),
-          date,
-          start_time: startIso,
-          end_time: endIso,
-        },
+        { bucket_id: Number(bucketId), activity: activity.trim(), started_at, ended_at },
         { onSuccess: () => onClose(), onError: () => setError("Failed to create entry.") },
       );
     }
   }
 
   const selectedBucket = activeBuckets.find((b) => String(b.id) === bucketId);
-  const duration = calcDuration(startTime, endTime);
+  const duration = calcDuration(startDate, startTime, endDate, endTime);
 
   return (
     <div
@@ -168,17 +158,45 @@ export default function LogTimeModal({ entry, buckets, defaultDate, onClose }: P
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Date + Duration row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {/* Start date + End date + Duration */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: 10 }}>
             <div>
               <label style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.15em", color: "rgba(6,182,212,0.5)", display: "block", marginBottom: 5 }}>
-                DATE
+                START DATE
               </label>
               <input
                 type="date"
-                value={date}
-                max={today()}
-                onChange={(e) => setDate(e.target.value)}
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  if (e.target.value > endDate) setEndDate(e.target.value);
+                }}
+                required
+                style={{
+                  width: "100%",
+                  background: "rgba(6,182,212,0.05)",
+                  border: "1px solid rgba(6,182,212,0.2)",
+                  borderRadius: 5,
+                  padding: "7px 10px",
+                  fontFamily: G,
+                  fontSize: 11,
+                  color: "#fff",
+                  outline: "none",
+                  colorScheme: "dark",
+                } as React.CSSProperties}
+                onFocus={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = A; }}
+                onBlur={(e) => { (e.currentTarget as HTMLInputElement).style.borderColor = "rgba(6,182,212,0.2)"; }}
+              />
+            </div>
+            <div>
+              <label style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.15em", color: "rgba(6,182,212,0.5)", display: "block", marginBottom: 5 }}>
+                END DATE
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEndDate(e.target.value)}
                 required
                 style={{
                   width: "100%",

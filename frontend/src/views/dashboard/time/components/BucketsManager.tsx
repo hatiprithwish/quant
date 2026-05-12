@@ -9,8 +9,10 @@ import {
 import { useGetTimeBuckets, useGetQuestsDashboard } from "@/api/cachedQueries";
 import type { TimeBucketItem } from "@/schemas";
 
+import { AppConstants } from "@/config/Constants";
+
 const G = "'JetBrains Mono','Fira Code',monospace";
-const A = "#06b6d4";
+const A = AppConstants.PALETTE[0];
 
 function today() {
   return new Date().toISOString().split("T")[0];
@@ -21,10 +23,7 @@ function yearAgo() {
   return d.toISOString().split("T")[0];
 }
 
-const SWATCHES = [
-  "#06b6d4","#8b5cf6","#ec4899","#ef4444","#f97316",
-  "#eab308","#22c55e","#10b981","#3b82f6","#6b7280",
-];
+const SWATCHES = AppConstants.PALETTE;
 
 // ── Inline bucket form (shared by create + edit) ────────────────────────────
 

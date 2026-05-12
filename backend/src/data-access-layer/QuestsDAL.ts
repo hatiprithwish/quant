@@ -292,8 +292,8 @@ export class QuestsDAL {
 
     return db
       .select({
-        date: timeLogs.date,
-        minutes: sql<number>`sum(round((julianday(${timeLogs.end_time}) - julianday(${timeLogs.start_time})) * 1440))`,
+        date: sql<string>`substr(${timeLogs.started_at}, 1, 10)`,
+        minutes: sql<number>`sum(round((julianday(${timeLogs.ended_at}) - julianday(${timeLogs.started_at})) * 1440))`,
       })
       .from(timeLogs)
       .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
@@ -301,12 +301,12 @@ export class QuestsDAL {
         and(
           eq(timeLogs.user_id, userId),
           eq(timeBuckets.quest_id, questId),
-          gte(timeLogs.date, from),
-          lte(timeLogs.date, to),
+          gte(timeLogs.started_at, `${from}T00:00:00`),
+          lte(timeLogs.started_at, `${to}T23:59:59`),
         ),
       )
-      .groupBy(timeLogs.date)
-      .orderBy(timeLogs.date);
+      .groupBy(sql`substr(${timeLogs.started_at}, 1, 10)`)
+      .orderBy(sql`substr(${timeLogs.started_at}, 1, 10)`);
   }
 
   static async getGrowthVsDistractionMinutes(
@@ -318,15 +318,15 @@ export class QuestsDAL {
     const rows = await db
       .select({
         is_distraction: timeBuckets.is_distraction,
-        minutes: sql<number>`sum(round((julianday(${timeLogs.end_time}) - julianday(${timeLogs.start_time})) * 1440))`,
+        minutes: sql<number>`sum(round((julianday(${timeLogs.ended_at}) - julianday(${timeLogs.started_at})) * 1440))`,
       })
       .from(timeLogs)
       .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
       .where(
         and(
           eq(timeLogs.user_id, userId),
-          gte(timeLogs.date, from),
-          lte(timeLogs.date, to),
+          gte(timeLogs.started_at, `${from}T00:00:00`),
+          lte(timeLogs.started_at, `${to}T23:59:59`),
           isNull(timeBuckets.deleted_at),
         ),
       )
@@ -360,7 +360,7 @@ export class QuestsDAL {
 
     const rows = await db
       .select({
-        minutes: sql<number>`sum(round((julianday(${timeLogs.end_time}) - julianday(${timeLogs.start_time})) * 1440))`,
+        minutes: sql<number>`sum(round((julianday(${timeLogs.ended_at}) - julianday(${timeLogs.started_at})) * 1440))`,
       })
       .from(timeLogs)
       .innerJoin(timeBuckets, eq(timeLogs.bucket_id, timeBuckets.id))
@@ -368,8 +368,8 @@ export class QuestsDAL {
         and(
           eq(timeLogs.user_id, userId),
           eq(timeBuckets.quest_id, questId),
-          gte(timeLogs.date, from),
-          lte(timeLogs.date, to),
+          gte(timeLogs.started_at, `${from}T00:00:00`),
+          lte(timeLogs.started_at, `${to}T23:59:59`),
         ),
       );
     return rows[0]?.minutes ?? 0;

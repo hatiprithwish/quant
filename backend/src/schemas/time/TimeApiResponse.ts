@@ -2,13 +2,12 @@ import { ApiResponse } from "../common";
 
 export interface TimeActivity {
   id: number;
-  date: string;
   bucket_id: number;
   bucket_name: string;
   bucket_color: string;
   activity: string;
-  start_time: string;
-  end_time: string;
+  started_at: string;
+  ended_at: string;
   duration_minutes: number;
 }
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { DebtEntry, WalletWithBalance } from "@/schemas";
 import { useMutationUpdateDebt, useMutationAddRepayment } from "@/api/mutations";
 import Spinner from "@/components/common/Spinner";
+import { AppConstants } from "@/config/Constants";
 
 interface Props {
   debt: DebtEntry;
@@ -11,10 +12,7 @@ interface Props {
 
 type TabType = "details" | "repayment";
 
-const COLORS = [
-  "#3b82f6", "#ef4444", "#10b981", "#f59e0b",
-  "#8b5cf6", "#ec4899", "#06b6d4", "#f97316",
-];
+const COLORS = AppConstants.PALETTE;
 
 function today() {
   return new Date().toISOString().split("T")[0];

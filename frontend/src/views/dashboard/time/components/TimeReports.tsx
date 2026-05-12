@@ -261,7 +261,7 @@ export default function TimeReports() {
         if (search && !a.activity.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       })
-      .sort((a, b) => b.start_time.localeCompare(a.start_time));
+      .sort((a, b) => b.started_at.localeCompare(a.started_at));
   }, [data, selectedBuckets, search]);
 
   const pieData = useMemo(() => {
@@ -283,7 +283,7 @@ export default function TimeReports() {
 
     const dayMap: Record<string, Record<string, number>> = {};
     filteredActivities.forEach((a) => {
-      const date = a.start_time.slice(0, 10);
+      const date = a.started_at.slice(0, 10);
       if (!dayMap[date]) dayMap[date] = {};
       dayMap[date][a.bucket_name] = (dayMap[date][a.bucket_name] ?? 0) + a.duration_minutes / 60;
     });
@@ -610,7 +610,7 @@ export default function TimeReports() {
                   onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                 >
                   <div style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.3)", width: 40, flexShrink: 0 }}>
-                    {a.start_time.slice(5, 10).replace("-", "/")}
+                    {a.started_at.slice(5, 10).replace("-", "/")}
                   </div>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: a.bucket_color, flexShrink: 0 }} />
                   <div style={{ fontFamily: G, fontSize: 8, color: a.bucket_color, opacity: 0.75, width: 72, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -620,7 +620,7 @@ export default function TimeReports() {
                     {a.activity}
                   </div>
                   <div style={{ fontFamily: G, fontSize: 8, color: "rgba(6,182,212,0.35)", flexShrink: 0 }}>
-                    {a.start_time.slice(11, 16)} – {a.end_time.slice(11, 16)}
+                    {a.started_at.slice(11, 16)} – {a.ended_at.slice(11, 16)}
                   </div>
                   <div style={{ fontFamily: G, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", width: 42, textAlign: "right", flexShrink: 0 }}>
                     {fmtMins(a.duration_minutes)}
