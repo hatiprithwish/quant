@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoneyCategoryTypeEnum, RecurringTransactionTypeEnum, RecurringTransactionPeriodEnum, RecurringEndConditionEnum } from "@/schemas";
 import type { WalletWithBalance } from "@/schemas";
 import Spinner from "@/components/common/Spinner";
@@ -68,6 +68,20 @@ export default function AddRecurringTransactionModal({ wallets, onClose, editing
 
   const { data: investmentsData } = useGetInvestments();
   const investmentAccounts = investmentsData?.accounts ?? [];
+
+  // Populate account selectors once investment data loads when editing
+  useEffect(() => {
+    if (!editing || investmentAccounts.length === 0) return;
+    if (editing.from_asset_id && fromAssetAccountId === "") {
+      const acct = investmentAccounts.find((a) => a.assets.some((ast) => ast.id === editing.from_asset_id));
+      if (acct) setFromAssetAccountId(acct.id);
+    }
+    if (editing.asset_id && toAssetAccountId === "") {
+      const acct = investmentAccounts.find((a) => a.assets.some((ast) => ast.id === editing.asset_id));
+      if (acct) setToAssetAccountId(acct.id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [investmentAccounts.length]);
 
   const { data: categoriesData } = useGetMoneyCategories();
   const expenseCategories = categoriesData?.categories.filter((c) => c.type === MoneyCategoryTypeEnum.Expense) ?? [];

@@ -137,21 +137,57 @@ export class TransactionRepo {
       })),
       ...debtItems,
       ...repaymentItems,
-      ...investmentFlows.map((f) => ({
-        id: f.id,
-        type: "investment" as UnifiedTransaction["type"],
-        date: f.date,
-        amount: f.amount,
-        currency: "INR",
-        description: f.description ?? f.asset_name,
-        category: null,
-        wallet_id: f.wallet_id,
-        wallet_name: f.wallet_name ?? null,
-        from_wallet_id: null,
-        from_wallet_name: null,
-        to_wallet_id: null,
-        to_wallet_name: null,
-      })),
+      ...investmentFlows.map((f) => {
+        if (f.transfer_type === "wallet_to_asset") {
+          return {
+            id: f.id,
+            type: "transfer" as UnifiedTransaction["type"],
+            date: f.date,
+            amount: f.amount,
+            currency: "INR",
+            description: f.description ?? f.asset_name,
+            category: null,
+            wallet_id: null,
+            wallet_name: null,
+            from_wallet_id: f.wallet_id,
+            from_wallet_name: walletMap.get(f.wallet_id!) ?? null,
+            to_wallet_id: null,
+            to_wallet_name: f.asset_name ?? null,
+          };
+        }
+        if (f.transfer_type === "asset_to_wallet") {
+          return {
+            id: f.id,
+            type: "transfer" as UnifiedTransaction["type"],
+            date: f.date,
+            amount: Math.abs(f.amount),
+            currency: "INR",
+            description: f.description ?? f.asset_name,
+            category: null,
+            wallet_id: null,
+            wallet_name: null,
+            from_wallet_id: null,
+            from_wallet_name: f.asset_name ?? null,
+            to_wallet_id: f.wallet_id,
+            to_wallet_name: walletMap.get(f.wallet_id!) ?? null,
+          };
+        }
+        return {
+          id: f.id,
+          type: "investment" as UnifiedTransaction["type"],
+          date: f.date,
+          amount: f.amount,
+          currency: "INR",
+          description: f.description ?? f.asset_name,
+          category: null,
+          wallet_id: f.wallet_id,
+          wallet_name: f.wallet_name ?? null,
+          from_wallet_id: null,
+          from_wallet_name: null,
+          to_wallet_id: null,
+          to_wallet_name: null,
+        };
+      }),
     ];
 
     items.sort((a, b) => {

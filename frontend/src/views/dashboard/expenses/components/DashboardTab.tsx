@@ -11,6 +11,7 @@ import {
   useGetBudgets,
   useGetDebts,
   useGetRecurringTransactions,
+  useGetInvestments,
 } from "@/api/cachedQueries";
 import AddWalletModal from "./AddWalletModal";
 import EditWalletModal from "./EditWalletModal";
@@ -320,9 +321,36 @@ function BudgetXPRow({ budget, onEdit }: { budget: BudgetWithSpent; onEdit: (b: 
 
 // ── Recurring row ─────────────────────────────────────────────────────────────
 
-function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit: (r: RecurringTransactionItem) => void }) {
+function RecurringRow({
+  item, onEdit, walletMap, assetMap,
+}: {
+  item: RecurringTransactionItem;
+  onEdit: (r: RecurringTransactionItem) => void;
+  walletMap: Map<number, string>;
+  assetMap: Map<number, string>;
+}) {
   const [hovered, setHovered] = useState(false);
   const isIncome = item.type === "income";
+  const isTransfer = item.type === "transfer";
+  const isExpense = item.type === "expense";
+
+  function getLabel() {
+    if (item.description) return item.description;
+    if (isTransfer) {
+      const from = item.wallet_id ? walletMap.get(item.wallet_id)
+        : item.from_asset_id ? assetMap.get(item.from_asset_id)
+        : null;
+      const to = item.to_wallet_id ? walletMap.get(item.to_wallet_id)
+        : item.asset_id ? assetMap.get(item.asset_id)
+        : null;
+      if (from && to) return `TRANSFER · ${from} → ${to}`;
+    }
+    return item.name;
+  }
+
+  const amountColor = isIncome ? "#22c55e" : isExpense ? "#ef4444" : "rgba(255,255,255,0.7)";
+  const dotColor = isIncome ? "#22c55e" : isExpense ? "#ef4444" : "#6366f1";
+  const dotGlow = isIncome ? "0 0 6px #22c55e" : isExpense ? "0 0 6px #ef4444" : "0 0 6px #6366f1";
 
   return (
     <div
@@ -339,8 +367,8 @@ function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{
           width: 5, height: 5, borderRadius: "50%",
-          background: isIncome ? "#22c55e" : "rgba(255,255,255,0.2)",
-          boxShadow: isIncome ? "0 0 6px #22c55e" : "none",
+          background: dotColor,
+          boxShadow: dotGlow,
           flexShrink: 0,
         }} />
         <div>
@@ -349,7 +377,7 @@ function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit
             fontSize: 9, letterSpacing: "0.06em",
             color: hovered ? "#fff" : "rgba(255,255,255,0.65)",
             transition: "color 0.15s",
-          }}>{item.name || item.description}</div>
+          }}>{getLabel()}</div>
           <div style={{
             fontFamily: "'JetBrains Mono','Fira Code',monospace",
             fontSize: 7, letterSpacing: "0.1em",
@@ -364,7 +392,7 @@ function RecurringRow({ item, onEdit }: { item: RecurringTransactionItem; onEdit
       <span style={{
         fontFamily: "'Syne','JetBrains Mono',monospace",
         fontSize: 13, fontWeight: 700,
-        color: isIncome ? "#22c55e" : "rgba(255,255,255,0.7)",
+        color: amountColor,
         letterSpacing: "-0.01em",
       }}>
         {isIncome ? "+" : "−"}{fmtMoney(item.amount)}
@@ -470,16 +498,22 @@ export default function DashboardTab({ data }: Props) {
   const [showAddBudget, setShowAddBudget]     = useState(false);
   const [editingBudget, setEditingBudget]     = useState<BudgetWithSpent | null>(null);
 
-  const { data: walletsData }    = useGetWallets();
-  const { data: budgetsData }    = useGetBudgets(budgetPeriod, periodStartDate[budgetPeriod]());
-  const { data: debtsData }      = useGetDebts();
-  const { data: recurringData }  = useGetRecurringTransactions();
+  const { data: walletsData }      = useGetWallets();
+  const { data: budgetsData }      = useGetBudgets(budgetPeriod, periodStartDate[budgetPeriod]());
+  const { data: debtsData }        = useGetDebts();
+  const { data: recurringData }    = useGetRecurringTransactions();
+  const { data: investmentsData }  = useGetInvestments();
 
   const wallets   = walletsData?.wallets   ?? [];
   const budgets   = budgetsData?.budgets   ?? [];
   const lent      = debtsData?.lent        ?? [];
   const borrowed  = debtsData?.borrowed    ?? [];
   const recurring = recurringData?.items   ?? [];
+
+  const walletMap = new Map(wallets.map((w) => [w.id, w.name]));
+  const assetMap  = new Map(
+    (investmentsData?.accounts ?? []).flatMap((a) => a.assets.map((ast) => [ast.id, ast.name] as [number, string]))
+  );
 
   const monthSpent      = data?.grandTotal ?? 0;
   const budgetTotal     = budgets.reduce((s, b) => s + b.amount, 0);
@@ -693,6 +727,7 @@ export default function DashboardTab({ data }: Props) {
                 recurring.map(r => (
                   <RecurringRow
                     key={r.id} item={r}
+                    walletMap={walletMap} assetMap={assetMap}
                     onEdit={item => { setEditingRecurring(item); setShowAddRecurring(true); }}
                   />
                 ))

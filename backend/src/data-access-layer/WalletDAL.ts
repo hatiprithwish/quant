@@ -1,6 +1,6 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { wallets, depositLogs, expenseLogs, transferLogs, debts, debtRepayments } from "../db/tables";
+import { wallets, depositLogs, expenseLogs, transferLogs, debts, debtRepayments, investmentCashFlows } from "../db/tables";
 import {
   GetWalletsDbRequest,
   InsertWalletDbRequest,
@@ -66,6 +66,12 @@ export class WalletDAL {
             FROM ${debtRepayments} dr
             INNER JOIN ${debts} db ON db.id = dr.debt_id
             WHERE dr.wallet_id = "wallets"."id" AND db.type = 'borrowed'
+          ), 0)
+          -
+          COALESCE((
+            SELECT SUM(icf.amount)
+            FROM ${investmentCashFlows} icf
+            WHERE icf.wallet_id = "wallets"."id" AND icf.transfer_type IS NOT NULL
           ), 0)
         `.as("balance"),
       })

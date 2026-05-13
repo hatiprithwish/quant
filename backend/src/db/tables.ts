@@ -479,6 +479,9 @@ export const investmentCashFlows = sqliteTable("investment_cash_flows", {
   date: text("date").notNull(),
   wallet_id: integer("wallet_id").references(() => wallets.id),
   description: text("description"),
+  // "wallet_to_asset" | "asset_to_wallet" — set for recurring transfer flows so they
+  // show as a single transfer entry instead of a separate expense/deposit
+  transfer_type: text("transfer_type"),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

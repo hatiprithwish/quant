@@ -5,11 +5,9 @@ import { RecurringTransactionDAL } from "../data-access-layer/RecurringTransacti
 import { ExpenseDAL } from "../data-access-layer/ExpenseDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
 import { InvestmentDAL } from "../data-access-layer/InvestmentDAL";
-import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import {
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
-  MoneyCategoryTypeEnum,
 } from "../schemas";
 import { Logger } from "../config/Logger";
 import { AppConstants } from "../config/Constants";
@@ -83,37 +81,14 @@ async function materializeTransfer(
       description: desc,
     });
   } else if (item.wallet_id !== null && item.asset_id !== null) {
-    // Wallet → Investment Asset
-    const expCats = await MoneyCategoryDAL.findByType(item.user_id, MoneyCategoryTypeEnum.Expense, db);
-    const cat = expCats[0];
-    if (!cat) {
-      Logger.error({
-        correlationId: "cron",
-        logCategory: AppConstants.LOG_CATEGORIES.CRON,
-        logAction: "RecurringTransferSkipped",
-        message: "No expense category found for wallet debit",
-        metadata: { userId: item.user_id },
-      });
-      return;
-    }
-    await ExpenseDAL.insertOne(
-      {
-        userId: item.user_id,
-        date: item.next_date,
-        amount: item.amount,
-        currency: "INR",
-        categoryId: cat.id,
-        description: desc,
-        walletId: item.wallet_id,
-      },
-      db,
-    );
+    // Wallet → Investment Asset: single cashflow entry (transfer_type tracks the direction)
     await db.insert(investmentCashFlows).values({
       asset_id: item.asset_id,
       amount: item.amount,
       date: item.next_date,
       wallet_id: item.wallet_id,
       description: desc,
+      transfer_type: "wallet_to_asset",
     });
   } else if (item.from_asset_id !== null && item.wallet_id !== null) {
     // Investment Asset → Wallet
@@ -133,12 +108,14 @@ async function materializeTransfer(
     const ratio = asset.invested_amount / asset.current_value;
     const principalReduction = transferAmount * ratio;
 
+    // Single cashflow entry for the withdrawal; transfer_type marks it as asset→wallet
     await db.insert(investmentCashFlows).values({
       asset_id: item.from_asset_id,
       amount: -principalReduction,
       date: item.next_date,
       wallet_id: item.wallet_id,
       description: desc,
+      transfer_type: "asset_to_wallet",
     });
 
     await db.insert(assetValueSnapshots).values({
@@ -146,31 +123,6 @@ async function materializeTransfer(
       value: asset.current_value - transferAmount,
       snapshot_date: item.next_date,
     });
-
-    const incomeCategories = await MoneyCategoryDAL.findByType(item.user_id, MoneyCategoryTypeEnum.Income, db);
-    const incomeCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
-    if (!incomeCat) {
-      Logger.error({
-        correlationId: "cron",
-        logCategory: AppConstants.LOG_CATEGORIES.CRON,
-        logAction: "RecurringTransferSkipped",
-        message: "No income category found for wallet credit",
-        metadata: { userId: item.user_id },
-      });
-      return;
-    }
-    await DepositDAL.insert(
-      {
-        userId: item.user_id,
-        walletId: item.wallet_id,
-        date: item.next_date,
-        amount: transferAmount,
-        currency: "INR",
-        categoryId: incomeCat.id,
-        description: desc,
-      },
-      db,
-    );
   }
 }
 

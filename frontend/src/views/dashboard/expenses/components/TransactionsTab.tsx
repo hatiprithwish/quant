@@ -52,6 +52,9 @@ function getAmountColor(item: UnifiedTransaction): string {
   if (item.type === "income" || item.type === "lent_repayment")
     return "#22c55e";
   if (item.type === "transfer") return "#6366f1";
+  if (item.type === "expense" || item.type === "borrowed_repayment") return "#ef4444";
+  if (item.type === "lent") return "#f59e0b";
+  if (item.type === "borrowed") return "#3b82f6";
   return "rgba(255,255,255,0.85)";
 }
 
@@ -270,7 +273,10 @@ function TxRow({
             transition: "color 0.12s",
           }}
         >
-          {item.description ?? "—"}
+          {item.description
+            ?? (item.type === "transfer"
+              ? `${item.from_wallet_name ?? "?"} → ${item.to_wallet_name ?? "?"}`
+              : "—")}
         </div>
       </div>
 

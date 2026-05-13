@@ -225,6 +225,7 @@ export class InvestmentDAL {
         wallet_id: investmentCashFlows.wallet_id,
         wallet_name: wallets.name,
         description: investmentCashFlows.description,
+        transfer_type: investmentCashFlows.transfer_type,
       })
       .from(investmentCashFlows)
       .leftJoin(wallets, eq(investmentCashFlows.wallet_id, wallets.id))
