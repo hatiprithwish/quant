@@ -1,6 +1,6 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { wallets, depositLogs, expenseLogs, transferLogs } from "../db/tables";
+import { wallets, depositLogs, expenseLogs, transferLogs, debts, debtRepayments, investmentCashFlows } from "../db/tables";
 import {
   GetWalletsDbRequest,
   InsertWalletDbRequest,
@@ -21,25 +21,57 @@ export class WalletDAL {
           COALESCE((
             SELECT SUM(d.amount)
             FROM ${depositLogs} d
-            WHERE d.wallet_id = ${wallets.id}
+            WHERE d.wallet_id = "wallets"."id"
           ), 0)
           +
           COALESCE((
             SELECT SUM(t.amount)
             FROM ${transferLogs} t
-            WHERE t.to_wallet_id = ${wallets.id}
+            WHERE t.to_wallet_id = "wallets"."id"
           ), 0)
           -
           COALESCE((
             SELECT SUM(e.amount)
             FROM ${expenseLogs} e
-            WHERE e.wallet_id = ${wallets.id}
+            WHERE e.wallet_id = "wallets"."id"
           ), 0)
           -
           COALESCE((
             SELECT SUM(t.amount)
             FROM ${transferLogs} t
-            WHERE t.from_wallet_id = ${wallets.id}
+            WHERE t.from_wallet_id = "wallets"."id"
+          ), 0)
+          -
+          COALESCE((
+            SELECT SUM(db.amount)
+            FROM ${debts} db
+            WHERE db.wallet_id = "wallets"."id" AND db.type = 'lent'
+          ), 0)
+          +
+          COALESCE((
+            SELECT SUM(db.amount)
+            FROM ${debts} db
+            WHERE db.wallet_id = "wallets"."id" AND db.type = 'borrowed'
+          ), 0)
+          +
+          COALESCE((
+            SELECT SUM(dr.amount)
+            FROM ${debtRepayments} dr
+            INNER JOIN ${debts} db ON db.id = dr.debt_id
+            WHERE dr.wallet_id = "wallets"."id" AND db.type = 'lent'
+          ), 0)
+          -
+          COALESCE((
+            SELECT SUM(dr.amount)
+            FROM ${debtRepayments} dr
+            INNER JOIN ${debts} db ON db.id = dr.debt_id
+            WHERE dr.wallet_id = "wallets"."id" AND db.type = 'borrowed'
+          ), 0)
+          -
+          COALESCE((
+            SELECT SUM(icf.amount)
+            FROM ${investmentCashFlows} icf
+            WHERE icf.wallet_id = "wallets"."id" AND icf.transfer_type IS NOT NULL
           ), 0)
         `.as("balance"),
       })

@@ -3,17 +3,24 @@ import { TimeDAL } from "../data-access-layer/TimeDAL";
 import {
   LogTimeRepoRequest,
   TimeQueryRepoRequest,
+  CreateTimeEntryRepoRequest,
+  UpdateTimeEntryRepoRequest,
+  GetBucketEntriesRepoRequest,
   LogTimeResponse,
   GetTimeSummaryResponse,
+  CreateTimeEntryResponse,
+  UpdateTimeEntryResponse,
+  DeleteTimeEntryResponse,
+  GetBucketEntriesResponse,
   DayTimeSummary,
   BucketSummary,
   TimeActivity,
 } from "../schemas";
 
-function computeDurationMinutes(startTime: string, endTime: string): number {
-  const start = new Date(startTime).getTime();
-  const end = new Date(endTime).getTime();
-  return Math.round((end - start) / 60000);
+function computeDurationMinutes(started_at: string, ended_at: string): number {
+  const start = new Date(started_at).getTime();
+  const end = new Date(ended_at).getTime();
+  return Math.max(0, Math.round((end - start) / 60000));
 }
 
 export class TimeRepo {
@@ -24,11 +31,10 @@ export class TimeRepo {
     await TimeDAL.insertMany(
       req.entries.map((entry) => ({
         userId: req.userId,
-        date: entry.date,
         bucket_id: entry.bucket_id,
         activity: entry.activity,
-        startTime: entry.start_time,
-        endTime: entry.end_time,
+        started_at: entry.started_at,
+        ended_at: entry.ended_at,
       })),
       db,
     );
@@ -50,21 +56,21 @@ export class TimeRepo {
     let totalMinutes = 0;
 
     for (const row of rows) {
-      const duration = computeDurationMinutes(row.start_time, row.end_time);
+      const duration = computeDurationMinutes(row.started_at, row.ended_at);
+      const date = row.started_at.slice(0, 10);
 
-      if (!dayMap.has(row.date)) dayMap.set(row.date, new Map());
-      const bMap = dayMap.get(row.date)!;
+      if (!dayMap.has(date)) dayMap.set(date, new Map());
+      const bMap = dayMap.get(date)!;
       if (!bMap.has(row.bucket_id)) bMap.set(row.bucket_id, []);
 
       bMap.get(row.bucket_id)!.push({
         id: row.id,
-        date: row.date,
         bucket_id: row.bucket_id,
         bucket_name: row.bucket_name,
         bucket_color: row.bucket_color,
         activity: row.activity,
-        start_time: row.start_time,
-        end_time: row.end_time,
+        started_at: row.started_at,
+        ended_at: row.ended_at,
         duration_minutes: duration,
       });
 
@@ -109,6 +115,82 @@ export class TimeRepo {
       days,
       totalMinutes,
       byBucket,
+    };
+  }
+
+  static async createEntry(
+    req: CreateTimeEntryRepoRequest,
+    db: DrizzleDb,
+  ): Promise<CreateTimeEntryResponse> {
+    const rows = await TimeDAL.insertOne(
+      {
+        user_id: req.userId,
+        bucket_id: req.bucket_id,
+        activity: req.activity,
+        started_at: req.started_at,
+        ended_at: req.ended_at,
+      },
+      db,
+    );
+    return { isSuccess: true, message: "Entry created", id: rows[0].id };
+  }
+
+  static async updateEntry(
+    req: UpdateTimeEntryRepoRequest,
+    db: DrizzleDb,
+  ): Promise<UpdateTimeEntryResponse> {
+    await TimeDAL.update(
+      { id: req.id, userId: req.userId, bucket_id: req.bucket_id, activity: req.activity, started_at: req.started_at, ended_at: req.ended_at },
+      db,
+    );
+    return { isSuccess: true, message: "Entry updated" };
+  }
+
+  static async deleteEntry(
+    id: number,
+    userId: string,
+    db: DrizzleDb,
+  ): Promise<DeleteTimeEntryResponse> {
+    await TimeDAL.softDelete(id, userId, db);
+    return { isSuccess: true, message: "Entry deleted" };
+  }
+
+  static async getBucketEntries(
+    req: GetBucketEntriesRepoRequest,
+    db: DrizzleDb,
+  ): Promise<GetBucketEntriesResponse> {
+    const { rows, total } = await TimeDAL.findByBucketPaginated(
+      {
+        userId: req.userId,
+        bucket_id: req.bucket_id,
+        search: req.search ?? null,
+        page: req.page,
+        page_size: req.page_size,
+      },
+      db,
+    );
+
+    const entries: TimeActivity[] = rows.map((row) => ({
+      id: row.id,
+      bucket_id: row.bucket_id,
+      bucket_name: row.bucket_name,
+      bucket_color: row.bucket_color,
+      activity: row.activity,
+      started_at: row.started_at,
+      ended_at: row.ended_at,
+      duration_minutes: computeDurationMinutes(row.started_at, row.ended_at),
+    }));
+
+    const total_pages = Math.max(1, Math.ceil(total / req.page_size));
+
+    return {
+      isSuccess: true,
+      message: "Entries retrieved",
+      entries,
+      total,
+      page: req.page,
+      page_size: req.page_size,
+      total_pages,
     };
   }
 }

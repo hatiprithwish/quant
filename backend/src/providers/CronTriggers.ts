@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { recurringTransactionItems } from "../db/tables";
+import { recurringTransactionItems, transferLogs, investmentCashFlows, assetValueSnapshots } from "../db/tables";
 import { RecurringTransactionDAL } from "../data-access-layer/RecurringTransactionDAL";
 import { ExpenseDAL } from "../data-access-layer/ExpenseDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
+import { InvestmentDAL } from "../data-access-layer/InvestmentDAL";
 import {
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
@@ -52,6 +53,79 @@ function advanceDate(
   return d.toISOString().split("T")[0];
 }
 
+async function materializeTransfer(
+  item: {
+    user_id: string;
+    wallet_id: number | null;
+    to_wallet_id: number | null;
+    asset_id: number | null;
+    from_asset_id: number | null;
+    amount: number;
+    next_date: string;
+    name: string;
+    description: string | null;
+  },
+  db: DrizzleDb,
+): Promise<void> {
+  const desc = item.description ?? item.name;
+
+  if (item.wallet_id !== null && item.to_wallet_id !== null) {
+    // Wallet → Wallet
+    await db.insert(transferLogs).values({
+      user_id: item.user_id,
+      from_wallet_id: item.wallet_id,
+      to_wallet_id: item.to_wallet_id,
+      date: item.next_date,
+      amount: item.amount,
+      currency: "INR",
+      description: desc,
+    });
+  } else if (item.wallet_id !== null && item.asset_id !== null) {
+    // Wallet → Investment Asset: single cashflow entry (transfer_type tracks the direction)
+    await db.insert(investmentCashFlows).values({
+      asset_id: item.asset_id,
+      amount: item.amount,
+      date: item.next_date,
+      wallet_id: item.wallet_id,
+      description: desc,
+      transfer_type: "wallet_to_asset",
+    });
+  } else if (item.from_asset_id !== null && item.wallet_id !== null) {
+    // Investment Asset → Wallet
+    const asset = await InvestmentDAL.findAssetWithLatestSnapshot(item.from_asset_id, db);
+    if (!asset || asset.current_value === null || asset.current_value <= 0) {
+      Logger.error({
+        correlationId: "cron",
+        logCategory: AppConstants.LOG_CATEGORIES.CRON,
+        logAction: "RecurringTransferSkipped",
+        message: "Asset has no current value; skipping transfer",
+        metadata: { assetId: item.from_asset_id },
+      });
+      return;
+    }
+
+    const transferAmount = Math.min(item.amount, asset.current_value);
+    const ratio = asset.invested_amount / asset.current_value;
+    const principalReduction = transferAmount * ratio;
+
+    // Single cashflow entry for the withdrawal; transfer_type marks it as asset→wallet
+    await db.insert(investmentCashFlows).values({
+      asset_id: item.from_asset_id,
+      amount: -principalReduction,
+      date: item.next_date,
+      wallet_id: item.wallet_id,
+      description: desc,
+      transfer_type: "asset_to_wallet",
+    });
+
+    await db.insert(assetValueSnapshots).values({
+      asset_id: item.from_asset_id,
+      value: asset.current_value - transferAmount,
+      snapshot_date: item.next_date,
+    });
+  }
+}
+
 export async function processRecurringTransactions(
   db: DrizzleDb,
 ): Promise<void> {
@@ -92,25 +166,27 @@ export async function processRecurringTransactions(
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          categoryId: item.category_id,
+          categoryId: item.category_id!,
           description: item.description ?? item.name,
-          walletId: item.wallet_id,
+          walletId: item.wallet_id!,
         },
         db,
       );
-    } else {
+    } else if (item.type === "income") {
       await DepositDAL.insert(
         {
           userId: item.user_id,
-          walletId: item.wallet_id,
+          walletId: item.wallet_id!,
           date: item.next_date,
           amount: item.amount,
           currency: "INR",
-          categoryId: item.category_id,
+          categoryId: item.category_id!,
           description: item.description ?? item.name,
         },
         db,
       );
+    } else if (item.type === "transfer") {
+      await materializeTransfer(item, db);
     }
 
     // Advance or terminate

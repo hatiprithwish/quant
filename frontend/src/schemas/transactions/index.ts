@@ -1,7 +1,7 @@
 import { ApiResponse } from "../common";
 import { MoneyCategoryItem } from "../money-categories";
 
-export type TransactionType = "expense" | "income" | "transfer";
+export type TransactionType = "expense" | "income" | "transfer" | "lent" | "borrowed" | "lent_repayment" | "borrowed_repayment" | "investment";
 
 export interface UnifiedTransaction {
   id: number;

@@ -5,6 +5,7 @@ import type {
   GetExpenseSummaryResponse,
   GetTimeSummaryResponse,
   GetTimeBucketsResponse,
+  GetBucketEntriesResponse,
   GetScratchpadResponse,
   GetWalletsResponse,
   GetBudgetsResponse,
@@ -17,6 +18,7 @@ import type {
   GetQuestDetailResponse,
   GetQuestsKanbanResponse,
   GetMoneyCategoriesResponse,
+  GetInvestmentsResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -66,6 +68,27 @@ export function useGetTimeBuckets() {
   return useQuery({
     queryKey: ["/api/time-bucket"],
     queryFn: () => apiClient.get<GetTimeBucketsResponse>("/api/time-bucket"),
+  });
+}
+
+export function useGetBucketEntries(
+  bucketId: number,
+  page: number,
+  search: string,
+  pageSize = 25,
+) {
+  return useQuery({
+    queryKey: ["/api/time-entry", bucketId, page, search, pageSize],
+    queryFn: () => {
+      const params = new URLSearchParams({
+        bucket_id: String(bucketId),
+        page: String(page),
+        page_size: String(pageSize),
+      });
+      if (search) params.set("search", search);
+      return apiClient.get<GetBucketEntriesResponse>(`/api/time-entry?${params.toString()}`);
+    },
+    enabled: bucketId > 0,
   });
 }
 
@@ -171,5 +194,12 @@ export function useGetBodyMeasurements(metricId: number, from: string, to: strin
         to,
       }),
     enabled: isEnabled,
+  });
+}
+
+export function useGetInvestments() {
+  return useQuery({
+    queryKey: ["/api/investments"],
+    queryFn: () => apiClient.get<GetInvestmentsResponse>("/api/investments"),
   });
 }

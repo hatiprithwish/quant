@@ -1,6 +1,6 @@
-import { and, between, eq } from "drizzle-orm";
+import { and, between, eq, or } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { depositLogs } from "../db/tables";
+import { depositLogs, moneyCategories } from "../db/tables";
 import { InsertDepositDbRequest, UpdateDepositDbRequest } from "../schemas";
 
 export class DepositDAL {
@@ -46,6 +46,25 @@ export class DepositDAL {
     await db
       .delete(depositLogs)
       .where(and(eq(depositLogs.id, id), eq(depositLogs.user_id, userId)));
+  }
+
+  static async findOpeningBalance(walletId: number, userId: string, db: DrizzleDb) {
+    const rows = await db
+      .select({ depositLogs })
+      .from(depositLogs)
+      .leftJoin(moneyCategories, eq(depositLogs.category_id, moneyCategories.id))
+      .where(
+        and(
+          eq(depositLogs.wallet_id, walletId),
+          eq(depositLogs.user_id, userId),
+          or(
+            eq(depositLogs.description, "Opening balance"),
+            eq(moneyCategories.name, "opening_balance"),
+          ),
+        ),
+      )
+      .limit(1);
+    return rows[0]?.depositLogs ?? null;
   }
 
   static async findByDateRange(

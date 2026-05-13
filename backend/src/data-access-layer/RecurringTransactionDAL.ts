@@ -20,7 +20,7 @@ export class RecurringTransactionDAL {
       .insert(recurringTransactionItems)
       .values({
         user_id: req.userId,
-        wallet_id: req.walletId,
+        wallet_id: req.walletId ?? null,
         type: req.type,
         name: req.name,
         amount: req.amount,
@@ -31,9 +31,12 @@ export class RecurringTransactionDAL {
         end_condition: req.endCondition,
         end_date: req.endDate,
         occurrences: req.occurrences,
-        category_id: req.categoryId,
+        category_id: req.categoryId ?? null,
         description: req.description,
         next_date: req.nextDate,
+        to_wallet_id: req.toWalletId ?? null,
+        asset_id: req.assetId ?? null,
+        from_asset_id: req.fromAssetId ?? null,
       })
       .returning();
     return row;
@@ -75,6 +78,9 @@ export class RecurringTransactionDAL {
     if (req.categoryId !== undefined) updates.category_id = req.categoryId;
     if (req.description !== undefined) updates.description = req.description;
     if (req.nextDate !== undefined) updates.next_date = req.nextDate;
+    if (req.toWalletId !== undefined) updates.to_wallet_id = req.toWalletId;
+    if (req.assetId !== undefined) updates.asset_id = req.assetId;
+    if (req.fromAssetId !== undefined) updates.from_asset_id = req.fromAssetId;
 
     const [row] = await db
       .update(recurringTransactionItems)

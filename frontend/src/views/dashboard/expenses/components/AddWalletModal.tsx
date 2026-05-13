@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { WalletTypeEnum } from "@/schemas";
 import { useMutationCreateWallet } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 interface Props {
   onClose: () => void;
@@ -118,9 +119,9 @@ export default function AddWalletModal({ onClose }: Props) {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
-              {mutation.isPending ? "Creating…" : "Create Wallet"}
+              {mutation.isPending ? <><Spinner size="sm" /> Creating…</> : "Create Wallet"}
             </button>
           </div>
         </form>

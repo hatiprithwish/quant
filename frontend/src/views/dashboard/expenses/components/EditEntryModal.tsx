@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { UnifiedTransaction, WalletWithBalance } from "@/schemas";
 import { MoneyCategoryTypeEnum } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 import { useGetMoneyCategories } from "@/api/cachedQueries";
 import {
   useMutationUpdateExpense,
@@ -143,8 +144,8 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
               <button type="button" onClick={() => setConfirmDelete(false)} className="flex-1 py-2 rounded-lg text-sm font-medium border border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 Cancel
               </button>
-              <button type="button" onClick={handleDelete} disabled={isPending} className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
-                {isPending ? "Deleting…" : "Yes, Delete"}
+              <button type="button" onClick={handleDelete} disabled={isPending} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
+                {isPending ? <><Spinner size="sm" /> Deleting…</> : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -236,8 +237,8 @@ export default function EditEntryModal({ entry, wallets, from, to, onClose }: Pr
               <button type="button" onClick={onClose} className="flex-1 py-2 rounded-lg text-sm font-medium border border-gray-200 dark:border-neutral-700 text-gray-600 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors">
                 Cancel
               </button>
-              <button type="submit" disabled={isPending} className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50">
-                {isPending ? "Saving…" : "Save"}
+              <button type="submit" disabled={isPending} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50">
+                {isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
               </button>
             </div>
           </form>

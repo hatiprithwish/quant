@@ -1,4 +1,5 @@
 import { ApiResponse } from "../common";
+import { AppConstants } from "@/config/Constants";
 
 export enum MealTypeLabelEnum {
   Breakfast = "breakfast",
@@ -14,11 +15,12 @@ export const mealTypeDisplayLabel: Record<MealTypeLabelEnum, string> = {
   [MealTypeLabelEnum.Snack]: "Snack",
 };
 
+const P = AppConstants.PALETTE;
 export const mealTypeColor: Record<MealTypeLabelEnum, string> = {
-  [MealTypeLabelEnum.Breakfast]: "#f59e0b",
-  [MealTypeLabelEnum.Lunch]: "#10b981",
-  [MealTypeLabelEnum.Dinner]: "#6366f1",
-  [MealTypeLabelEnum.Snack]: "#ec4899",
+  [MealTypeLabelEnum.Breakfast]: P[5],
+  [MealTypeLabelEnum.Lunch]: P[7],
+  [MealTypeLabelEnum.Dinner]: P[1],
+  [MealTypeLabelEnum.Snack]: P[2],
 };
 
 export interface FoodItem {

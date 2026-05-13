@@ -1,153 +1,248 @@
-import { useState, useRef, useEffect } from "react";
-import { useGetExpenses, useGetTransactions, useGetWallets } from "@/api/cachedQueries";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  useGetExpenses,
+  useGetTransactions,
+  useGetWallets,
+} from "@/api/cachedQueries";
 import DashboardTab from "./components/DashboardTab";
 import TransactionsTab from "./components/TransactionsTab";
 import CategoriesTab from "./components/CategoriesTab";
+import LendingTab from "./components/LendingTab";
+import InvestmentsTab from "./components/InvestmentsTab";
 import AddEntryModal from "./components/AddEntryModal";
+import Spinner from "@/components/common/Spinner";
+import DateRangeDropdown, { drToday, getPresetRange } from "@/components/common/DateRangeDropdown";
 
-function today() {
-  return new Date().toISOString().split("T")[0];
-}
 
-function daysAgo(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().split("T")[0];
-}
+// ── Types ───────────────────────────────────────────────────────────────────────
 
-function startOfMonth() {
-  const d = new Date();
-  d.setDate(1);
-  return d.toISOString().split("T")[0];
-}
+type Tab = "dashboard" | "transactions" | "categories" | "lending" | "investments";
+const VALID_TABS: Tab[] = ["dashboard", "transactions", "categories", "lending", "investments"];
 
-function startOfQuarter() {
-  const d = new Date();
-  const q = Math.floor(d.getMonth() / 3);
-  d.setMonth(q * 3, 1);
-  return d.toISOString().split("T")[0];
-}
+// ── Inner nav config ─────────────────────────────────────────────────────────────
 
-function startOfYear() {
-  const d = new Date();
-  d.setMonth(0, 1);
-  return d.toISOString().split("T")[0];
-}
-
-function fmtDate(iso: string) {
-  const [, m, d] = iso.split("-");
-  return `${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(m) - 1]}`;
-}
-
-const PRESETS = [
-  { label: "Today", from: () => today(), to: () => today() },
-  { label: "7 days", from: () => daysAgo(6), to: () => today() },
-  { label: "Month", from: () => startOfMonth(), to: () => today() },
-  { label: "Quarter", from: () => startOfQuarter(), to: () => today() },
-  { label: "Year", from: () => startOfYear(), to: () => today() },
+const MONEY_SECTIONS: { tab: Tab; label: string; sub: string; glyph: string; xp: number }[] = [
+  { tab: "dashboard",    label: "OVERVIEW",     sub: "command center", glyph: "◈", xp: 100 },
+  { tab: "transactions", label: "LEDGER",       sub: "all entries",    glyph: "≡", xp: 85  },
+  { tab: "categories",   label: "CATEGORIES",   sub: "budget & tags",  glyph: "◐", xp: 72  },
+  { tab: "lending",      label: "DEBTS",        sub: "lent & owed",    glyph: "⇄", xp: 45  },
+  { tab: "investments",  label: "PORTFOLIO",    sub: "assets & growth",glyph: "△", xp: 90  },
 ];
 
-type Tab = "dashboard" | "transactions" | "categories";
+// ── Inner Sidebar ──────────────────────────────────────────────────────────────
 
-function DateRangeDropdown({
-  from,
-  to,
-  onChange,
+function MoneyRail({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  return (
+    <aside style={{
+      width: 160,
+      flexShrink: 0,
+      background: "rgba(8,6,2,0.7)",
+      borderRight: "1px solid rgba(245,158,11,0.1)",
+      display: "flex",
+      flexDirection: "column",
+      padding: "16px 0",
+      position: "relative",
+      backdropFilter: "blur(4px)",
+    }}>
+      {/* ambient glow behind rail */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse at 50% 20%, rgba(245,158,11,0.03) 0%, transparent 70%)",
+      }} />
+
+      <div style={{
+        padding: "0 12px 12px",
+        borderBottom: "1px solid rgba(245,158,11,0.08)",
+        marginBottom: 8,
+      }}>
+        <div style={{
+          fontFamily: "'JetBrains Mono','Fira Code',monospace",
+          fontSize: 8, letterSpacing: "0.22em",
+          color: "rgba(245,158,11,0.4)",
+          marginBottom: 2,
+        }}>SECTOR</div>
+        <div style={{
+          fontFamily: "'JetBrains Mono','Fira Code',monospace",
+          fontSize: 11, letterSpacing: "0.18em", fontWeight: 700,
+          color: "#f59e0b",
+          textShadow: "0 0 12px rgba(245,158,11,0.5)",
+        }}>FINANCE</div>
+      </div>
+
+      <nav style={{ flex: 1, padding: "0 6px", display: "flex", flexDirection: "column", gap: 1 }}>
+        {MONEY_SECTIONS.map(section => {
+          const active = tab === section.tab;
+          return (
+            <button
+              key={section.tab}
+              onClick={() => setTab(section.tab)}
+              style={{
+                display: "flex", flexDirection: "column",
+                alignItems: "flex-start",
+                padding: "8px 8px",
+                background: active ? "rgba(245,158,11,0.1)" : "transparent",
+                borderLeft: `2px solid ${active ? "#f59e0b" : "transparent"}`,
+                borderRadius: "0 4px 4px 0",
+                border: "none",
+                borderLeftWidth: 2,
+                borderLeftStyle: "solid",
+                borderLeftColor: active ? "#f59e0b" : "transparent",
+                cursor: "pointer",
+                textAlign: "left",
+                width: "100%",
+                transition: "all 0.15s",
+                position: "relative",
+              }}
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,158,11,0.05)";
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
+                <span style={{
+                  fontSize: 10, color: active ? "#f59e0b" : "rgba(245,158,11,0.3)",
+                  transition: "color 0.15s", flexShrink: 0,
+                  textShadow: active ? "0 0 8px rgba(245,158,11,0.6)" : "none",
+                }}>{section.glyph}</span>
+                <span style={{
+                  fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                  fontSize: 9, letterSpacing: "0.14em", fontWeight: 700,
+                  color: active ? "#fff" : "rgba(255,255,255,0.35)",
+                  transition: "color 0.15s", lineHeight: 1.3, flex: 1,
+                }}>{section.label}</span>
+                {active && (
+                  <div style={{
+                    width: 3, height: 3, borderRadius: "50%",
+                    background: "#f59e0b",
+                    boxShadow: "0 0 6px #f59e0b",
+                    flexShrink: 0,
+                  }} />
+                )}
+              </div>
+              <div style={{
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 7, letterSpacing: "0.1em",
+                color: active ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.18)",
+                marginLeft: 16, marginTop: 1,
+                transition: "color 0.15s",
+              }}>{section.sub}</div>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Bottom status */}
+      <div style={{
+        padding: "10px 12px 0",
+        borderTop: "1px solid rgba(245,158,11,0.08)",
+        marginTop: 8,
+      }}>
+        <div style={{
+          fontFamily: "'JetBrains Mono','Fira Code',monospace",
+          fontSize: 7, letterSpacing: "0.1em",
+          color: "rgba(245,158,11,0.25)",
+          lineHeight: 1.6,
+        }}>
+          <div>SYS · MONEY</div>
+          <div>STATUS · ONLINE</div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ── Page header ────────────────────────────────────────────────────────────────
+
+function PageHeader({
+  tab, from, to, onChange, showDateFilter, onAddEntry,
 }: {
-  from: string;
-  to: string;
+  tab: Tab; from: string; to: string;
   onChange: (f: string, t: string) => void;
+  showDateFilter: boolean; onAddEntry: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [localFrom, setLocalFrom] = useState(from);
-  const [localTo, setLocalTo] = useState(to);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { setLocalFrom(from); }, [from]);
-  useEffect(() => { setLocalTo(to); }, [to]);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const label = from === to ? fmtDate(from) : `${fmtDate(from)} – ${fmtDate(to)}`;
-
-  function commitFrom(val: string) {
-    setLocalFrom(val);
-    if (val && localTo && val <= localTo) onChange(val, localTo);
-  }
-
-  function commitTo(val: string) {
-    setLocalTo(val);
-    if (val && localFrom && localFrom <= val) onChange(localFrom, val);
-  }
+  const section = MONEY_SECTIONS.find(s => s.tab === tab);
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors whitespace-nowrap"
-      >
-        {label}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="opacity-50">
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-lg p-3" style={{ minWidth: "16rem", width: "max-content" }}>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {PRESETS.map((p) => {
-              const pFrom = p.from();
-              const pTo = p.to();
-              const active = from === pFrom && to === pTo;
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => { onChange(pFrom, pTo); setOpen(false); }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-gray-900 dark:bg-white text-white dark:text-black"
-                      : "bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-neutral-700"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={localFrom}
-              max={localTo}
-              onChange={(e) => commitFrom(e.target.value)}
-              className="flex-1 min-w-0 text-xs border border-gray-200 dark:border-neutral-700 rounded-md px-2 py-1.5 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-gray-400 dark:focus:border-neutral-500"
-            />
-            <span className="text-gray-300 dark:text-neutral-600 text-xs shrink-0">→</span>
-            <input
-              type="date"
-              value={localTo}
-              min={localFrom}
-              max={today()}
-              onChange={(e) => commitTo(e.target.value)}
-              className="flex-1 min-w-0 text-xs border border-gray-200 dark:border-neutral-700 rounded-md px-2 py-1.5 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-gray-400 dark:focus:border-neutral-500"
-            />
-          </div>
+    <div style={{
+      borderBottom: "1px solid rgba(245,158,11,0.08)",
+      padding: "14px 24px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      background: "rgba(8,6,2,0.4)",
+      backdropFilter: "blur(2px)",
+      flexShrink: 0,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{
+          fontSize: 16, color: "rgba(245,158,11,0.5)",
+          textShadow: "0 0 10px rgba(245,158,11,0.3)",
+        }}>{section?.glyph}</span>
+        <div>
+          <div style={{
+            fontFamily: "'JetBrains Mono','Fira Code',monospace",
+            fontSize: 11, letterSpacing: "0.22em", fontWeight: 700,
+            color: "#ffffff",
+          }}>{section?.label ?? tab.toUpperCase()}</div>
+          <div style={{
+            fontFamily: "'JetBrains Mono','Fira Code',monospace",
+            fontSize: 8, letterSpacing: "0.12em",
+            color: "rgba(245,158,11,0.4)",
+            marginTop: 1,
+          }}>{section?.sub}</div>
         </div>
-      )}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {showDateFilter && (
+          <DateRangeDropdown accent="#f59e0b" panelBg="#0d0d0d" align="right" from={from} to={to} onChange={onChange} />
+        )}
+        {tab !== "lending" && tab !== "investments" && (
+          <button
+            onClick={onAddEntry}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "5px 12px",
+              background: "#f59e0b",
+              border: "none",
+              borderRadius: 4,
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
+              fontSize: 10, letterSpacing: "0.1em", fontWeight: 700,
+              color: "#000", cursor: "pointer",
+              boxShadow: "0 0 16px rgba(245,158,11,0.35)",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(245,158,11,0.55)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 16px rgba(245,158,11,0.35)";
+              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+            }}
+          >
+            + LOG ENTRY
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
+// ── Main ───────────────────────────────────────────────────────────────────────
+
 export default function ExpensesPage() {
-  const [tab, setTab] = useState<Tab>("dashboard");
-  const [from, setFrom] = useState(startOfMonth());
-  const [to, setTo] = useState(today());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const tab: Tab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : "dashboard";
+
+  function setTab(t: Tab) {
+    setSearchParams(prev => { prev.set("tab", t); return prev; });
+  }
+
+  const [from, setFrom] = useState(() => getPresetRange("thisMonth").from);
+  const [to, setTo] = useState(drToday);
   const [showAddEntry, setShowAddEntry] = useState(false);
 
   const { data: expenseData, isLoading: expenseLoading, error: expenseError } = useGetExpenses(from, to);
@@ -157,95 +252,156 @@ export default function ExpensesPage() {
   const wallets = walletsData?.wallets ?? [];
   const isLoading = tab === "dashboard" ? expenseLoading : tab === "transactions" ? txLoading : false;
   const error = tab === "dashboard" ? expenseError : tab === "transactions" ? txError : null;
+  const showDateFilter = tab !== "lending" && tab !== "investments";
 
   return (
-    <div className="space-y-0">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Expenses</h1>
-          <p className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
-            {new Date(from + "T00:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" })} · Monthly
-          </p>
+    <>
+      {/* Inject fonts + global styles */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap');
+
+        .money-shell {
+          display: flex;
+          flex: 1;
+          height: 100%;
+          min-height: 0;
+          background: #080602;
+          position: relative;
+          overflow: hidden;
+        }
+        .money-shell::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(245,158,11,0.007) 2px,
+            rgba(245,158,11,0.007) 4px
+          );
+          pointer-events: none;
+          z-index: 0;
+        }
+        .money-shell::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(ellipse at 15% 50%, rgba(245,158,11,0.04) 0%, transparent 55%),
+            radial-gradient(ellipse at 85% 20%, rgba(245,158,11,0.02) 0%, transparent 45%);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .money-content-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          position: relative;
+          z-index: 1;
+          overflow: visible;
+        }
+        .money-tab-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 24px;
+          position: relative;
+        }
+        .money-tab-content::-webkit-scrollbar { width: 4px; }
+        .money-tab-content::-webkit-scrollbar-track { background: transparent; }
+        .money-tab-content::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.2); border-radius: 2px; }
+        .money-tab-content::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.4); }
+
+        /* Override child component styles for dark money theme */
+        .money-tab-content .bg-white,
+        .money-tab-content .dark\\:bg-neutral-900 {
+          background: rgba(15,12,4,0.8) !important;
+          border-color: rgba(245,158,11,0.12) !important;
+        }
+        .money-tab-content .border-gray-200,
+        .money-tab-content .dark\\:border-neutral-800 {
+          border-color: rgba(245,158,11,0.12) !important;
+        }
+        .money-tab-content h3 {
+          font-family: 'JetBrains Mono','Fira Code',monospace !important;
+          letter-spacing: 0.12em !important;
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+        }
+
+        @keyframes moneyPulse {
+          0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
+          50% { opacity: 0.5; box-shadow: 0 0 12px rgba(245,158,11,0.9); }
+        }
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateX(-6px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .money-section-enter {
+          animation: fadeSlideIn 0.2s ease-out forwards;
+        }
+      `}</style>
+
+      <div className="money-shell">
+        {/* Inner rail — z above shell backgrounds */}
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <MoneyRail tab={tab} setTab={setTab} />
         </div>
-        <div className="flex items-center gap-3">
-          <DateRangeDropdown from={from} to={to} onChange={(f, t) => { setFrom(f); setTo(t); }} />
-          <button
-            onClick={() => setShowAddEntry(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-md text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors whitespace-nowrap"
-          >
-            + Add Entry
-          </button>
+
+        <div className="money-content-area">
+          <PageHeader
+            tab={tab} from={from} to={to}
+            onChange={(f, t) => { setFrom(f); setTo(t); }}
+            showDateFilter={showDateFilter}
+            onAddEntry={() => setShowAddEntry(true)}
+          />
+
+          <div className="money-tab-content">
+            {isLoading && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 0" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                  <Spinner />
+                  <div style={{
+                    fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                    fontSize: 9, letterSpacing: "0.2em",
+                    color: "rgba(245,158,11,0.4)",
+                  }}>LOADING...</div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div style={{
+                border: "1px solid rgba(239,68,68,0.3)",
+                background: "rgba(239,68,68,0.08)",
+                borderRadius: 6, padding: "12px 16px",
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 10, letterSpacing: "0.08em",
+                color: "rgba(239,68,68,0.8)",
+              }}>
+                ✕ FAILED TO LOAD DATA
+              </div>
+            )}
+
+            {!isLoading && !error && (
+              <div className="money-section-enter">
+                {tab === "dashboard"    && <DashboardTab data={expenseData ?? null} />}
+                {tab === "transactions" && <TransactionsTab data={txData ?? null} wallets={wallets} from={from} to={to} />}
+                {tab === "categories"   && <CategoriesTab />}
+                {tab === "lending"      && <LendingTab />}
+                {tab === "investments"  && <InvestmentsTab />}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-neutral-800 mb-5">
-        <button
-          onClick={() => setTab("dashboard")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            tab === "dashboard"
-              ? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
-              : "border-transparent text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
-          }`}
-        >
-          Dashboard
-        </button>
-        <button
-          onClick={() => setTab("transactions")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            tab === "transactions"
-              ? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
-              : "border-transparent text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
-          }`}
-        >
-          All Transactions
-        </button>
-        <button
-          onClick={() => setTab("categories")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            tab === "categories"
-              ? "border-gray-900 dark:border-white text-gray-900 dark:text-white"
-              : "border-transparent text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300"
-          }`}
-        >
-          Categories
-        </button>
-      </div>
-
-      {isLoading && (
-        <div className="text-center py-8 text-gray-400 dark:text-neutral-500 text-sm">Loading…</div>
-      )}
-
-      {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
-          Failed to load data.
-        </div>
-      )}
-
-      {!isLoading && !error && (
-        <>
-          {tab === "dashboard" && <DashboardTab data={expenseData ?? null} />}
-          {tab === "transactions" && (
-            <TransactionsTab
-              data={txData ?? null}
-              wallets={wallets}
-              from={from}
-              to={to}
-            />
-          )}
-          {tab === "categories" && <CategoriesTab />}
-        </>
-      )}
 
       {showAddEntry && (
-        <AddEntryModal
-          wallets={wallets}
-          from={from}
-          to={to}
-          onClose={() => setShowAddEntry(false)}
-        />
+        <AddEntryModal wallets={wallets} from={from} to={to} onClose={() => setShowAddEntry(false)} />
       )}
-    </div>
+    </>
   );
 }

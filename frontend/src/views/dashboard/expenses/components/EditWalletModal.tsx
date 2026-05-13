@@ -6,6 +6,7 @@ import {
   useMutationDeleteWallet,
   useGetWalletRecordCount,
 } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 interface Props {
   wallet: WalletWithBalance;
@@ -16,6 +17,8 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
   const [name, setName] = useState(wallet.name);
   const [type, setType] = useState<WalletTypeEnum>(wallet.type);
   const [creditLimit, setCreditLimit] = useState(wallet.credit_limit?.toString() ?? "");
+  const [currentBalance, setCurrentBalance] = useState(wallet.balance.toString());
+  const [balanceChanged, setBalanceChanged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteStep, setDeleteStep] = useState<"idle" | "checking" | "confirm">("idle");
   const [recordCount, setRecordCount] = useState(0);
@@ -29,10 +32,12 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
     setError(null);
     if (!name.trim()) return setError("Name is required.");
     try {
+      const desiredBalance = Number(currentBalance);
       await updateMutation.mutateAsync({
         name: name.trim(),
         type,
         credit_limit: type === WalletTypeEnum.Credit && creditLimit ? Number(creditLimit) : null,
+        current_balance: balanceChanged && !isNaN(desiredBalance) ? desiredBalance : undefined,
       });
       onClose();
     } catch {
@@ -99,9 +104,9 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleteMutation.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {deleteMutation.isPending ? "Deleting…" : "Yes, Delete"}
+                {deleteMutation.isPending ? <><Spinner size="sm" /> Deleting…</> : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -135,6 +140,17 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1.5">Current Balance (₹)</label>
+              <input
+                type="number"
+                value={currentBalance}
+                onChange={(e) => { setCurrentBalance(e.target.value); setBalanceChanged(true); }}
+                className="w-full text-sm border border-gray-200 dark:border-neutral-700 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:border-gray-400 dark:focus:border-neutral-500"
+              />
+              <p className="mt-1 text-xs text-gray-400 dark:text-neutral-500">Adjust to match your actual balance. Difference added/subtracted from opening balance.</p>
             </div>
 
             {type === WalletTypeEnum.Credit && (
@@ -171,9 +187,9 @@ export default function EditWalletModal({ wallet, onClose }: Props) {
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
               >
-                {updateMutation.isPending ? "Saving…" : "Save"}
+                {updateMutation.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
               </button>
             </div>
           </form>

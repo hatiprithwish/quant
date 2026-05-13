@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/api/apiClient";
 import { useGetScratchpad } from "@/api/cachedQueries";
+import Spinner from "@/components/common/Spinner";
 
 const AUTOSAVE_INTERVAL_MS = 10_000;
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -65,7 +66,7 @@ export default function ScratchpadPage() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>;
+    return <div className="flex items-center justify-center py-12"><Spinner /></div>;
   }
 
   return (

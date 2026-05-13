@@ -15,3 +15,4 @@ export * from "./transactions";
 export * from "./body";
 export * from "./quests";
 export * from "./time-buckets";
+export * from "./investment";

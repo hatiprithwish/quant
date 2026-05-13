@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { MoneyCategoryItem } from "@/schemas";
 import { MoneyCategoryTypeEnum, BudgetPeriodEnum, BudgetWithSpent } from "@/schemas";
+import Spinner from "@/components/common/Spinner";
 import { useGetMoneyCategories } from "@/api/cachedQueries";
 import { useMutationUpdateBudget, useMutationDeleteBudget } from "@/api/mutations";
 
@@ -264,9 +265,9 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
-              {updateMutation.isPending ? "Saving…" : "Save"}
+              {updateMutation.isPending ? <><Spinner size="sm" /> Saving…</> : "Save"}
             </button>
           </div>
         </form>
@@ -286,9 +287,9 @@ export default function EditBudgetModal({ budget, onClose }: Props) {
               <button
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
-                className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
               >
-                {deleteMutation.isPending ? "Deleting…" : "Confirm Delete"}
+                {deleteMutation.isPending ? <><Spinner size="sm" /> Deleting…</> : "Confirm Delete"}
               </button>
             </div>
           </div>

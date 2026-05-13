@@ -4,7 +4,7 @@ import { DrizzleDb } from "../db";
 import { TimeRepo } from "../repos/TimeRepo";
 import { TimeBucketsRepo } from "../repos/TimeBucketsRepo";
 
-const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 
 export function registerTimeTools(
   server: McpServer,
@@ -18,10 +18,6 @@ export function registerTimeTools(
       entries: z
         .array(
           z.object({
-            date: z
-              .string()
-              .regex(/^\d{4}-\d{2}-\d{2}$/)
-              .describe("Log date YYYY-MM-DD (the day you are logging for)"),
             bucket_id: z
               .number()
               .int()
@@ -31,15 +27,15 @@ export function registerTimeTools(
               .string()
               .min(1)
               .describe("Brief description of what was done"),
-            start_time: z
+            started_at: z
               .string()
               .regex(ISO_DATETIME_REGEX)
-              .describe("Start datetime as 'YYYY-MM-DD HH:MM' (24h)"),
-            end_time: z
+              .describe("Start datetime as 'YYYY-MM-DDTHH:MM:SS' (ISO 8601)"),
+            ended_at: z
               .string()
               .regex(ISO_DATETIME_REGEX)
               .describe(
-                "End datetime as 'YYYY-MM-DD HH:MM' (24h). Can be next day for cross-midnight activities.",
+                "End datetime as 'YYYY-MM-DDTHH:MM:SS' (ISO 8601). Can be next day for cross-midnight activities.",
               ),
           }),
         )

@@ -7,6 +7,7 @@ import {
   useMutationUpdateMoneyCategory,
   useMutationDeleteMoneyCategory,
 } from "@/api/mutations";
+import Spinner from "@/components/common/Spinner";
 
 const COLOR_SWATCHES = [
   "#ef4444", "#f97316", "#f59e0b", "#eab308",
@@ -119,9 +120,9 @@ function CategoryForm({ initial, onSave, onCancel, isCreate }: CategoryFormProps
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
         >
-          {saving ? "Saving…" : isCreate ? "Create" : "Save"}
+          {saving ? <><Spinner size="sm" /> Saving…</> : isCreate ? "Create" : "Save"}
         </button>
       </div>
     </form>

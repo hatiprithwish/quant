@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import type { QuestSummary } from "@/schemas";
-import { questCategoryIcon, questStatusLabel, QuestStatusEnum } from "@/schemas";
+import { questCategoryIcon, QuestStatusEnum } from "@/schemas";
 
 function fmtMins(mins: number) {
   const h = Math.floor(mins / 60);
@@ -8,36 +8,37 @@ function fmtMins(mins: number) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function ProgressRing({ pct, color, size = 52 }: { pct: number; color: string; size?: number }) {
-  const r = (size - 6) / 2;
+function ProgressRing({ pct, color, size = 44 }: { pct: number; color: string; size?: number }) {
+  const r = (size - 8) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
   return (
-    <svg width={size} height={size} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={5} className="dark:stroke-gray-700" />
+    <svg width={size} height={size} style={{ flexShrink: 0 }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(139,92,246,0.12)" strokeWidth={5} />
       <circle
         cx={size / 2} cy={size / 2} r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={5}
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
+        fill="none" stroke={color} strokeWidth={5}
+        strokeDasharray={circ} strokeDashoffset={offset}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        style={{ transition: "stroke-dashoffset 0.4s ease" }}
+        style={{ filter: `drop-shadow(0 0 3px ${color})`, transition: "stroke-dashoffset 0.4s ease" }}
       />
-      <text x={size / 2} y={size / 2 + 4} textAnchor="middle" fontSize={10} fontWeight={700} fill={color}>
+      <text
+        x={size / 2} y={size / 2 + 4}
+        textAnchor="middle" fontSize={8} fontWeight={700} fill={color}
+        style={{ fontFamily: "'JetBrains Mono',monospace" }}
+      >
         {Math.round(pct)}%
       </text>
     </svg>
   );
 }
 
-const STATUS_STYLE: Record<QuestStatusEnum, string> = {
-  [QuestStatusEnum.Active]: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-  [QuestStatusEnum.Paused]: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400",
-  [QuestStatusEnum.Blocked]: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
-  [QuestStatusEnum.Done]: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+const STATUS_BADGE: Record<QuestStatusEnum, { bg: string; color: string; label: string }> = {
+  [QuestStatusEnum.Active]: { bg: "rgba(16,185,129,0.12)", color: "#10b981", label: "ACTIVE" },
+  [QuestStatusEnum.Paused]: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b", label: "PAUSED" },
+  [QuestStatusEnum.Blocked]: { bg: "rgba(239,68,68,0.12)", color: "#ef4444", label: "BLOCKED" },
+  [QuestStatusEnum.Done]: { bg: "rgba(139,92,246,0.08)", color: "rgba(167,139,250,0.45)", label: "DONE" },
 };
 
 interface Props {
@@ -48,68 +49,153 @@ export default function QuestCard({ quest }: Props) {
   const navigate = useNavigate();
   const taskPct = quest.task_total > 0 ? (quest.task_done / quest.task_total) * 100 : 0;
   const xpPct = quest.xp_max > 0 ? Math.min((quest.total_xp / quest.xp_max) * 100, 100) : 0;
+  const badge = STATUS_BADGE[quest.status];
 
   return (
     <div
       onClick={() => navigate(`/quests/${quest.id}`)}
-      className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all group"
+      style={{
+        background: "rgba(14,9,26,0.9)",
+        border: "1px solid rgba(139,92,246,0.14)",
+        borderRadius: 8,
+        padding: 16,
+        cursor: "pointer",
+        transition: "all 0.2s",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "rgba(139,92,246,0.35)";
+        el.style.boxShadow = "0 0 22px rgba(139,92,246,0.12)";
+        el.style.transform = "translateY(-2px)";
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderColor = "rgba(139,92,246,0.14)";
+        el.style.boxShadow = "none";
+        el.style.transform = "translateY(0)";
+      }}
     >
-      <div className="flex items-start gap-3">
-        <div className="w-1 self-stretch rounded-full" style={{ backgroundColor: quest.color }} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-gray-400 dark:text-gray-500 text-xs">{questCategoryIcon[quest.category]}</span>
-                <span className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{quest.category}</span>
-              </div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                {quest.name}
-              </h3>
-            </div>
-            <ProgressRing pct={taskPct} color={quest.color} />
-          </div>
+      {/* Top color accent bar */}
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 2,
+        background: quest.color,
+        boxShadow: `0 0 10px ${quest.color}`,
+      }} />
 
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${STATUS_STYLE[quest.status]}`}>
-              {questStatusLabel[quest.status]}
-            </span>
-            {quest.streak > 0 && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">🔥 {quest.streak}d</span>
-            )}
-            {quest.time_this_week_minutes > 0 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">{fmtMins(quest.time_this_week_minutes)} this week</span>
-            )}
-          </div>
+      {/* Row 1: category · status badge · progress ring */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        marginTop: 4, marginBottom: 8,
+      }}>
+        <span style={{
+          fontSize: 9, color: quest.color, opacity: 0.85,
+          textShadow: `0 0 6px ${quest.color}`,
+        }}>{questCategoryIcon[quest.category]}</span>
+        <span style={{
+          fontFamily: "'JetBrains Mono',monospace",
+          fontSize: 7, letterSpacing: "0.15em",
+          color: "rgba(167,139,250,0.35)",
+          textTransform: "uppercase",
+        }}>{quest.category}</span>
 
-          <div className="mb-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-400 dark:text-gray-500">XP</span>
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{quest.total_xp} / {quest.xp_max}</span>
-            </div>
-            <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${xpPct}%`, backgroundColor: quest.color }}
-              />
-            </div>
-          </div>
-
-          {quest.next_milestone && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              <span className="text-gray-400 dark:text-gray-600">Next: </span>
-              {quest.next_milestone}
-              {quest.next_milestone_due && (
-                <span className="ml-1 text-gray-400 dark:text-gray-600">· {quest.next_milestone_due}</span>
-              )}
-            </div>
-          )}
-
-          <div className="mt-2 pt-2 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-            <span>{quest.task_done}/{quest.task_total} tasks</span>
-            <span>{quest.milestone_done}/{quest.milestone_total} milestones</span>
-          </div>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontFamily: "'JetBrains Mono',monospace",
+            fontSize: 7, letterSpacing: "0.1em", fontWeight: 700,
+            padding: "2px 5px", borderRadius: 2,
+            background: badge.bg, color: badge.color,
+          }}>{badge.label}</span>
+          <ProgressRing pct={taskPct} color={quest.color} />
         </div>
+      </div>
+
+      {/* Quest name — full width */}
+      <div style={{
+        fontSize: 14, fontWeight: 600,
+        color: "#ddd6fe",
+        marginBottom: 12,
+        lineHeight: 1.35,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>{quest.name}</div>
+
+      {/* XP bar — full width */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+          <span style={{
+            fontFamily: "'JetBrains Mono',monospace",
+            fontSize: 7, letterSpacing: "0.12em",
+            color: "rgba(139,92,246,0.38)",
+          }}>XP</span>
+          <span style={{
+            fontFamily: "'JetBrains Mono',monospace",
+            fontSize: 7, color: "#fbbf24", opacity: 0.8,
+          }}>{quest.total_xp} / {quest.xp_max}</span>
+        </div>
+        <div style={{
+          height: 3,
+          background: "rgba(139,92,246,0.1)",
+          borderRadius: 2, overflow: "hidden",
+        }}>
+          <div style={{
+            height: "100%", width: `${xpPct}%`,
+            background: `linear-gradient(90deg, ${quest.color}bb, ${quest.color})`,
+            boxShadow: `0 0 5px ${quest.color}`,
+            borderRadius: 2, transition: "width 0.4s ease",
+          }} />
+        </div>
+      </div>
+
+      {/* Streak / time — full width */}
+      {(quest.streak > 0 || quest.time_this_week_minutes > 0) && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 9, alignItems: "center" }}>
+          {quest.streak > 0 && (
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "#fbbf24" }}>
+              🔥 {quest.streak}d
+            </span>
+          )}
+          {quest.time_this_week_minutes > 0 && (
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8, color: "rgba(139,92,246,0.38)" }}>
+              {fmtMins(quest.time_this_week_minutes)} this wk
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Next milestone — full width */}
+      {quest.next_milestone && (
+        <div style={{
+          fontFamily: "'JetBrains Mono',monospace",
+          fontSize: 7, color: "rgba(167,139,250,0.38)",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          marginBottom: 10,
+        }}>
+          <span style={{ color: "rgba(139,92,246,0.25)" }}>NEXT · </span>
+          {quest.next_milestone}
+          {quest.next_milestone_due && (
+            <span style={{ color: "rgba(139,92,246,0.2)" }}> · {quest.next_milestone_due}</span>
+          )}
+        </div>
+      )}
+
+      {/* Footer — full width */}
+      <div style={{
+        borderTop: "1px solid rgba(139,92,246,0.07)",
+        paddingTop: 9, marginTop: "auto",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{
+          fontFamily: "'JetBrains Mono',monospace",
+          fontSize: 7, color: "rgba(167,139,250,0.3)", letterSpacing: "0.06em",
+        }}>{quest.task_done}/{quest.task_total} tasks</span>
+        <span style={{
+          fontFamily: "'JetBrains Mono',monospace",
+          fontSize: 7, color: "rgba(167,139,250,0.3)", letterSpacing: "0.06em",
+        }}>{quest.milestone_done}/{quest.milestone_total} milestones</span>
       </div>
     </div>
   );

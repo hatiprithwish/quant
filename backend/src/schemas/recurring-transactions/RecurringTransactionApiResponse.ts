@@ -18,10 +18,14 @@ export interface RecurringTransactionItem {
   end_condition: RecurringEndConditionEnum;
   end_date: string | null;
   occurrences: number | null;
-  category: MoneyCategoryItem;
+  category: MoneyCategoryItem | null;
   description: string | null;
-  wallet_id: number;
+  wallet_id: number | null;
   next_date: string;
+  // Transfer fields
+  to_wallet_id: number | null;
+  asset_id: number | null;
+  from_asset_id: number | null;
 }
 
 export interface GetRecurringTransactionsResponse extends ApiResponse {

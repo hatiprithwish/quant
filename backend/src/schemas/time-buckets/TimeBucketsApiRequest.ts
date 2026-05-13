@@ -13,6 +13,7 @@ export const ZUpdateTimeBucketRequest = z.object({
   name: z.string().min(1).max(50).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   is_distraction: z.boolean().optional(),
+  is_archived: z.boolean().optional(),
   quest_id: z.string().nullable().optional(),
 });
 export type UpdateTimeBucketRequest = z.infer<typeof ZUpdateTimeBucketRequest>;

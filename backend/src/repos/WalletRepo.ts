@@ -59,7 +59,7 @@ export class WalletRepo {
       db,
     );
 
-    if (req.initial_balance && req.initial_balance > 0) {
+    if (req.initial_balance !== undefined && req.initial_balance !== null) {
       const incomeCategories = await MoneyCategoryDAL.findByType(req.userId, MoneyCategoryTypeEnum.Income, db);
       const openingBalanceCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
       if (openingBalanceCat) {
@@ -108,6 +108,42 @@ export class WalletRepo {
 
     if (!row) {
       return { isSuccess: false, message: "Wallet not found", wallet: null as never };
+    }
+
+    if (req.current_balance !== undefined) {
+      const allRows = await WalletDAL.findAllWithBalance({ userId: req.userId }, db);
+      const currentRow = allRows.find((r) => r.id === req.id);
+      const currentBalance = currentRow?.balance ?? 0;
+      const adjustment = req.current_balance - currentBalance;
+
+      if (adjustment !== 0) {
+        const openingDeposit = await DepositDAL.findOpeningBalance(req.id, req.userId, db);
+        if (openingDeposit) {
+          const newAmount = openingDeposit.amount + adjustment;
+          if (newAmount >= 0) {
+            await DepositDAL.update(openingDeposit.id, req.userId, { amount: newAmount }, db);
+          } else {
+            await DepositDAL.update(openingDeposit.id, req.userId, { amount: 0 }, db);
+          }
+        } else {
+          const incomeCategories = await MoneyCategoryDAL.findByType(req.userId, MoneyCategoryTypeEnum.Income, db);
+          const openingBalanceCat = incomeCategories.find((c) => c.name === "opening_balance") ?? incomeCategories[0];
+          if (openingBalanceCat && adjustment !== 0) {
+            await DepositDAL.insert(
+              {
+                userId: req.userId,
+                walletId: req.id,
+                date: new Date().toISOString().split("T")[0],
+                amount: adjustment,
+                currency: "INR",
+                categoryId: openingBalanceCat.id,
+                description: "Opening balance",
+              },
+              db,
+            );
+          }
+        }
+      }
     }
 
     const updatedRows = await WalletDAL.findAllWithBalance(

@@ -51,12 +51,15 @@ function rowToItem(
     end_condition: string;
     end_date: string | null;
     occurrences: number | null;
-    category_id: number;
+    category_id: number | null;
     description: string | null;
-    wallet_id: number;
+    wallet_id: number | null;
     next_date: string;
+    to_wallet_id?: number | null;
+    asset_id?: number | null;
+    from_asset_id?: number | null;
   },
-  cat: MoneyCategoryItem,
+  cat: MoneyCategoryItem | null,
 ) {
   return {
     id: row.id,
@@ -74,6 +77,9 @@ function rowToItem(
     description: row.description,
     wallet_id: row.wallet_id,
     next_date: row.next_date,
+    to_wallet_id: row.to_wallet_id ?? null,
+    asset_id: row.asset_id ?? null,
+    from_asset_id: row.from_asset_id ?? null,
   };
 }
 
@@ -89,7 +95,7 @@ export class RecurringTransactionRepo {
     return {
       isSuccess: true,
       message: "Recurring transactions retrieved",
-      items: rows.map((row) => rowToItem(row, catMap.get(row.category_id)!)),
+      items: rows.map((row) => rowToItem(row, row.category_id != null ? (catMap.get(row.category_id) ?? null) : null)),
     };
   }
 
@@ -107,7 +113,7 @@ export class RecurringTransactionRepo {
     const row = await RecurringTransactionDAL.insert(
       {
         userId: req.userId,
-        walletId: req.wallet_id,
+        walletId: req.wallet_id ?? null,
         type: req.type,
         name: req.name,
         amount: req.amount,
@@ -118,19 +124,22 @@ export class RecurringTransactionRepo {
         endCondition: req.end_condition,
         endDate,
         occurrences: req.occurrences ?? null,
-        categoryId: req.category_id,
+        categoryId: req.category_id ?? null,
         description: req.description ?? null,
         nextDate: req.start_date,
+        toWalletId: req.to_wallet_id ?? null,
+        assetId: req.asset_id ?? null,
+        fromAssetId: req.from_asset_id ?? null,
       },
       db,
     );
 
-    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+    const cat = row.category_id != null ? await MoneyCategoryDAL.findById(row.category_id, req.userId, db) : null;
 
     return {
       isSuccess: true,
       message: "Recurring transaction created",
-      item: rowToItem(row, toMoneyCategoryItem(cat!)),
+      item: rowToItem(row, cat ? toMoneyCategoryItem(cat) : null),
     };
   }
 
@@ -154,6 +163,9 @@ export class RecurringTransactionRepo {
     if (req.description !== undefined) updates.description = req.description ?? null;
     if (req.start_date !== undefined) updates.nextDate = req.start_date;
     if (req.category_id !== undefined) updates.categoryId = req.category_id;
+    if (req.to_wallet_id !== undefined) updates.toWalletId = req.to_wallet_id ?? null;
+    if (req.asset_id !== undefined) updates.assetId = req.asset_id ?? null;
+    if (req.from_asset_id !== undefined) updates.fromAssetId = req.from_asset_id ?? null;
 
     if (req.end_condition !== undefined) {
       updates.endCondition = req.end_condition;
@@ -179,12 +191,12 @@ export class RecurringTransactionRepo {
       return { isSuccess: false, message: "Recurring transaction not found", item: null as never };
     }
 
-    const cat = await MoneyCategoryDAL.findById(row.category_id, req.userId, db);
+    const cat = row.category_id != null ? await MoneyCategoryDAL.findById(row.category_id, req.userId, db) : null;
 
     return {
       isSuccess: true,
       message: "Recurring transaction updated",
-      item: rowToItem(row, toMoneyCategoryItem(cat!)),
+      item: rowToItem(row, cat ? toMoneyCategoryItem(cat) : null),
     };
   }
 }

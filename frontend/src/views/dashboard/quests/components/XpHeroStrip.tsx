@@ -1,73 +1,127 @@
-import type { UserLevelInfo, GrowthVsDistraction } from "@/schemas";
+import type { UserLevelInfo } from "@/schemas";
 
 interface Props {
   levelInfo: UserLevelInfo;
   currentStreak: number;
   activeQuestsCount: number;
   focusScore: number;
-  growthVsDistraction: GrowthVsDistraction;
 }
 
-export default function XpHeroStrip({ levelInfo, currentStreak, activeQuestsCount, focusScore, growthVsDistraction }: Props) {
+export default function XpHeroStrip({ levelInfo, currentStreak, activeQuestsCount, focusScore }: Props) {
   const xpPct = levelInfo.xp_for_next > 0
     ? Math.min((levelInfo.xp_in_level / levelInfo.xp_for_next) * 100, 100)
     : 100;
 
-  const growthTotal = growthVsDistraction.growth_minutes + growthVsDistraction.distraction_minutes;
-  const growthBarPct = growthTotal > 0 ? (growthVsDistraction.growth_minutes / growthTotal) * 100 : 0;
-
   return (
-    <div className="bg-gradient-to-br from-indigo-950 via-indigo-900 to-violet-900 rounded-xl border border-indigo-800/50 p-5 text-white">
-      <div className="flex items-start gap-5 flex-wrap">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="flex-shrink-0 w-14 h-14 rounded-full bg-indigo-700/60 border-2 border-indigo-500 flex items-center justify-center">
-            <div className="text-center leading-none">
-              <div className="text-lg font-bold">{levelInfo.level}</div>
-              <div className="text-xs text-indigo-300 -mt-0.5">LVL</div>
-            </div>
+    <div style={{
+      background: "rgba(20,12,40,0.85)",
+      border: "1px solid rgba(139,92,246,0.2)",
+      borderRadius: 8,
+      padding: 20,
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse at 15% 50%, rgba(109,40,217,0.12) 0%, transparent 60%)",
+      }} />
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.4), transparent)",
+      }} />
+
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+        {/* Level orb + XP bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
+          <div style={{
+            width: 62, height: 62, borderRadius: "50%", flexShrink: 0,
+            background: "radial-gradient(circle at 35% 35%, rgba(167,139,250,0.2) 0%, rgba(109,40,217,0.45) 100%)",
+            border: "2px solid rgba(139,92,246,0.45)",
+            boxShadow: "0 0 22px rgba(139,92,246,0.3), inset 0 0 14px rgba(139,92,246,0.12)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          }}>
+            <div style={{
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
+              fontSize: 22, fontWeight: 700,
+              color: "#c4b5fd",
+              textShadow: "0 0 12px rgba(196,181,253,0.8)",
+              lineHeight: 1,
+            }}>{levelInfo.level}</div>
+            <div style={{
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
+              fontSize: 7, letterSpacing: "0.2em",
+              color: "rgba(167,139,250,0.55)",
+              marginTop: 2,
+            }}>LVL</div>
           </div>
-          <div className="min-w-0">
-            <div className="text-xs text-indigo-300 uppercase tracking-widest mb-0.5">{levelInfo.title}</div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-sm font-semibold">{levelInfo.xp_in_level.toLocaleString()} XP</span>
-              <span className="text-xs text-indigo-400">/ {levelInfo.xp_for_next.toLocaleString()} to next</span>
+
+          <div style={{ minWidth: 0 }}>
+            <div style={{
+              fontFamily: "'JetBrains Mono','Fira Code',monospace",
+              fontSize: 8, letterSpacing: "0.2em",
+              color: "rgba(139,92,246,0.5)",
+              marginBottom: 4,
+              textTransform: "uppercase",
+            }}>{levelInfo.title}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+              <span style={{
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 15, fontWeight: 700,
+                color: "#fbbf24",
+                textShadow: "0 0 8px rgba(251,191,36,0.45)",
+              }}>{levelInfo.xp_in_level.toLocaleString()} XP</span>
+              <span style={{
+                fontFamily: "'JetBrains Mono','Fira Code',monospace",
+                fontSize: 8,
+                color: "rgba(139,92,246,0.38)",
+              }}>/ {levelInfo.xp_for_next.toLocaleString()} to next</span>
             </div>
-            <div className="w-48 h-2 bg-indigo-900/60 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-indigo-400 to-violet-400 rounded-full transition-all"
-                style={{ width: `${xpPct}%` }}
-              />
+            <div style={{
+              width: 200, height: 5,
+              background: "rgba(139,92,246,0.12)",
+              borderRadius: 3, overflow: "hidden",
+              border: "1px solid rgba(139,92,246,0.12)",
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${xpPct}%`,
+                background: "linear-gradient(90deg, #6d28d9, #a78bfa)",
+                borderRadius: 3,
+                boxShadow: "0 0 8px rgba(139,92,246,0.55)",
+                transition: "width 0.6s ease",
+              }} />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-5 flex-wrap ml-auto">
-          <Stat label="Streak" value={`${currentStreak}d`} accent={currentStreak >= 7} icon="🔥" />
-          <Stat label="Active" value={`${activeQuestsCount}`} icon="⚔️" />
-          <Stat label="Focus" value={`${Math.round(focusScore)}%`} icon="◎" />
-          <div className="min-w-0">
-            <div className="text-xs text-indigo-400 mb-1">Growth vs Distraction</div>
-            <div className="w-32 h-2 bg-indigo-900/60 rounded-full overflow-hidden flex">
-              <div className="h-full bg-emerald-400 rounded-l-full transition-all" style={{ width: `${growthBarPct}%` }} />
-              <div className="h-full bg-red-400 rounded-r-full transition-all" style={{ width: `${100 - growthBarPct}%` }} />
-            </div>
-            <div className="flex justify-between text-xs text-indigo-300 mt-0.5">
-              <span>{Math.round(growthVsDistraction.growth_minutes / 60 * 10) / 10}h growth</span>
-              <span>{Math.round(growthVsDistraction.distraction_minutes / 60 * 10) / 10}h dist.</span>
-            </div>
-          </div>
+        {/* Stats */}
+        <div style={{ display: "flex", gap: 24, marginLeft: "auto", flexWrap: "wrap", alignItems: "center" }}>
+          <Stat label="STREAK" value={`${currentStreak}d`} glow={currentStreak >= 7} icon="🔥" accent="#fbbf24" />
+          <Stat label="ACTIVE" value={`${activeQuestsCount}`} icon="⚔" accent="#a78bfa" />
+          <Stat label="FOCUS" value={`${Math.round(focusScore)}%`} icon="◎" accent={focusScore >= 70 ? "#10b981" : "#a78bfa"} />
         </div>
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, accent, icon }: { label: string; value: string; accent?: boolean; icon?: string }) {
+function Stat({ label, value, glow, icon, accent }: { label: string; value: string; glow?: boolean; icon?: string; accent: string }) {
   return (
-    <div className="text-center">
-      <div className="text-xs text-indigo-400 mb-0.5">{label}</div>
-      <div className={`text-lg font-bold ${accent ? "text-amber-400" : "text-white"}`}>
-        {icon && <span className="mr-0.5">{icon}</span>}{value}
+    <div style={{ textAlign: "center" }}>
+      <div style={{
+        fontFamily: "'JetBrains Mono','Fira Code',monospace",
+        fontSize: 7, letterSpacing: "0.15em",
+        color: "rgba(139,92,246,0.4)",
+        marginBottom: 5,
+      }}>{label}</div>
+      <div style={{
+        fontFamily: "'JetBrains Mono','Fira Code',monospace",
+        fontSize: 19, fontWeight: 700,
+        color: accent,
+        textShadow: glow ? `0 0 14px ${accent}` : "none",
+        display: "flex", alignItems: "center", gap: 3, justifyContent: "center",
+      }}>
+        {icon && <span style={{ fontSize: 13 }}>{icon}</span>}{value}
       </div>
     </div>
   );

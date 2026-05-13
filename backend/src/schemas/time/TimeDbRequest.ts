@@ -1,10 +1,9 @@
 export interface InsertTimeLogDbRequest {
   userId: string;
-  date: string;
   bucket_id: number;
   activity: string;
-  startTime: string;
-  endTime: string;
+  started_at: string;
+  ended_at: string;
 }
 
 export interface GetTimeLogsDbRequest {
@@ -12,4 +11,21 @@ export interface GetTimeLogsDbRequest {
   from: string;
   to: string;
   bucket_id: number | null;
+}
+
+export interface UpdateTimeLogDbRequest {
+  id: number;
+  userId: string;
+  bucket_id?: number;
+  activity?: string;
+  started_at?: string;
+  ended_at?: string;
+}
+
+export interface GetBucketEntriesDbRequest {
+  userId: string;
+  bucket_id: number;
+  search: string | null;
+  page: number;
+  page_size: number;
 }

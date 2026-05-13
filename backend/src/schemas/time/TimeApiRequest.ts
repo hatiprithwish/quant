@@ -1,17 +1,13 @@
 import { z } from "zod";
 
-const ISO_DATETIME_REGEX = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+// ISO 8601: YYYY-MM-DDTHH:MM:SS
+const ISO_T_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 
 export const ZTimeEntryInput = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   bucket_id: z.number().int().positive(),
   activity: z.string().min(1),
-  start_time: z
-    .string()
-    .regex(ISO_DATETIME_REGEX, "Must be YYYY-MM-DD HH:MM"),
-  end_time: z
-    .string()
-    .regex(ISO_DATETIME_REGEX, "Must be YYYY-MM-DD HH:MM"),
+  started_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS"),
+  ended_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS"),
 });
 
 export const ZLogTimeRequest = z.object({
@@ -29,3 +25,32 @@ export const ZTimeQueryRequest = z.object({
 export type TimeQueryRequest = z.infer<typeof ZTimeQueryRequest>;
 
 export type TimeQueryRepoRequest = TimeQueryRequest & { userId: string };
+
+// ── Single time-entry CRUD ────────────────────────────────────────────────────
+
+export const ZCreateTimeEntryRequest = z.object({
+  bucket_id: z.number().int().positive(),
+  activity: z.string().min(1).max(500),
+  started_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS"),
+  ended_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS"),
+});
+export type CreateTimeEntryRequest = z.infer<typeof ZCreateTimeEntryRequest>;
+export type CreateTimeEntryRepoRequest = CreateTimeEntryRequest & { userId: string };
+
+export const ZUpdateTimeEntryRequest = z.object({
+  bucket_id: z.number().int().positive().optional(),
+  activity: z.string().min(1).max(500).optional(),
+  started_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS").optional(),
+  ended_at: z.string().regex(ISO_T_REGEX, "Must be YYYY-MM-DDTHH:MM:SS").optional(),
+});
+export type UpdateTimeEntryRequest = z.infer<typeof ZUpdateTimeEntryRequest>;
+export type UpdateTimeEntryRepoRequest = UpdateTimeEntryRequest & { id: number; userId: string };
+
+export const ZGetBucketEntriesRequest = z.object({
+  bucket_id: z.coerce.number().int().positive(),
+  search: z.string().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  page_size: z.coerce.number().int().min(1).max(100).default(25),
+});
+export type GetBucketEntriesRequest = z.infer<typeof ZGetBucketEntriesRequest>;
+export type GetBucketEntriesRepoRequest = GetBucketEntriesRequest & { userId: string };
