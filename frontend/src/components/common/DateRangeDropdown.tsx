@@ -102,13 +102,16 @@ export default function DateRangeDropdown({
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setLocalFrom(from); }, [from]);
   useEffect(() => { setLocalTo(to); }, [to]);
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const inTrigger = ref.current?.contains(e.target as Node);
+      const inPanel = panelRef.current?.contains(e.target as Node);
+      if (!inTrigger && !inPanel) setOpen(false);
     }
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
@@ -190,6 +193,7 @@ export default function DateRangeDropdown({
       {/* Panel — rendered in a portal to escape all stacking contexts */}
       {open && createPortal(
         <div
+          ref={panelRef}
           style={{
             ...panelStyle,
             background: panelBg,
