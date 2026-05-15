@@ -999,15 +999,22 @@ export default function DailyLogPage() {
         : `${ACCENT}88`;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "calc(100vh - 48px)",
-        gap: 20,
-        overflow: "hidden",
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-      }}
-    >
+    <>
+      <style>{`
+        .daily-log-root {
+          display: flex;
+          height: 100vh;
+          gap: 20px;
+          overflow: hidden;
+          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+        @media (max-width: 767px) {
+          .daily-log-root {
+            height: calc(100vh - 48px);
+          }
+        }
+      `}</style>
+    <div className="daily-log-root">
       {/* ── LEFT PANEL (EDITOR) ────────────────────────────────────────── */}
       <div
         style={{
@@ -1029,26 +1036,44 @@ export default function DailyLogPage() {
             <Spinner />
           </div>
         ) : (
-          <textarea
-            style={{
-              flex: 1,
-              width: "100%",
-              borderRadius: 8,
-              border: `1px solid ${saveStatus === "error" ? "#ef4444" : "#1e1e1e"}`,
-              background: "transparent",
-              padding: "16px",
-              fontSize: 14,
-              lineHeight: 1.8,
-              color: "inherit",
-              resize: "none",
-              outline: "none",
-              fontFamily: "inherit",
-              boxSizing: "border-box",
-            }}
-            placeholder={`Write anything for ${formatDisplayDate(date)}…\n\nFood, expenses, time spent, thoughts — anything goes.\nAt the end of the day, hit Analyze & Log to extract and save it all.`}
-            value={text}
-            onChange={handleChange}
-          />
+          <>
+            {/* Mobile save status bar */}
+            <div
+              className="md:hidden"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 2px 8px",
+                fontSize: 10,
+                color: saveColor,
+                letterSpacing: "0.1em",
+              }}
+            >
+              <span>{saveGlyph}</span>
+              <span>{saveLabel}</span>
+            </div>
+            <textarea
+              style={{
+                flex: 1,
+                width: "100%",
+                borderRadius: 8,
+                border: `1px solid ${saveStatus === "error" ? "#ef4444" : "#1e1e1e"}`,
+                background: "transparent",
+                padding: "16px",
+                fontSize: 14,
+                lineHeight: 1.8,
+                color: "inherit",
+                resize: "none",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
+              placeholder={`Write anything for ${formatDisplayDate(date)}…\n\nFood, expenses, time spent, thoughts — anything goes.\nAt the end of the day, hit Analyze & Log to extract and save it all.`}
+              value={text}
+              onChange={handleChange}
+            />
+          </>
         )}
       </div>
 
@@ -1120,5 +1145,6 @@ export default function DailyLogPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

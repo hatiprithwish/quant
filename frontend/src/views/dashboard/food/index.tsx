@@ -91,8 +91,6 @@ export default function FoodPage() {
           flex-shrink: 0;
           flex-wrap: wrap;
           gap: 10px;
-          position: relative;
-          z-index: 100;
           overflow: visible;
         }
         .fuel-body {
