@@ -1014,7 +1014,7 @@ export default function DailyLogPage() {
             gap: 0;
           }
           .daily-log-editor {
-            padding-bottom: 72px !important;
+            margin-bottom: 72px !important;
           }
         }
       `}</style>
