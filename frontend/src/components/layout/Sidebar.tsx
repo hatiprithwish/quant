@@ -1,15 +1,56 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
 import { useTheme } from "@/context/ThemeContext";
 
-const NAV_ITEMS = [
-  { to: "/food",      label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
-  { to: "/money",     label: "MONEY",  sub: "finance",   accent: "#f59e0b", glyph: "◉" },
-  { to: "/time",      label: "TIME",   sub: "tracking",  accent: "#06b6d4", glyph: "◎" },
-  { to: "/body",      label: "BODY",   sub: "metrics",   accent: "#ec4899", glyph: "◍" },
-  { to: "/quests",    label: "QUESTS", sub: "goals",     accent: "#a855f7", glyph: "◆" },
-  { to: "/daily-log",  label: "LOG",    sub: "daily log", accent: "#ea580c", glyph: "◈" },
+type SubItem = { to: string; label: string; sub: string; glyph: string };
+
+type NavItem = {
+  to: string;
+  label: string;
+  sub: string;
+  accent: string;
+  glyph: string;
+  activePrefix?: string;
+  defaultTo?: string;
+  subItems?: SubItem[];
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { to: "/food/dashboard", label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
+  {
+    to: "/money", label: "MONEY", sub: "finance", accent: "#f59e0b", glyph: "◉",
+    activePrefix: "/money", defaultTo: "/money/dashboard",
+    subItems: [
+      { to: "/money/dashboard",    label: "OVERVIEW",   sub: "command center",  glyph: "◈" },
+      { to: "/money/transactions", label: "LEDGER",     sub: "all entries",     glyph: "≡" },
+      { to: "/money/categories",   label: "CATEGORIES", sub: "budget & tags",   glyph: "◐" },
+      { to: "/money/lending",      label: "DEBTS",      sub: "lent & owed",     glyph: "⇄" },
+      { to: "/money/investments",  label: "PORTFOLIO",  sub: "assets & growth", glyph: "△" },
+    ],
+  },
+  {
+    to: "/time", label: "TIME", sub: "tracking", accent: "#06b6d4", glyph: "◎",
+    activePrefix: "/time", defaultTo: "/time",
+    subItems: [
+      { to: "/time",         label: "CHRONICLE", sub: "activity log", glyph: "◎" },
+      { to: "/time/buckets", label: "BUCKETS",   sub: "manage",       glyph: "◈" },
+      { to: "/time/reports", label: "REPORTS",   sub: "analytics",    glyph: "△" },
+    ],
+  },
+  { to: "/body", label: "BODY", sub: "metrics", accent: "#ec4899", glyph: "◍" },
+  {
+    to: "/quests", label: "QUESTS", sub: "goals", accent: "#a855f7", glyph: "◆",
+    activePrefix: "/quests", defaultTo: "/quests",
+    subItems: [
+      { to: "/quests",        label: "ALL QUESTS", sub: "full roster", glyph: "◈" },
+      { to: "/quests/active", label: "ACTIVE",     sub: "in progress", glyph: "▶" },
+      { to: "/quests/paused", label: "PAUSED",     sub: "on hold",     glyph: "⏸" },
+      { to: "/quests/done",   label: "DONE",       sub: "completed",   glyph: "✓" },
+      { to: "/quests/board",  label: "KANBAN",     sub: "board view",  glyph: "⊞" },
+    ],
+  },
+  { to: "/daily-log", label: "LOG", sub: "daily log", accent: "#ea580c", glyph: "◈" },
 ];
 
 function Clock() {
@@ -31,9 +72,11 @@ export default function Sidebar() {
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const dark = theme === "dark";
-
   const bg         = dark ? "#0a0a0a" : "#f5f0e8";
   const border     = dark ? "#1e1e1e" : "#d6cfc0";
   const dimText    = dark ? "#888888" : "#7a7060";
@@ -41,6 +84,28 @@ export default function Sidebar() {
   const labelColor = dark ? "#b0b0b0" : "#3a3530";
   const subColor   = dark ? "#666666" : "#9a9080";
   const hoverBg    = dark ? "#111111" : "#ede8de";
+
+  // Auto-expand sections whose prefix matches the current path
+  useEffect(() => {
+    NAV_ITEMS.forEach(item => {
+      if (item.subItems && item.activePrefix && location.pathname.startsWith(item.activePrefix)) {
+        setExpandedKeys(prev => {
+          if (prev.has(item.to)) return prev;
+          const next = new Set(prev);
+          next.add(item.to);
+          return next;
+        });
+      }
+    });
+  }, [location.pathname]);
+
+  function toggleExpanded(key: string) {
+    setExpandedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   return (
     <aside
@@ -53,15 +118,12 @@ export default function Sidebar() {
       }}
       className={`h-screen top-0 shrink-0 flex flex-col overflow-hidden ${collapsed ? "w-14" : "w-52"}`}
     >
-      {/* Scanline texture — dark only */}
       {dark && (
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
           backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px)",
         }} />
       )}
-
-      {/* Grain texture — light only */}
       {!dark && (
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.4,
@@ -77,8 +139,7 @@ export default function Sidebar() {
               <div className="flex items-center gap-2">
                 <div style={{
                   width: 6, height: 6, background: "#22c55e", borderRadius: "50%",
-                  boxShadow: "0 0 6px #22c55e",
-                  animation: "quantPulse 2s infinite",
+                  boxShadow: "0 0 6px #22c55e", animation: "quantPulse 2s infinite",
                 }} />
                 <span style={{ color: dark ? "#ffffff" : "#1a1510", fontSize: 11, letterSpacing: "0.2em", fontWeight: 700 }}>
                   QUANT
@@ -89,18 +150,12 @@ export default function Sidebar() {
                 style={{
                   color: dimText, fontSize: 10, padding: "2px 5px",
                   border: `1px solid ${border}`, background: "transparent",
-                  cursor: "pointer", lineHeight: 1, borderRadius: 2,
-                  fontFamily: "inherit",
+                  cursor: "pointer", lineHeight: 1, borderRadius: 2, fontFamily: "inherit",
                 }}
-                className="hover:opacity-100 transition-opacity"
-              >
-                ‹‹
-              </button>
+              >‹‹</button>
             </div>
             <div style={{ color: ghostText, fontSize: 9, letterSpacing: "0.12em", display: "flex", gap: 8 }}>
-              <Clock />
-              <span>·</span>
-              <DayOfYear />
+              <Clock /><span>·</span><DayOfYear />
             </div>
           </div>
         ) : (
@@ -111,75 +166,156 @@ export default function Sidebar() {
               style={{
                 color: dimText, fontSize: 10, padding: "2px 5px",
                 border: `1px solid ${border}`, background: "transparent",
-                cursor: "pointer", lineHeight: 1, borderRadius: 2,
-                fontFamily: "inherit",
+                cursor: "pointer", lineHeight: 1, borderRadius: 2, fontFamily: "inherit",
               }}
-            >
-              ››
-            </button>
+            >››</button>
           </div>
         )}
       </div>
 
       {/* Nav */}
       <nav style={{ position: "relative", zIndex: 1 }} className="flex-1 overflow-y-auto py-3 px-2 space-y-px">
-        {NAV_ITEMS.map(({ to, label, sub, accent, glyph }) => (
-          <NavLink
-            key={to}
-            to={to}
-            title={collapsed ? label : undefined}
-            style={({ isActive }) => ({
-              display: "flex",
-              alignItems: "center",
-              gap: collapsed ? 0 : 10,
-              justifyContent: collapsed ? "center" : "flex-start",
-              padding: "7px 8px",
-              background: isActive ? hoverBg : "transparent",
-              borderLeft: `2px solid ${isActive ? accent : "transparent"}`,
-              paddingLeft: collapsed ? undefined : 6,
-              textDecoration: "none",
-              borderRadius: "0 4px 4px 0",
-              transition: "background 0.15s",
-            })}
-          >
-            {({ isActive }) => (
-              <>
-                <span style={{
-                  fontSize: 13, color: isActive ? accent : dimText,
-                  flexShrink: 0, lineHeight: 1,
-                  transition: "color 0.15s",
-                }}>
-                  {glyph}
-                </span>
-                {!collapsed && (
-                  <div className="flex flex-col min-w-0">
-                    <span style={{
-                      fontSize: 10, letterSpacing: "0.14em", fontWeight: 700,
-                      color: isActive ? (dark ? "#ffffff" : "#1a1510") : labelColor,
-                      lineHeight: 1.3, transition: "color 0.15s",
-                    }}>
-                      {label}
-                    </span>
-                    <span style={{
-                      fontSize: 8, letterSpacing: "0.1em",
-                      color: isActive ? accent : subColor,
-                      lineHeight: 1.3, transition: "color 0.15s",
-                    }}>
-                      {sub}
-                    </span>
+        {NAV_ITEMS.map((item) => {
+          const { to, label, sub, accent, glyph, subItems, activePrefix, defaultTo } = item;
+          const hasChildren = !!subItems?.length;
+
+          if (hasChildren) {
+            const isGroupActive = activePrefix ? location.pathname.startsWith(activePrefix) : false;
+            const isExpanded = expandedKeys.has(to);
+
+            return (
+              <div key={to}>
+                {/* Parent row */}
+                <div
+                  style={{
+                    display: "flex", alignItems: "center",
+                    gap: collapsed ? 0 : 10,
+                    justifyContent: collapsed ? "center" : "flex-start",
+                    padding: "7px 8px",
+                    paddingLeft: collapsed ? undefined : 6,
+                    background: "transparent",
+                    borderLeft: "2px solid transparent",
+                    borderRadius: "0 4px 4px 0",
+                    transition: "background 0.15s",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    navigate(defaultTo ?? to);
+                    if (!collapsed) toggleExpanded(to);
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <span style={{ fontSize: 13, color: isGroupActive ? accent : dimText, flexShrink: 0, lineHeight: 1, transition: "color 0.15s" }}>
+                    {glyph}
+                  </span>
+                  {!collapsed && (
+                    <>
+                      <div className="flex flex-col min-w-0" style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, letterSpacing: "0.14em", fontWeight: 700, color: isGroupActive ? (dark ? "#ffffff" : "#1a1510") : labelColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                          {label}
+                        </span>
+                        <span style={{ fontSize: 8, letterSpacing: "0.1em", color: isGroupActive ? accent : subColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                          {sub}
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: 8, color: isGroupActive ? accent : dimText,
+                        flexShrink: 0, lineHeight: 1,
+                        transition: "transform 0.2s, color 0.15s",
+                        transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                        display: "inline-block",
+                      }}>›</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Sub-items */}
+                {!collapsed && isExpanded && (
+                  <div>
+                    {subItems!.map(child => {
+                      const subActive = location.pathname === child.to;
+                      return (
+                        <NavLink
+                          key={child.to}
+                          to={child.to}
+                          style={{
+                            display: "flex", alignItems: "center",
+                            gap: 8, padding: "5px 8px 5px 22px",
+                            background: subActive ? hoverBg : "transparent",
+                            borderLeft: `2px solid ${subActive ? accent : "transparent"}`,
+                            borderRadius: "0 4px 4px 0",
+                            textDecoration: "none",
+                            transition: "background 0.15s",
+                          }}
+                          onMouseEnter={e => { if (!subActive) (e.currentTarget as HTMLAnchorElement).style.background = hoverBg; }}
+                          onMouseLeave={e => { if (!subActive) (e.currentTarget as HTMLAnchorElement).style.background = "transparent"; }}
+                        >
+                          <span style={{ fontSize: 9, color: subActive ? accent : dimText, flexShrink: 0, lineHeight: 1, transition: "color 0.15s" }}>
+                            {child.glyph}
+                          </span>
+                          <div className="flex flex-col min-w-0" style={{ flex: 1 }}>
+                            <span style={{ fontSize: 9, letterSpacing: "0.12em", fontWeight: 700, color: subActive ? (dark ? "#ffffff" : "#1a1510") : labelColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                              {child.label}
+                            </span>
+                            <span style={{ fontSize: 7, letterSpacing: "0.1em", color: subActive ? accent : subColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                              {child.sub}
+                            </span>
+                          </div>
+                          {subActive && (
+                            <div style={{ width: 3, height: 3, borderRadius: "50%", background: accent, boxShadow: `0 0 5px ${accent}`, flexShrink: 0 }} />
+                          )}
+                        </NavLink>
+                      );
+                    })}
                   </div>
                 )}
-                {!collapsed && isActive && (
-                  <div style={{
-                    marginLeft: "auto", width: 3, height: 3,
-                    borderRadius: "50%", background: accent,
-                    boxShadow: `0 0 5px ${accent}`, flexShrink: 0,
-                  }} />
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
+              </div>
+            );
+          }
+
+          // Leaf item (no children)
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              title={collapsed ? label : undefined}
+              style={({ isActive }) => ({
+                display: "flex", alignItems: "center",
+                gap: collapsed ? 0 : 10,
+                justifyContent: collapsed ? "center" : "flex-start",
+                padding: "7px 8px",
+                paddingLeft: collapsed ? undefined : 6,
+                background: isActive ? hoverBg : "transparent",
+                borderLeft: `2px solid ${isActive ? accent : "transparent"}`,
+                textDecoration: "none",
+                borderRadius: "0 4px 4px 0",
+                transition: "background 0.15s",
+              })}
+            >
+              {({ isActive }) => (
+                <>
+                  <span style={{ fontSize: 13, color: isActive ? accent : dimText, flexShrink: 0, lineHeight: 1, transition: "color 0.15s" }}>
+                    {glyph}
+                  </span>
+                  {!collapsed && (
+                    <div className="flex flex-col min-w-0">
+                      <span style={{ fontSize: 10, letterSpacing: "0.14em", fontWeight: 700, color: isActive ? (dark ? "#ffffff" : "#1a1510") : labelColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                        {label}
+                      </span>
+                      <span style={{ fontSize: 8, letterSpacing: "0.1em", color: isActive ? accent : subColor, lineHeight: 1.3, transition: "color 0.15s" }}>
+                        {sub}
+                      </span>
+                    </div>
+                  )}
+                  {!collapsed && isActive && (
+                    <div style={{ marginLeft: "auto", width: 3, height: 3, borderRadius: "50%", background: accent, boxShadow: `0 0 5px ${accent}`, flexShrink: 0 }} />
+                  )}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Divider */}
@@ -190,50 +326,31 @@ export default function Sidebar() {
         <button
           onClick={toggleTheme}
           style={{
-            width: "100%", display: "flex",
-            alignItems: "center",
-            gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? "center" : "flex-start",
+            width: "100%", display: "flex", alignItems: "center",
+            gap: collapsed ? 0 : 10, justifyContent: collapsed ? "center" : "flex-start",
             padding: "6px 8px", background: "transparent",
-            border: "none", cursor: "pointer",
-            borderLeft: "2px solid transparent",
-            fontFamily: "inherit",
+            border: "none", cursor: "pointer", borderLeft: "2px solid transparent", fontFamily: "inherit",
           }}
-          className="group"
-          onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >
-          <span style={{ fontSize: 10, color: dimText, transition: "color 0.15s" }}>
-            {dark ? "○" : "●"}
-          </span>
-          {!collapsed && (
-            <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>
-              {dark ? "LIGHT" : "DARK"}
-            </span>
-          )}
+          <span style={{ fontSize: 10, color: dimText, transition: "color 0.15s" }}>{dark ? "○" : "●"}</span>
+          {!collapsed && <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>{dark ? "LIGHT" : "DARK"}</span>}
         </button>
 
         <button
           onClick={() => signOut()}
           style={{
-            width: "100%", display: "flex",
-            alignItems: "center",
-            gap: collapsed ? 0 : 10,
-            justifyContent: collapsed ? "center" : "flex-start",
+            width: "100%", display: "flex", alignItems: "center",
+            gap: collapsed ? 0 : 10, justifyContent: collapsed ? "center" : "flex-start",
             padding: "6px 8px", background: "transparent",
-            border: "none", cursor: "pointer",
-            borderLeft: "2px solid transparent",
-            fontFamily: "inherit",
+            border: "none", cursor: "pointer", borderLeft: "2px solid transparent", fontFamily: "inherit",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = hoverBg)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
         >
           <span style={{ fontSize: 10, color: dimText }}>×</span>
-          {!collapsed && (
-            <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>
-              LOGOUT
-            </span>
-          )}
+          {!collapsed && <span style={{ fontSize: 9, letterSpacing: "0.14em", color: dimText, fontFamily: "inherit" }}>LOGOUT</span>}
         </button>
 
         {!collapsed && (

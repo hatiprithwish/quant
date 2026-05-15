@@ -1,7 +1,5 @@
 import { useState, useMemo } from "react";
 import { useGetFood } from "@/api/cachedQueries";
-import { MealTypeLabelEnum } from "@/schemas";
-import type { DailyFoodSummary } from "@/schemas";
 import NutritionHero from "./components/NutritionHero";
 import MacroChart from "./components/MacroChart";
 import MealLog from "./components/MealLog";
@@ -11,139 +9,17 @@ import DateRangeDropdown, { drToday } from "@/components/common/DateRangeDropdow
 const G = "'JetBrains Mono','Fira Code',monospace";
 const A = "#10b981";
 
-type MealFilter = MealTypeLabelEnum | null;
-
-const RAIL_NAV: { label: string; sub: string; glyph: string; value: MealFilter }[] = [
-  { label: "ALL MEALS",  sub: "full log",   glyph: "◈",  value: null },
-  { label: "BREAKFAST",  sub: "morning",    glyph: "○",  value: MealTypeLabelEnum.Breakfast },
-  { label: "LUNCH",      sub: "midday",     glyph: "◐",  value: MealTypeLabelEnum.Lunch },
-  { label: "DINNER",     sub: "evening",    glyph: "●",  value: MealTypeLabelEnum.Dinner },
-  { label: "SNACK",      sub: "in-between", glyph: "◦",  value: MealTypeLabelEnum.Snack },
-];
-
-const MEAL_COLORS: Record<MealTypeLabelEnum, string> = {
-  [MealTypeLabelEnum.Breakfast]: "#f59e0b",
-  [MealTypeLabelEnum.Lunch]:     "#10b981",
-  [MealTypeLabelEnum.Dinner]:    "#818cf8",
-  [MealTypeLabelEnum.Snack]:     "#ec4899",
-};
-
-// ── Left Rail ──────────────────────────────────────────────────────────────────
-
-function FuelRail({ filter, setFilter }: { filter: MealFilter; setFilter: (f: MealFilter) => void }) {
-  return (
-    <aside style={{
-      width: 160, flexShrink: 0,
-      background: "rgba(2,10,6,0.75)",
-      borderRight: "1px solid rgba(16,185,129,0.1)",
-      display: "flex", flexDirection: "column",
-      padding: "16px 0", position: "relative",
-      backdropFilter: "blur(4px)",
-    }}>
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse at 50% 20%, rgba(16,185,129,0.035) 0%, transparent 70%)",
-      }} />
-
-      <div style={{ padding: "0 12px 12px", borderBottom: "1px solid rgba(16,185,129,0.07)", marginBottom: 8 }}>
-        <div style={{ fontFamily: G, fontSize: 8, letterSpacing: "0.22em", color: "rgba(16,185,129,0.4)", marginBottom: 2 }}>
-          SECTOR
-        </div>
-        <div style={{ fontFamily: G, fontSize: 11, letterSpacing: "0.18em", fontWeight: 700, color: A, textShadow: `0 0 12px rgba(16,185,129,0.5)` }}>
-          FUEL
-        </div>
-      </div>
-
-      <nav style={{ flex: 1, padding: "0 6px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {RAIL_NAV.map(item => {
-          const active = filter === item.value;
-          const accent = item.value ? MEAL_COLORS[item.value] : A;
-          return (
-            <button
-              key={String(item.value)}
-              onClick={() => setFilter(item.value)}
-              style={{
-                display: "flex", flexDirection: "column", alignItems: "flex-start",
-                padding: "8px 8px",
-                background: active ? `rgba(16,185,129,0.07)` : "transparent",
-                border: "none",
-                borderLeftWidth: 2, borderLeftStyle: "solid",
-                borderLeftColor: active ? accent : "transparent",
-                borderRadius: "0 4px 4px 0",
-                cursor: "pointer", textAlign: "left", width: "100%",
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(16,185,129,0.04)"; }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
-                <span style={{
-                  fontSize: 10,
-                  color: active ? accent : "rgba(16,185,129,0.25)",
-                  textShadow: active ? `0 0 8px ${accent}99` : "none",
-                  flexShrink: 0, transition: "color 0.15s",
-                }}>{item.glyph}</span>
-                <span style={{
-                  fontFamily: G, fontSize: 9, letterSpacing: "0.12em", fontWeight: 700,
-                  color: active ? "#fff" : "rgba(255,255,255,0.3)",
-                  transition: "color 0.15s", flex: 1,
-                }}>{item.label}</span>
-                {active && (
-                  <div style={{
-                    width: 3, height: 3, borderRadius: "50%",
-                    background: accent, boxShadow: `0 0 6px ${accent}`,
-                    flexShrink: 0,
-                  }} />
-                )}
-              </div>
-              <div style={{
-                fontFamily: G, fontSize: 7, letterSpacing: "0.1em",
-                color: active ? `${accent}88` : "rgba(255,255,255,0.17)",
-                marginLeft: 16, marginTop: 1, transition: "color 0.15s",
-              }}>{item.sub}</div>
-            </button>
-          );
-        })}
-      </nav>
-
-      <div style={{ padding: "10px 12px 0", borderTop: "1px solid rgba(16,185,129,0.07)", marginTop: 8 }}>
-        <div style={{ fontFamily: G, fontSize: 7, letterSpacing: "0.1em", color: "rgba(16,185,129,0.2)", lineHeight: 1.6 }}>
-          <div>SYS · FUEL</div>
-          <div>STATUS · ONLINE</div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-// ── Derived data ───────────────────────────────────────────────────────────────
-
-function applyMealFilter(days: DailyFoodSummary[], filter: MealFilter): DailyFoodSummary[] {
-  if (filter === null) return days;
-  return days
-    .map(day => ({
-      ...day,
-      meals: day.meals.filter(m => m.meal_type === filter),
-      total_calories: day.meals.filter(m => m.meal_type === filter).reduce((s, m) => s + m.total_calories, 0),
-      total_protein_g: day.meals.filter(m => m.meal_type === filter).reduce((s, m) => s + m.total_protein_g, 0),
-      total_carb_g: day.meals.filter(m => m.meal_type === filter).reduce((s, m) => s + m.total_carb_g, 0),
-      total_fat_g: day.meals.filter(m => m.meal_type === filter).reduce((s, m) => s + m.total_fat_g, 0),
-    }))
-    .filter(day => day.meals.length > 0);
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function FoodPage() {
   const [from, setFrom] = useState(drToday);
   const [to, setTo] = useState(drToday);
-  const [filter, setFilter] = useState<MealFilter>(null);
 
   const { data, isLoading, error } = useGetFood(from, to);
 
   const filteredDays = useMemo(
-    () => (data ? applyMealFilter(data.days, filter) : []),
-    [data, filter],
+    () => (data ? data.days : []),
+    [data],
   );
 
   const totals = useMemo(() => {
@@ -240,9 +116,7 @@ export default function FoodPage() {
         @media (max-width: 900px) {
           .fuel-main-grid { grid-template-columns: 1fr; }
         }
-        .fuel-rail-wrapper { position: relative; z-index: 2; }
         @media (max-width: 640px) {
-          .fuel-rail-wrapper { display: none; }
           .fuel-body { padding: 14px 16px; }
           .fuel-header { padding: 10px 16px; }
         }
@@ -254,10 +128,6 @@ export default function FoodPage() {
       `}</style>
 
       <div className="fuel-shell">
-        <div className="fuel-rail-wrapper">
-          <FuelRail filter={filter} setFilter={setFilter} />
-        </div>
-
         <div className="fuel-content-area">
           {/* Header */}
           <div className="fuel-header">
