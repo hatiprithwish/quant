@@ -40,12 +40,10 @@ function PageHeader({
   return (
     <div style={{
       borderBottom: "1px solid rgba(245,158,11,0.08)",
-      padding: "14px 24px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
       background: "rgba(8,6,2,0.4)",
       backdropFilter: "blur(2px)",
       flexShrink: 0,
-    }}>
+    }} className="px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-2 flex-wrap">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{
           fontSize: 16, color: "rgba(245,158,11,0.5)",
@@ -66,7 +64,7 @@ function PageHeader({
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         {showDateFilter && (
           <DateRangeDropdown accent="#f59e0b" panelBg="#0d0d0d" align="right" from={from} to={to} onChange={onChange} />
         )}
@@ -84,6 +82,7 @@ function PageHeader({
               color: "#000", cursor: "pointer",
               boxShadow: "0 0 16px rgba(245,158,11,0.35)",
               transition: "all 0.15s",
+              whiteSpace: "nowrap",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(245,158,11,0.55)";
@@ -170,8 +169,11 @@ export default function ExpensesPage({ tab }: { tab: MoneyTab }) {
         .money-tab-content {
           flex: 1;
           overflow-y: auto;
-          padding: 24px;
+          padding: 14px;
           position: relative;
+        }
+        @media (min-width: 768px) {
+          .money-tab-content { padding: 24px; }
         }
         .money-tab-content::-webkit-scrollbar { width: 4px; }
         .money-tab-content::-webkit-scrollbar-track { background: transparent; }

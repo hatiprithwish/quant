@@ -13,17 +13,20 @@ import QuestsBoardPage from "./quests/board";
 import DebtDetailPage from "./money/debt";
 
 const FULL_HEIGHT_PREFIXES = ["/money", "/food", "/time", "/quests"];
+const WIDE_PREFIXES = ["/daily-log"];
 
 export default function DashboardPage() {
   const location = useLocation();
 
   const isFullHeight = FULL_HEIGHT_PREFIXES.some(p => location.pathname.startsWith(p));
+  const isWide = WIDE_PREFIXES.some(p => location.pathname.startsWith(p));
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <Sidebar />
-      <main className={`flex-1 ${isFullHeight ? "p-0 overflow-visible flex flex-col" : "p-6 overflow-y-auto"}`}>
-        <div className={isFullHeight ? "flex-1 flex flex-col min-h-0 overflow-visible" : "max-w-3xl mx-auto"}>
+      {/* pt-12 on mobile to clear the fixed top bar; md:pt-0 on desktop where sidebar is in flow */}
+      <main className={`flex-1 min-w-0 pt-12 md:pt-0 ${isFullHeight ? "p-0 overflow-visible flex flex-col" : "p-3 md:p-6 overflow-y-auto"}`}>
+        <div className={isFullHeight ? "flex-1 flex flex-col min-h-0 overflow-visible" : isWide ? "" : "max-w-3xl mx-auto"}>
           <Routes>
             <Route path="/" element={<Navigate to="/food/dashboard" replace />} />
             <Route path="/food" element={<Navigate to="/food/dashboard" replace />} />

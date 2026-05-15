@@ -68,10 +68,17 @@ function DayOfYear() {
   return <span>DAY {day}</span>;
 }
 
-export default function Sidebar() {
+function SidebarContent({
+  collapsed,
+  setCollapsed,
+  onNavClick,
+}: {
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
+  onNavClick?: () => void;
+}) {
   const { signOut } = useClerk();
   const { theme, toggleTheme } = useTheme();
-  const [collapsed, setCollapsed] = useState(false);
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,7 +92,6 @@ export default function Sidebar() {
   const subColor   = dark ? "#666666" : "#9a9080";
   const hoverBg    = dark ? "#111111" : "#ede8de";
 
-  // Auto-expand sections whose prefix matches the current path
   useEffect(() => {
     NAV_ITEMS.forEach(item => {
       if (item.subItems && item.activePrefix && location.pathname.startsWith(item.activePrefix)) {
@@ -108,15 +114,18 @@ export default function Sidebar() {
   }
 
   return (
-    <aside
+    <div
       style={{
-        position: "sticky",
         background: bg,
         borderRight: `1px solid ${border}`,
         fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
-        transition: "background 0.2s, border-color 0.2s, width 0.3s",
+        transition: "background 0.2s, border-color 0.2s",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        position: "relative",
       }}
-      className={`h-screen top-0 shrink-0 flex flex-col overflow-hidden ${collapsed ? "w-14" : "w-52"}`}
     >
       {dark && (
         <div style={{
@@ -185,7 +194,6 @@ export default function Sidebar() {
 
             return (
               <div key={to}>
-                {/* Parent row */}
                 <div
                   style={{
                     display: "flex", alignItems: "center",
@@ -202,6 +210,7 @@ export default function Sidebar() {
                   onClick={() => {
                     navigate(defaultTo ?? to);
                     if (!collapsed) toggleExpanded(to);
+                    onNavClick?.();
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
@@ -230,7 +239,6 @@ export default function Sidebar() {
                   )}
                 </div>
 
-                {/* Sub-items */}
                 {!collapsed && isExpanded && (
                   <div>
                     {subItems!.map(child => {
@@ -239,6 +247,7 @@ export default function Sidebar() {
                         <NavLink
                           key={child.to}
                           to={child.to}
+                          onClick={onNavClick}
                           style={{
                             display: "flex", alignItems: "center",
                             gap: 8, padding: "5px 8px 5px 22px",
@@ -274,11 +283,11 @@ export default function Sidebar() {
             );
           }
 
-          // Leaf item (no children)
           return (
             <NavLink
               key={to}
               to={to}
+              onClick={onNavClick}
               title={collapsed ? label : undefined}
               style={({ isActive }) => ({
                 display: "flex", alignItems: "center",
@@ -318,10 +327,8 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Divider */}
       <div style={{ height: 1, background: border, margin: "0 8px" }} />
 
-      {/* Footer */}
       <div style={{ position: "relative", zIndex: 1 }} className="px-2 py-3 space-y-px">
         <button
           onClick={toggleTheme}
@@ -366,6 +373,117 @@ export default function Sidebar() {
           50% { opacity: 0.35; }
         }
       `}</style>
-    </aside>
+    </div>
+  );
+}
+
+export default function Sidebar() {
+  const { theme } = useTheme();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  const dark = theme === "dark";
+  const bg = dark ? "#0a0a0a" : "#f5f0e8";
+  const border = dark ? "#1e1e1e" : "#d6cfc0";
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        style={{
+          position: "sticky",
+          top: 0,
+          transition: "width 0.3s",
+          flexShrink: 0,
+          height: "100vh",
+        }}
+        className={`hidden md:flex flex-col ${collapsed ? "w-14" : "w-52"}`}
+      >
+        <SidebarContent collapsed={collapsed} setCollapsed={setCollapsed} />
+      </aside>
+
+      {/* Mobile top bar */}
+      <div
+        style={{
+          background: bg,
+          borderBottom: `1px solid ${border}`,
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          zIndex: 40,
+        }}
+        className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between px-4 py-3"
+      >
+        <div className="flex items-center gap-2">
+          <div style={{
+            width: 6, height: 6, background: "#22c55e", borderRadius: "50%",
+            boxShadow: "0 0 6px #22c55e", animation: "quantPulse 2s infinite",
+          }} />
+          <span style={{ color: dark ? "#ffffff" : "#1a1510", fontSize: 11, letterSpacing: "0.2em", fontWeight: 700 }}>
+            QUANT
+          </span>
+        </div>
+        <button
+          onClick={() => setMobileOpen(true)}
+          style={{
+            background: "transparent",
+            border: `1px solid ${border}`,
+            color: dark ? "#888" : "#7a7060",
+            padding: "4px 10px",
+            borderRadius: 3,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 12,
+            lineHeight: 1,
+          }}
+        >
+          ≡
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 48,
+          }}
+          className="md:hidden"
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: mobileOpen ? 0 : "-100%",
+          width: "min(280px, 85vw)",
+          height: "100vh",
+          zIndex: 49,
+          transition: "left 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+        className="md:hidden"
+      >
+        <SidebarContent
+          collapsed={false}
+          setCollapsed={() => {}}
+          onNavClick={() => setMobileOpen(false)}
+        />
+      </div>
+
+      <style>{`
+        @keyframes quantPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+      `}</style>
+    </>
   );
 }
