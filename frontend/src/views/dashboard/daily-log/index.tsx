@@ -1011,6 +1011,10 @@ export default function DailyLogPage() {
         @media (max-width: 767px) {
           .daily-log-root {
             height: calc(100vh - 48px);
+            gap: 0;
+          }
+          .daily-log-editor {
+            padding-bottom: 72px !important;
           }
         }
       `}</style>
@@ -1054,9 +1058,11 @@ export default function DailyLogPage() {
               <span>{saveLabel}</span>
             </div>
             <textarea
+              className="daily-log-editor"
               style={{
                 flex: 1,
                 width: "100%",
+                minHeight: 0,
                 borderRadius: 8,
                 border: `1px solid ${saveStatus === "error" ? "#ef4444" : "#1e1e1e"}`,
                 background: "transparent",
@@ -1068,6 +1074,7 @@ export default function DailyLogPage() {
                 outline: "none",
                 fontFamily: "inherit",
                 boxSizing: "border-box",
+                overflowY: "auto",
               }}
               placeholder={`Write anything for ${formatDisplayDate(date)}…\n\nFood, expenses, time spent, thoughts — anything goes.\nAt the end of the day, hit Analyze & Log to extract and save it all.`}
               value={text}
