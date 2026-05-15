@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { to: "/time",      label: "TIME",   sub: "tracking",  accent: "#06b6d4", glyph: "◎" },
   { to: "/body",      label: "BODY",   sub: "metrics",   accent: "#ec4899", glyph: "◍" },
   { to: "/quests",    label: "QUESTS", sub: "goals",     accent: "#a855f7", glyph: "◆" },
-  { to: "/scratchpad",label: "SCRATCH",sub: "notes",     accent: "#64748b", glyph: "◇" },
+  { to: "/daily-log",  label: "LOG",    sub: "daily log", accent: "#ea580c", glyph: "◈" },
 ];
 
 function Clock() {

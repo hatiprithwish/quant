@@ -6,7 +6,7 @@ import TimePage from "./time";
 import BucketEntriesPage from "./time/BucketEntriesPage";
 import BodyPage from "./body";
 import SettingsPage from "./settings";
-import ScratchpadPage from "./scratchpad";
+import DailyLogPage from "./daily-log";
 import QuestsPage from "./quests";
 import QuestDetailPage from "./quests/[id]";
 import QuestsBoardPage from "./quests/board";
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             />
             <Route path="/time/bucket/:id" element={<BucketEntriesPage />} />
             <Route path="/body" element={<BodyPage />} />
-            <Route path="/scratchpad" element={<ScratchpadPage />} />
+            <Route path="/daily-log" element={<DailyLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/quests" element={<QuestsPage />} />
             <Route path="/quests/board" element={<QuestsBoardPage />} />

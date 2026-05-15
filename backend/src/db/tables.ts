@@ -186,16 +186,27 @@ export const oauthAuthCodes = sqliteTable("oauth_auth_codes", {
     .default(sql`(datetime('now'))`),
 });
 
-export const scratchpads = sqliteTable("scratchpads", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  user_id: text("user_id")
-    .notNull()
-    .references(() => users.id),
-  content: text("content").notNull().default(""),
-  updated_at: text("updated_at")
-    .notNull()
-    .default(sql`(datetime('now'))`),
-});
+// @service: daily-log
+export const dailyLogs = sqliteTable(
+  "daily_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    date: text("date").notNull(),
+    content: text("content").notNull().default(""),
+    ai_processed: integer("ai_processed").notNull().default(0),
+    ai_processed_at: text("ai_processed_at"),
+    created_at: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updated_at: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [uniqueIndex("UK_daily_logs_user_id_date").on(t.user_id, t.date)],
+);
 
 export const budgets = sqliteTable("budgets", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -506,7 +517,6 @@ export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
 export type FoodLog = typeof foodLogs.$inferSelect;
 export type ExpenseLog = typeof expenseLogs.$inferSelect;
 export type TimeLog = typeof timeLogs.$inferSelect;
-export type Scratchpad = typeof scratchpads.$inferSelect;
 export type Wallet = typeof wallets.$inferSelect;
 export type DepositLog = typeof depositLogs.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
@@ -529,3 +539,4 @@ export type AssetValueSnapshot = typeof assetValueSnapshots.$inferSelect;
 export type QuestXpEvent = typeof questXpEvents.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type UserStreak = typeof userStreaks.$inferSelect;
+export type DailyLog = typeof dailyLogs.$inferSelect;

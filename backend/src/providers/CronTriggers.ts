@@ -1,10 +1,11 @@
 import { eq } from "drizzle-orm";
 import { DrizzleDb } from "../db";
-import { recurringTransactionItems, transferLogs, investmentCashFlows, assetValueSnapshots } from "../db/tables";
+import { recurringTransactionItems, transferLogs, investmentCashFlows, assetValueSnapshots, users } from "../db/tables";
 import { RecurringTransactionDAL } from "../data-access-layer/RecurringTransactionDAL";
 import { ExpenseDAL } from "../data-access-layer/ExpenseDAL";
 import { DepositDAL } from "../data-access-layer/DepositDAL";
 import { InvestmentDAL } from "../data-access-layer/InvestmentDAL";
+import { DailyLogDAL } from "../data-access-layer/DailyLogDAL";
 import {
   RecurringTransactionPeriodEnum,
   RecurringEndConditionEnum,
@@ -123,6 +124,24 @@ async function materializeTransfer(
       value: asset.current_value - transferAmount,
       snapshot_date: item.next_date,
     });
+  }
+}
+
+// @service: daily-log
+export async function createDailyLogs(db: DrizzleDb): Promise<void> {
+  const today = new Date().toISOString().split("T")[0];
+  const allUsers = await db.select({ id: users.id }).from(users);
+
+  Logger.info({
+    correlationId: "cron",
+    logCategory: AppConstants.LOG_CATEGORIES.CRON,
+    logAction: "CreateDailyLogs",
+    message: `Creating daily logs for ${allUsers.length} users`,
+    metadata: { today },
+  });
+
+  for (const user of allUsers) {
+    await DailyLogDAL.createIfNotExists({ userId: user.id, date: today }, db);
   }
 }
 

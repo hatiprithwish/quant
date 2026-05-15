@@ -24,6 +24,9 @@
       "simple": { "limit": 10, "period": 60 }
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "d1_databases": [
     {
       "binding": "DB",

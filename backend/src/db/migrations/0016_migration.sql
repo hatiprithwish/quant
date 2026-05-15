@@ -76,3 +76,5 @@ WHERE id IN (
       OR icf.description = d.description
     )
 );
+
+ALTER TABLE `investment_cash_flows` ADD `transfer_type` text;

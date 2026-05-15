@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  AI: Ai;
   CLERK_SECRET_KEY: string;
   CLERK_PUBLISHABLE_KEY: string;
   FRONTEND_URL: string;

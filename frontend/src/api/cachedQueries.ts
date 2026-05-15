@@ -6,7 +6,6 @@ import type {
   GetTimeSummaryResponse,
   GetTimeBucketsResponse,
   GetBucketEntriesResponse,
-  GetScratchpadResponse,
   GetWalletsResponse,
   GetBudgetsResponse,
   GetDebtsResponse,
@@ -19,6 +18,8 @@ import type {
   GetQuestsKanbanResponse,
   GetMoneyCategoriesResponse,
   GetInvestmentsResponse,
+  GetDailyLogResponse,
+  ListDailyLogsResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
 
@@ -120,10 +121,19 @@ export function useGetQuestsKanban() {
   });
 }
 
-export function useGetScratchpad() {
+export function useGetDailyLog(date: string) {
+  const isEnabled = Boolean(date);
   return useQuery({
-    queryKey: ["/api/scratchpad"],
-    queryFn: () => apiClient.get<GetScratchpadResponse>("/api/scratchpad"),
+    queryKey: ["/api/daily-log", date],
+    queryFn: () => apiClient.get<GetDailyLogResponse>(`/api/daily-log/${date}`),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetDailyLogs() {
+  return useQuery({
+    queryKey: ["/api/daily-logs"],
+    queryFn: () => apiClient.get<ListDailyLogsResponse>("/api/daily-log"),
   });
 }
 
