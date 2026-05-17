@@ -6,7 +6,7 @@ import { authRoutes } from "./routes/AuthRoutes";
 import { foodRoutes } from "./routes/FoodRoutes";
 import { expenseRoutes } from "./routes/ExpenseRoutes";
 import { timeRoutes } from "./routes/TimeRoutes";
-import { scratchpadRoutes } from "./routes/ScratchpadRoutes";
+import { dailyLogRoutes } from "./routes/DailyLogRoutes";
 import { oauthRoutes } from "./routes/OAuthRoutes";
 import { walletRoutes } from "./routes/WalletRoutes";
 import { walletMutationRoutes } from "./routes/WalletMutationRoutes";
@@ -30,7 +30,7 @@ import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
 import { Logger } from "./config/Logger";
 import { AppConstants } from "./config/Constants";
-import { processRecurringTransactions } from "./providers/CronTriggers";
+import { processRecurringTransactions, createDailyLogs } from "./providers/CronTriggers";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -114,7 +114,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/query/food", foodRoutes);
 app.route("/api/query/expenses", expenseRoutes);
 app.route("/api/query/time", timeRoutes);
-app.route("/api/scratchpad", scratchpadRoutes);
+app.route("/api/daily-log", dailyLogRoutes);
 app.route("/oauth", oauthRoutes);
 app.route("/api/query/wallets", walletRoutes);
 app.route("/api/wallet", walletMutationRoutes);
@@ -179,6 +179,11 @@ export default {
   fetch: app.fetch.bind(app),
   scheduled: async (_controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
     const db = getDb(env.DB);
-    ctx.waitUntil(processRecurringTransactions(db));
+    ctx.waitUntil(
+      Promise.all([
+        processRecurringTransactions(db),
+        createDailyLogs(db),
+      ]),
+    );
   },
 };

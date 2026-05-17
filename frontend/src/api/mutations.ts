@@ -19,6 +19,10 @@ import type {
   UpdateDebtResponse,
   AddRepaymentResponse,
   DebtTypeEnum,
+  SaveDailyLogResponse,
+  AnalyzeDailyLogResponse,
+  WeeklyReviewResponse,
+  CompareDaysResponse,
 } from "@/schemas";
 import type {
   RecurringTransactionPeriodEnum,
@@ -869,5 +873,44 @@ export function useMutationUpdateAssetValue() {
     mutationFn: ({ assetId, ...data }: { assetId: number; value: number; snapshot_date: string }) =>
       apiClient.post<UpdateAssetValueResponse>(`/api/investments/assets/${assetId}/value`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: [INV_KEY] }); },
+  });
+}
+
+// ── Daily Log mutations ───────────────────────────────────────────────────────
+
+export function useMutationSaveDailyLog(date: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (content: string) =>
+      apiClient.patch<SaveDailyLogResponse>(`/api/daily-log/${date}`, { content }),
+    onSuccess: (data) => {
+      qc.setQueryData(["/api/daily-log", date], data);
+    },
+  });
+}
+
+export function useMutationAnalyzeDailyLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (date: string) =>
+      apiClient.post<AnalyzeDailyLogResponse>(`/api/daily-log/${date}/analyze`, {}),
+    onSuccess: (_data, date) => {
+      qc.invalidateQueries({ queryKey: ["/api/daily-log", date] });
+      qc.invalidateQueries({ queryKey: ["/api/daily-logs"] });
+    },
+  });
+}
+
+export function useMutationWeeklyReview() {
+  return useMutation({
+    mutationFn: ({ from, to }: { from: string; to: string }) =>
+      apiClient.post<WeeklyReviewResponse>("/api/daily-log/weekly-review", { from, to }),
+  });
+}
+
+export function useMutationCompareDays() {
+  return useMutation({
+    mutationFn: ({ date1, date2 }: { date1: string; date2: string }) =>
+      apiClient.post<CompareDaysResponse>("/api/daily-log/compare", { date1, date2 }),
   });
 }

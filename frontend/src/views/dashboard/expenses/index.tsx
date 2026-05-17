@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import {
   useGetExpenses,
   useGetTransactions,
@@ -17,149 +16,22 @@ import DateRangeDropdown, { drToday, getPresetRange } from "@/components/common/
 
 // ── Types ───────────────────────────────────────────────────────────────────────
 
-type Tab = "dashboard" | "transactions" | "categories" | "lending" | "investments";
-const VALID_TABS: Tab[] = ["dashboard", "transactions", "categories", "lending", "investments"];
+export type MoneyTab = "dashboard" | "transactions" | "categories" | "lending" | "investments";
 
-// ── Inner nav config ─────────────────────────────────────────────────────────────
-
-const MONEY_SECTIONS: { tab: Tab; label: string; sub: string; glyph: string; xp: number }[] = [
-  { tab: "dashboard",    label: "OVERVIEW",     sub: "command center", glyph: "◈", xp: 100 },
-  { tab: "transactions", label: "LEDGER",       sub: "all entries",    glyph: "≡", xp: 85  },
-  { tab: "categories",   label: "CATEGORIES",   sub: "budget & tags",  glyph: "◐", xp: 72  },
-  { tab: "lending",      label: "DEBTS",        sub: "lent & owed",    glyph: "⇄", xp: 45  },
-  { tab: "investments",  label: "PORTFOLIO",    sub: "assets & growth",glyph: "△", xp: 90  },
+const MONEY_SECTIONS: { tab: MoneyTab; label: string; sub: string; glyph: string }[] = [
+  { tab: "dashboard",    label: "OVERVIEW",   sub: "command center",  glyph: "◈" },
+  { tab: "transactions", label: "LEDGER",     sub: "all entries",     glyph: "≡" },
+  { tab: "categories",   label: "CATEGORIES", sub: "budget & tags",   glyph: "◐" },
+  { tab: "lending",      label: "DEBTS",      sub: "lent & owed",     glyph: "⇄" },
+  { tab: "investments",  label: "PORTFOLIO",  sub: "assets & growth", glyph: "△" },
 ];
-
-// ── Inner Sidebar ──────────────────────────────────────────────────────────────
-
-function MoneyRail({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
-  return (
-    <aside style={{
-      width: 160,
-      flexShrink: 0,
-      background: "rgba(8,6,2,0.7)",
-      borderRight: "1px solid rgba(245,158,11,0.1)",
-      display: "flex",
-      flexDirection: "column",
-      padding: "16px 0",
-      position: "relative",
-      backdropFilter: "blur(4px)",
-    }}>
-      {/* ambient glow behind rail */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse at 50% 20%, rgba(245,158,11,0.03) 0%, transparent 70%)",
-      }} />
-
-      <div style={{
-        padding: "0 12px 12px",
-        borderBottom: "1px solid rgba(245,158,11,0.08)",
-        marginBottom: 8,
-      }}>
-        <div style={{
-          fontFamily: "'JetBrains Mono','Fira Code',monospace",
-          fontSize: 8, letterSpacing: "0.22em",
-          color: "rgba(245,158,11,0.4)",
-          marginBottom: 2,
-        }}>SECTOR</div>
-        <div style={{
-          fontFamily: "'JetBrains Mono','Fira Code',monospace",
-          fontSize: 11, letterSpacing: "0.18em", fontWeight: 700,
-          color: "#f59e0b",
-          textShadow: "0 0 12px rgba(245,158,11,0.5)",
-        }}>FINANCE</div>
-      </div>
-
-      <nav style={{ flex: 1, padding: "0 6px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {MONEY_SECTIONS.map(section => {
-          const active = tab === section.tab;
-          return (
-            <button
-              key={section.tab}
-              onClick={() => setTab(section.tab)}
-              style={{
-                display: "flex", flexDirection: "column",
-                alignItems: "flex-start",
-                padding: "8px 8px",
-                background: active ? "rgba(245,158,11,0.1)" : "transparent",
-                borderLeft: `2px solid ${active ? "#f59e0b" : "transparent"}`,
-                borderRadius: "0 4px 4px 0",
-                border: "none",
-                borderLeftWidth: 2,
-                borderLeftStyle: "solid",
-                borderLeftColor: active ? "#f59e0b" : "transparent",
-                cursor: "pointer",
-                textAlign: "left",
-                width: "100%",
-                transition: "all 0.15s",
-                position: "relative",
-              }}
-              onMouseEnter={e => {
-                if (!active) (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,158,11,0.05)";
-              }}
-              onMouseLeave={e => {
-                if (!active) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%" }}>
-                <span style={{
-                  fontSize: 10, color: active ? "#f59e0b" : "rgba(245,158,11,0.3)",
-                  transition: "color 0.15s", flexShrink: 0,
-                  textShadow: active ? "0 0 8px rgba(245,158,11,0.6)" : "none",
-                }}>{section.glyph}</span>
-                <span style={{
-                  fontFamily: "'JetBrains Mono','Fira Code',monospace",
-                  fontSize: 9, letterSpacing: "0.14em", fontWeight: 700,
-                  color: active ? "#fff" : "rgba(255,255,255,0.35)",
-                  transition: "color 0.15s", lineHeight: 1.3, flex: 1,
-                }}>{section.label}</span>
-                {active && (
-                  <div style={{
-                    width: 3, height: 3, borderRadius: "50%",
-                    background: "#f59e0b",
-                    boxShadow: "0 0 6px #f59e0b",
-                    flexShrink: 0,
-                  }} />
-                )}
-              </div>
-              <div style={{
-                fontFamily: "'JetBrains Mono','Fira Code',monospace",
-                fontSize: 7, letterSpacing: "0.1em",
-                color: active ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.18)",
-                marginLeft: 16, marginTop: 1,
-                transition: "color 0.15s",
-              }}>{section.sub}</div>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Bottom status */}
-      <div style={{
-        padding: "10px 12px 0",
-        borderTop: "1px solid rgba(245,158,11,0.08)",
-        marginTop: 8,
-      }}>
-        <div style={{
-          fontFamily: "'JetBrains Mono','Fira Code',monospace",
-          fontSize: 7, letterSpacing: "0.1em",
-          color: "rgba(245,158,11,0.25)",
-          lineHeight: 1.6,
-        }}>
-          <div>SYS · MONEY</div>
-          <div>STATUS · ONLINE</div>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 // ── Page header ────────────────────────────────────────────────────────────────
 
 function PageHeader({
   tab, from, to, onChange, showDateFilter, onAddEntry,
 }: {
-  tab: Tab; from: string; to: string;
+  tab: MoneyTab; from: string; to: string;
   onChange: (f: string, t: string) => void;
   showDateFilter: boolean; onAddEntry: () => void;
 }) {
@@ -168,12 +40,10 @@ function PageHeader({
   return (
     <div style={{
       borderBottom: "1px solid rgba(245,158,11,0.08)",
-      padding: "14px 24px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
       background: "rgba(8,6,2,0.4)",
       backdropFilter: "blur(2px)",
       flexShrink: 0,
-    }}>
+    }} className="px-4 py-3 md:px-6 md:py-4 flex items-center justify-between gap-2 flex-wrap">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span style={{
           fontSize: 16, color: "rgba(245,158,11,0.5)",
@@ -194,7 +64,7 @@ function PageHeader({
         </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         {showDateFilter && (
           <DateRangeDropdown accent="#f59e0b" panelBg="#0d0d0d" align="right" from={from} to={to} onChange={onChange} />
         )}
@@ -212,6 +82,7 @@ function PageHeader({
               color: "#000", cursor: "pointer",
               boxShadow: "0 0 16px rgba(245,158,11,0.35)",
               transition: "all 0.15s",
+              whiteSpace: "nowrap",
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 24px rgba(245,158,11,0.55)";
@@ -232,15 +103,7 @@ function PageHeader({
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
-export default function ExpensesPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab") as Tab | null;
-  const tab: Tab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : "dashboard";
-
-  function setTab(t: Tab) {
-    setSearchParams(prev => { prev.set("tab", t); return prev; });
-  }
-
+export default function ExpensesPage({ tab }: { tab: MoneyTab }) {
   const [from, setFrom] = useState(() => getPresetRange("thisMonth").from);
   const [to, setTo] = useState(drToday);
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -306,8 +169,11 @@ export default function ExpensesPage() {
         .money-tab-content {
           flex: 1;
           overflow-y: auto;
-          padding: 24px;
+          padding: 14px;
           position: relative;
+        }
+        @media (min-width: 768px) {
+          .money-tab-content { padding: 24px; }
         }
         .money-tab-content::-webkit-scrollbar { width: 4px; }
         .money-tab-content::-webkit-scrollbar-track { background: transparent; }
@@ -346,11 +212,6 @@ export default function ExpensesPage() {
       `}</style>
 
       <div className="money-shell">
-        {/* Inner rail — z above shell backgrounds */}
-        <div style={{ position: "relative", zIndex: 2 }}>
-          <MoneyRail tab={tab} setTab={setTab} />
-        </div>
-
         <div className="money-content-area">
           <PageHeader
             tab={tab} from={from} to={to}
