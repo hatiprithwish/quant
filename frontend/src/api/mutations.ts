@@ -876,6 +876,106 @@ export function useMutationUpdateAssetValue() {
   });
 }
 
+// ── Trajectory mutations ──────────────────────────────────────────────────────
+
+import type { GetTrajectoryConfigResponse } from "@/schemas";
+
+export interface UpsertTrajectoryConfigInput {
+  escape_number?: number | null;
+  monthly_investment_target?: number | null;
+  assumed_annual_return_rate?: number | null;
+  current_monthly_income?: number | null;
+  income_milestone_year1?: number | null;
+  income_milestone_year3?: number | null;
+}
+
+export function useMutationUpsertTrajectoryConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpsertTrajectoryConfigInput) =>
+      apiClient.put<GetTrajectoryConfigResponse>("/api/trajectory/config", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/config"] });
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/dashboard"] });
+    },
+  });
+}
+
+export interface CreateVaultQuestInput {
+  name: string;
+  description?: string;
+  trajectory_phase: string;
+  parent_quest_id?: string;
+  color?: string;
+  deadline?: string;
+  escape_number?: number;
+}
+
+export function useMutationCreateVaultQuest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateVaultQuestInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string; id?: string }>("/api/trajectory/vault/quest", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/vault"] });
+    },
+  });
+}
+
+export interface UpdateVaultQuestInput {
+  questId: string;
+  name?: string;
+  description?: string;
+  color?: string;
+  deadline?: string;
+  escape_number?: number;
+}
+
+export function useMutationUpdateVaultQuest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questId, ...data }: UpdateVaultQuestInput) =>
+      apiClient.patch<{ isSuccess: boolean; message: string }>(`/api/trajectory/vault/quest/${questId}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/vault"] });
+    },
+  });
+}
+
+export interface LockInWeekInput {
+  week_start: string;
+}
+
+export function useMutationLockInWeek() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: LockInWeekInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string; score?: number }>("/api/trajectory/checkin/lock", data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/checkin"] });
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/dashboard"] });
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/checkins"] });
+    },
+  });
+}
+
+export interface SubmitCorrectionInput {
+  week_start: string;
+  corrections: Record<string, string>;
+  confidence_override?: number;
+}
+
+export function useMutationSubmitCheckinCorrection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: SubmitCorrectionInput) =>
+      apiClient.post<{ isSuccess: boolean; message: string }>("/api/trajectory/checkin/correct", data),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["/api/trajectory/checkin", vars.week_start] });
+    },
+  });
+}
+
 // ── Daily Log mutations ───────────────────────────────────────────────────────
 
 export function useMutationSaveDailyLog(date: string) {

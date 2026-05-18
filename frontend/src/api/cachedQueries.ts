@@ -20,8 +20,99 @@ import type {
   GetInvestmentsResponse,
   GetDailyLogResponse,
   ListDailyLogsResponse,
+  GetTrajectoryDashboardResponse,
+  GetVaultResponse,
+  GetTrajectoryConfigResponse,
+  GetWeeklyCheckinResponse,
+  GetCheckinHistoryResponse,
+  GetEliminationItemsResponse,
 } from "@/schemas";
 import { BudgetPeriodEnum } from "@/schemas";
+
+// ── Trajectory queries ────────────────────────────────────────────────────────
+
+export function useGetTrajectoryDashboard() {
+  return useQuery({
+    queryKey: ["/api/trajectory/dashboard"],
+    queryFn: () => apiClient.get<GetTrajectoryDashboardResponse>("/api/trajectory/dashboard"),
+  });
+}
+
+export function useGetTrajectoryConfig() {
+  return useQuery({
+    queryKey: ["/api/trajectory/config"],
+    queryFn: () => apiClient.get<GetTrajectoryConfigResponse>("/api/trajectory/config"),
+  });
+}
+
+export function useGetVault() {
+  return useQuery({
+    queryKey: ["/api/trajectory/vault"],
+    queryFn: () => apiClient.get<GetVaultResponse>("/api/trajectory/vault"),
+  });
+}
+
+export function useGetWeeklyCheckin(weekStart: string) {
+  const isEnabled = Boolean(weekStart);
+  return useQuery({
+    queryKey: ["/api/trajectory/checkin", weekStart],
+    queryFn: () => apiClient.get<GetWeeklyCheckinResponse>(`/api/trajectory/checkin/${weekStart}`),
+    enabled: isEnabled,
+  });
+}
+
+export function useGetCheckinHistory() {
+  return useQuery({
+    queryKey: ["/api/trajectory/checkins"],
+    queryFn: () => apiClient.get<GetCheckinHistoryResponse>("/api/trajectory/checkins"),
+  });
+}
+
+export function useGetEliminationItems(weekStart: string) {
+  const isEnabled = Boolean(weekStart);
+  return useQuery({
+    queryKey: ["/api/trajectory/elimination", weekStart],
+    queryFn: () => apiClient.get<GetEliminationItemsResponse>(`/api/trajectory/elimination/${weekStart}`),
+    enabled: isEnabled,
+  });
+}
+
+// ── Habits queries ────────────────────────────────────────────────────────────
+
+export interface GetHabitsResponse {
+  isSuccess: boolean;
+  message: string;
+  week_from: string;
+  week_to: string;
+  habits: HabitData[];
+  daysWithDailyLog: number;
+  totalDays: number;
+}
+
+export interface HabitData {
+  key: string;
+  label: string;
+  category: "time" | "food" | "money" | "investment" | "manual";
+  is_distraction: boolean;
+  occurred_days: number;
+  total_days: number;
+  hours?: number;
+  amount?: number;
+  count?: number;
+  source: "auto" | "ai" | "manual";
+  badge: "AUTO" | "AI" | "MANUAL";
+  details: string;
+  trend: "good" | "bad" | "neutral";
+}
+
+export function useGetHabits(from: string, to: string) {
+  const isEnabled = Boolean(from && to);
+  return useQuery({
+    queryKey: ["/api/habits", from, to],
+    queryFn: () => apiClient.get<GetHabitsResponse>(`/api/habits?from=${from}&to=${to}`),
+    enabled: isEnabled,
+  });
+}
 
 export function useGetFood(from: string, to: string) {
   const isEnabled = Boolean(from && to);

@@ -25,12 +25,21 @@ import { timeBucketsRoutes } from "./routes/TimeBucketsRoutes";
 import { timeEntryRoutes } from "./routes/TimeEntryRoutes";
 import { moneyCategoryRoutes } from "./routes/MoneyCategoryRoutes";
 import { investmentRoutes } from "./routes/InvestmentRoutes";
+import { trajectoryRoutes } from "./routes/TrajectoryRoutes";
+import { habitRoutes } from "./routes/HabitRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
 import { Logger } from "./config/Logger";
 import { AppConstants } from "./config/Constants";
-import { processRecurringTransactions, createDailyLogs } from "./providers/CronTriggers";
+import {
+  processRecurringTransactions,
+  createDailyLogs,
+  weeklyCheckinPrompt,
+  weeklyScoreCompute,
+  missedCheckinPenalty,
+  achievementCheck,
+} from "./providers/CronTriggers";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -134,6 +143,8 @@ app.route("/api/time-bucket", timeBucketsRoutes);
 app.route("/api/time-entry", timeEntryRoutes);
 app.route("/api/money-category", moneyCategoryRoutes);
 app.route("/api/investments", investmentRoutes);
+app.route("/api/trajectory", trajectoryRoutes);
+app.route("/api/habits", habitRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
@@ -177,13 +188,34 @@ app.all("/mcp", async (c) => {
 
 export default {
   fetch: app.fetch.bind(app),
-  scheduled: async (_controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+  scheduled: async (controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
     const db = getDb(env.DB);
-    ctx.waitUntil(
-      Promise.all([
-        processRecurringTransactions(db),
-        createDailyLogs(db),
-      ]),
-    );
+    const now = new Date();
+    const dayOfWeek = now.getUTCDay(); // 0=Sun, 1=Mon, ..., 3=Wed
+    const hour = now.getUTCHours();
+
+    const jobs: Promise<void>[] = [
+      processRecurringTransactions(db),
+      createDailyLogs(db),
+    ];
+
+    // Monday (day=1) around 8am UTC: weekly check-in prompt
+    if (dayOfWeek === 1 && hour >= 8 && hour < 10) {
+      jobs.push(weeklyCheckinPrompt(db));
+    }
+
+    // Wednesday (day=3) around 9am UTC: missed check-in penalty
+    if (dayOfWeek === 3 && hour >= 9 && hour < 11) {
+      jobs.push(missedCheckinPenalty(db));
+    }
+
+    // Sunday (day=0) around 23:00 UTC: score compute + achievement check
+    if (dayOfWeek === 0 && hour >= 23) {
+      jobs.push(
+        weeklyScoreCompute(db, env.AI).then(() => achievementCheck(db)),
+      );
+    }
+
+    ctx.waitUntil(Promise.all(jobs));
   },
 };

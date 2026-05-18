@@ -19,6 +19,11 @@ import {
   TaskStatusEnum,
   XpSourceTypeEnum,
   MoneyCategoryTypeEnum,
+  TrajectoryPhaseEnum,
+  TaskPhaseTagEnum,
+  GoalChangeTypeEnum,
+  EliminationResultEnum,
+  WeeklyCheckinStatusEnum,
 } from "../schemas";
 
 export const users = sqliteTable("users", {
@@ -369,6 +374,12 @@ export const quests = sqliteTable("quests", {
   color: text("color").notNull(),
   status: text("status").$type<QuestStatusEnum>().notNull().default(QuestStatusEnum.Active),
   deadline: text("deadline"),
+  // Trajectory phase — null means standalone (free-form quest)
+  trajectory_phase: text("trajectory_phase").$type<TrajectoryPhaseEnum>(),
+  // Links lower-phase quests to their parent five-year goal
+  parent_quest_id: text("parent_quest_id").references((): any => quests.id),
+  // Escape number target (only for five_year quests of financial type)
+  escape_number: real("escape_number"),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -388,6 +399,8 @@ export const questMilestones = sqliteTable("quest_milestones", {
   order: integer("order").notNull().default(0),
   status: text("status").$type<MilestoneStatusEnum>().notNull().default(MilestoneStatusEnum.Pending),
   due_date: text("due_date"),
+  // AI-projected completion date based on current pace
+  projected_date: text("projected_date"),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -406,6 +419,8 @@ export const questTasks = sqliteTable("quest_tasks", {
   status: text("status").$type<TaskStatusEnum>().notNull().default(TaskStatusEnum.Todo),
   xp_reward: integer("xp_reward").notNull().default(20),
   due_date: text("due_date"),
+  // Phase tag for trajectory scoring (null = regular task)
+  phase_tag: text("phase_tag").$type<TaskPhaseTagEnum>(),
   created_at: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -510,6 +525,168 @@ export const assetValueSnapshots = sqliteTable("asset_value_snapshots", {
     .default(sql`(datetime('now'))`),
 });
 
+// ── TRAJECTORY INTELLIGENCE TABLES ──────────────────────────────────────────
+
+export const trajectoryConfig = sqliteTable("trajectory_config", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  escape_number: real("escape_number"),
+  monthly_investment_target: real("monthly_investment_target"),
+  assumed_annual_return_rate: real("assumed_annual_return_rate").default(0.12),
+  current_monthly_income: real("current_monthly_income"),
+  income_milestone_year1: real("income_milestone_year1"),
+  income_milestone_year3: real("income_milestone_year3"),
+  checkin_due: integer("checkin_due").notNull().default(0),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const weeklyCheckins = sqliteTable(
+  "weekly_checkins",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    // ISO date of Monday for this week (primary lookup key)
+    week_start: text("week_start").notNull(),
+    status: text("status")
+      .$type<WeeklyCheckinStatusEnum>()
+      .notNull()
+      .default(WeeklyCheckinStatusEnum.Pending),
+    // AI-computed component scores (0–100)
+    task_completion_score: real("task_completion_score"),
+    elimination_score: real("elimination_score"),
+    decision_alignment_score: real("decision_alignment_score"),
+    confidence_score: real("confidence_score"),
+    // Weighted final score
+    weekly_score: real("weekly_score"),
+    // Full LLM-generated analysis (JSON)
+    ai_analysis: text("ai_analysis"),
+    // User correction notes keyed by section (JSON)
+    user_corrections: text("user_corrections"),
+    ai_model_version: text("ai_model_version"),
+    reviewed_at: text("reviewed_at"),
+    created_at: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updated_at: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (t) => [uniqueIndex("UK_weekly_checkins_user_week").on(t.user_id, t.week_start)],
+);
+
+export const goalChangeRequests = sqliteTable("goal_change_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  quest_id: text("quest_id")
+    .notNull()
+    .references(() => quests.id),
+  change_type: text("change_type").$type<GoalChangeTypeEnum>().notNull(),
+  reason: text("reason").notNull(),
+  old_description: text("old_description"),
+  new_description: text("new_description"),
+  xp_penalty: integer("xp_penalty").notNull().default(0),
+  // Cooling-off window: change locked until this timestamp
+  cooling_off_until: text("cooling_off_until").notNull(),
+  confirmed_at: text("confirmed_at"),
+  cancelled_at: text("cancelled_at"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const eliminationItems = sqliteTable("elimination_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  // ISO date of Monday for the week this item belongs to
+  week_start: text("week_start").notNull(),
+  description: text("description").notNull(),
+  linked_time_bucket_id: integer("linked_time_bucket_id").references(() => timeBuckets.id),
+  linked_money_category_id: integer("linked_money_category_id").references(() => moneyCategories.id),
+  // 'junk' is the only supported food type for now
+  linked_food_type: text("linked_food_type"),
+  result: text("result").$type<EliminationResultEnum>(),
+  notes: text("notes"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const scoreHistory = sqliteTable("score_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  // 'weekly' | 'quarterly' | 'yearly'
+  period_type: text("period_type").notNull(),
+  // ISO date of period start (Monday for weekly, quarter start for quarterly)
+  period_start: text("period_start").notNull(),
+  score: real("score").notNull(),
+  // Snapshot of component scores (JSON)
+  component_scores: text("component_scores"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const decisionLogs = sqliteTable("decision_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  week_start: text("week_start").notNull(),
+  description: text("description").notNull(),
+  // 'aligned' | 'misaligned' | 'neutral'
+  alignment: text("alignment").notNull().default("neutral"),
+  // Quest this decision relates to (optional)
+  related_quest_id: text("related_quest_id").references(() => quests.id),
+  // Source: 'ai_detected' | 'user_reported'
+  source: text("source").notNull().default("user_reported"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const habitLogExtractions = sqliteTable("habit_log_extractions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  user_id: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  daily_log_id: integer("daily_log_id")
+    .notNull()
+    .references(() => dailyLogs.id),
+  date: text("date").notNull(),
+  // Habit name e.g. 'meditation', 'porn', 'gym'
+  habit_key: text("habit_key").notNull(),
+  // true = occurred, false = explicitly did not occur
+  occurred: integer("occurred").notNull().default(1),
+  // Raw text snippet from the log that triggered this extraction
+  source_text: text("source_text"),
+  // 'ai' | 'manual'
+  source_type: text("source_type").notNull().default("ai"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ── TYPE EXPORTS ─────────────────────────────────────────────────────────────
+
 export type MoneyCategory = typeof moneyCategories.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
@@ -540,3 +717,10 @@ export type QuestXpEvent = typeof questXpEvents.$inferSelect;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type UserStreak = typeof userStreaks.$inferSelect;
 export type DailyLog = typeof dailyLogs.$inferSelect;
+export type TrajectoryConfig = typeof trajectoryConfig.$inferSelect;
+export type WeeklyCheckin = typeof weeklyCheckins.$inferSelect;
+export type GoalChangeRequest = typeof goalChangeRequests.$inferSelect;
+export type EliminationItem = typeof eliminationItems.$inferSelect;
+export type ScoreHistory = typeof scoreHistory.$inferSelect;
+export type DecisionLog = typeof decisionLogs.$inferSelect;
+export type HabitLogExtraction = typeof habitLogExtractions.$inferSelect;

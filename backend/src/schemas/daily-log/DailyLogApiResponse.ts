@@ -22,6 +22,12 @@ export interface ListDailyLogsResponse extends ApiResponse {
   logs: Pick<DailyLogEntry, "id" | "date" | "ai_processed">[];
 }
 
+export interface SkippedEntry {
+  type: "meal" | "expense" | "time_entry";
+  raw: string;
+  reason: string;
+}
+
 export interface AnalyzeDailyLogResponse extends ApiResponse {
   summary: {
     meals_logged: number;
@@ -29,6 +35,7 @@ export interface AnalyzeDailyLogResponse extends ApiResponse {
     time_entries_logged: number;
     details: string;
   };
+  skipped_entries: SkippedEntry[];
 }
 
 export interface WeeklyReviewResponse extends ApiResponse {

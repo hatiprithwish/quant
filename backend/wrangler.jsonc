@@ -25,7 +25,8 @@
     }
   ],
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
+    "remote": true
   },
   "d1_databases": [
     {
@@ -68,7 +69,11 @@
           "namespace_id": "2",
           "simple": { "limit": 10, "period": 60 }
         }
-      ]
+      ],
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
     },
     "production": {
       "name": "quant-backend",
@@ -97,7 +102,11 @@
           "namespace_id": "2",
           "simple": { "limit": 10, "period": 60 }
         }
-      ]
+      ],
+      "ai": {
+        "binding": "AI",
+        "remote": true
+      }
     }
   }
 }
