@@ -98,9 +98,22 @@ export class AppConstants {
 
   // D1 hard limit: 100 bound parameters per statement.
   static readonly D1_INSERT_CHUNK_SIZES = {
-    TIME: 16,    // 6 params/row
-    EXPENSE: 14, // 7 params/row
-    FOOD: 10,    // 10 params/row
-    BODY_LOG: 20, // 5 params/row
+    TIME: 16,       // 6 params/row
+    EXPENSE: 14,    // 7 params/row
+    FOOD: 10,       // 10 params/row
+    BODY_LOG: 20,   // 5 params/row
+    FOOD_ITEMS: 5,  // 20 params/row
+  } as const;
+
+  static readonly USDA_NUTRIENT_IDS = {
+    ENERGY: 1008, PROTEIN: 1003, CARBS: 1005, FAT: 1004, FIBER: 1079,
+    SUGAR: 2000, SODIUM: 1093, SATURATED_FAT: 1258, CHOLESTEROL: 1253,
+    TRANS_FAT: 1257, POTASSIUM: 1092, VITAMIN_A: 1106, VITAMIN_C: 1162,
+    VITAMIN_D: 1114, VITAMIN_B12: 1178, CALCIUM: 1087, IRON: 1089,
+  } as const;
+
+  static readonly NUTRITION_APIS = {
+    USDA_BASE: "https://api.nal.usda.gov/fdc/v1",
+    OFF_BASE: "https://world.openfoodfacts.org/cgi/search.pl",
   } as const;
 }

@@ -28,6 +28,9 @@
     "binding": "AI",
     "remote": true
   },
+  "browser": {
+    "binding": "BROWSER"
+  },
   "d1_databases": [
     {
       "binding": "DB",
@@ -48,6 +51,9 @@
       "vars": {
         "FRONTEND_URL": "https://staging.quant-frontend.pages.dev",
         "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      },
+      "browser": {
+        "binding": "BROWSER"
       },
       "d1_databases": [
         {
@@ -81,6 +87,9 @@
       "vars": {
         "FRONTEND_URL": "https://quant-frontend.pages.dev",
         "CLERK_PUBLISHABLE_KEY": "pk_test_ZXZvbHZlZC1iZWV0bGUtMjcuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      },
+      "browser": {
+        "binding": "BROWSER"
       },
       "d1_databases": [
         {

@@ -304,3 +304,11 @@ export function useGetInvestments() {
     queryFn: () => apiClient.get<GetInvestmentsResponse>("/api/investments"),
   });
 }
+
+export function useGetFoodItems(status?: "pending" | "approved") {
+  const url = status ? `/api/food-items?status=${status}` : "/api/food-items";
+  return useQuery({
+    queryKey: ["/api/food-items", status ?? "all"],
+    queryFn: () => apiClient.get<import("@/schemas").GetFoodItemsResponse>(url),
+  });
+}

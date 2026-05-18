@@ -24,6 +24,8 @@ import {
   GoalChangeTypeEnum,
   EliminationResultEnum,
   WeeklyCheckinStatusEnum,
+  FoodItemReviewStatusEnum,
+  FoodItemSourceEnum,
 } from "../schemas";
 
 export const users = sqliteTable("users", {
@@ -685,6 +687,47 @@ export const habitLogExtractions = sqliteTable("habit_log_extractions", {
     .default(sql`(datetime('now'))`),
 });
 
+export const foodItems = sqliteTable("food_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  keywords: text("keywords").notNull().default("[]"),
+  is_branded: integer("is_branded").notNull().default(0),
+  brand: text("brand"),
+  is_packaged: integer("is_packaged").notNull().default(0),
+  ingredients: text("ingredients"),
+  review_status: text("review_status")
+    .$type<FoodItemReviewStatusEnum>()
+    .notNull()
+    .default(FoodItemReviewStatusEnum.Pending),
+  source: text("source")
+    .$type<FoodItemSourceEnum>()
+    .notNull()
+    .default(FoodItemSourceEnum.AiEstimated),
+  calories_per_100g: real("calories_per_100g").notNull().default(0),
+  protein_g: real("protein_g").notNull().default(0),
+  carb_g: real("carb_g").notNull().default(0),
+  fat_g: real("fat_g").notNull().default(0),
+  fiber_g: real("fiber_g"),
+  sugar_g: real("sugar_g"),
+  sodium_mg: real("sodium_mg"),
+  saturated_fat_g: real("saturated_fat_g"),
+  cholesterol_mg: real("cholesterol_mg"),
+  trans_fat_g: real("trans_fat_g"),
+  potassium_mg: real("potassium_mg"),
+  vitamin_a_mcg: real("vitamin_a_mcg"),
+  vitamin_c_mg: real("vitamin_c_mg"),
+  vitamin_d_mcg: real("vitamin_d_mcg"),
+  vitamin_b12_mcg: real("vitamin_b12_mcg"),
+  calcium_mg: real("calcium_mg"),
+  iron_mg: real("iron_mg"),
+  created_at: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updated_at: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 // ── TYPE EXPORTS ─────────────────────────────────────────────────────────────
 
 export type MoneyCategory = typeof moneyCategories.$inferSelect;
@@ -724,3 +767,4 @@ export type EliminationItem = typeof eliminationItems.$inferSelect;
 export type ScoreHistory = typeof scoreHistory.$inferSelect;
 export type DecisionLog = typeof decisionLogs.$inferSelect;
 export type HabitLogExtraction = typeof habitLogExtractions.$inferSelect;
+export type FoodItem = typeof foodItems.$inferSelect;

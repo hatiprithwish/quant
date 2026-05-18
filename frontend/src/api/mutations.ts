@@ -1014,3 +1014,14 @@ export function useMutationCompareDays() {
       apiClient.post<CompareDaysResponse>("/api/daily-log/compare", { date1, date2 }),
   });
 }
+
+export function useMutationUpdateFoodItem(id: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: import("@/schemas").UpdateFoodItemInput) =>
+      apiClient.patch<import("@/schemas").UpdateFoodItemResponse>(`/api/food-items/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/food-items"] });
+    },
+  });
+}

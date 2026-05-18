@@ -7,6 +7,7 @@ import { TimeDAL } from "../data-access-layer/TimeDAL";
 import { TimeBucketsDAL } from "../data-access-layer/TimeBucketsDAL";
 import { MoneyCategoryDAL } from "../data-access-layer/MoneyCategoryDAL";
 import { WalletDAL } from "../data-access-layer/WalletDAL";
+import { NutritionLookupRepo } from "./NutritionLookupRepo";
 import {
   SaveDailyLogRepoRequest,
   WeeklyReviewRepoRequest,
@@ -82,6 +83,8 @@ export class DailyLogRepo {
     userId: string,
     date: string,
     ai: Ai,
+    usdaApiKey: string,
+    browser: Fetcher,
     db: DrizzleDb,
   ): Promise<AnalyzeDailyLogResponse> {
     const log = await DailyLogDAL.getByDate({ userId, date }, db);
@@ -136,31 +139,37 @@ export class DailyLogRepo {
     const defaultWalletId = wallets[0]?.id ?? null;
     const skipped: SkippedEntry[] = [];
 
-    // Insert meals
-    const mealRows = (parsed.meals as Array<Record<string, unknown>>).map(
-      (m) => {
-        const labelRaw = String(m.meal_type ?? "snack").toLowerCase();
-        const label = (
-          Object.values(MealTypeLabelEnum).includes(
-            labelRaw as MealTypeLabelEnum,
-          )
-            ? labelRaw
-            : MealTypeLabelEnum.Snack
-        ) as MealTypeLabelEnum;
-        return {
-          userId,
-          date,
-          mealType: mealTypeLabelToInt[label],
-          itemName: String(m.item_name ?? "Unknown"),
-          amount: null,
-          unit: null,
-          calories: Number(m.calories ?? 0),
-          proteinG: Number(m.protein_g ?? 0),
-          carbG: Number(m.carb_g ?? 0),
-          fatG: Number(m.fat_g ?? 0),
-        };
-      },
-    );
+    // Phase 2: resolve nutrition per meal item (sequential to avoid unique constraint races)
+    const mealRows: Parameters<typeof FoodDAL.insertMany>[0] = [];
+    for (const m of parsed.meals as Array<Record<string, unknown>>) {
+      const rawName = String(m.item_name ?? "Unknown");
+      const labelRaw = String(m.meal_type ?? "snack").toLowerCase();
+      const label = (
+        Object.values(MealTypeLabelEnum).includes(labelRaw as MealTypeLabelEnum)
+          ? labelRaw
+          : MealTypeLabelEnum.Snack
+      ) as MealTypeLabelEnum;
+      const amountG = m.amount_g != null ? Number(m.amount_g) : null;
+
+      const resolved = await NutritionLookupRepo.resolve(rawName, usdaApiKey, browser, ai, db);
+      if (!resolved.foundInDb) {
+        await NutritionLookupRepo.saveToDb(resolved, db);
+      }
+
+      const scale = amountG != null ? amountG / 100 : 1;
+      mealRows.push({
+        userId,
+        date,
+        mealType: mealTypeLabelToInt[label],
+        itemName: rawName,
+        amount: amountG,
+        unit: amountG != null ? "g" : null,
+        calories: Math.round(resolved.nutrition.calories_per_100g * scale),
+        proteinG: Math.round(resolved.nutrition.protein_g * scale * 10) / 10,
+        carbG: Math.round(resolved.nutrition.carb_g * scale * 10) / 10,
+        fatG: Math.round(resolved.nutrition.fat_g * scale * 10) / 10,
+      });
+    }
     if (mealRows.length > 0) {
       await FoodDAL.deleteByDate(userId, date, db);
       await FoodDAL.insertMany(mealRows, db);
@@ -347,7 +356,7 @@ ${walletList}
 Extract and return a JSON object with this exact structure:
 {
   "meals": [
-    { "item_name": "string", "meal_type": "breakfast|lunch|dinner|snack", "calories": number_or_null, "protein_g": number_or_null, "carb_g": number_or_null, "fat_g": number_or_null }
+    { "item_name": "string", "meal_type": "breakfast|lunch|dinner|snack", "amount_g": number_or_null }
   ],
   "expenses": [
     { "description": "string", "amount": number, "category_name": "exact name from AVAILABLE EXPENSE CATEGORIES", "wallet_name": "exact name from AVAILABLE WALLETS or null" }
@@ -360,7 +369,7 @@ Extract and return a JSON object with this exact structure:
 
 Rules:
 - Only extract things explicitly mentioned. Do not invent data.
-- For meals: ALWAYS estimate calories and macros using standard nutrition databases. For example: oats 50g = 189 kcal, 6g protein, 32g carb, 3g fat; peanut butter 30g = 188 kcal, 8g protein, 6g carb, 16g fat; watermelon 100g = 30 kcal, 0.6g protein, 8g carb, 0.2g fat; whey/protein powder 30g = 120 kcal, 24g protein, 3g carb, 2g fat. Use your knowledge — never leave calories null for common foods.
+- For meals: extract item_name (the food name), meal_type, and amount_g (numeric grams or ml if mentioned, otherwise null). Do NOT estimate calories or macros — nutrition will be resolved separately.
 - For expenses: you MUST pick category_name from the AVAILABLE EXPENSE CATEGORIES list exactly. Wallets are payment methods (bank accounts, cards) — pick from AVAILABLE WALLETS if mentioned, otherwise null.
 - For time: you MUST pick bucket_name from the AVAILABLE TIME BUCKETS list exactly. Pick the closest match.
 - Return ONLY the JSON object, no markdown, no explanation.`;

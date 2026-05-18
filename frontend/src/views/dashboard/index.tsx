@@ -16,6 +16,7 @@ import WeeklyCheckinPage from "./quests/checkin";
 import HabitIntelligencePage from "./quests/habits";
 import CompoundProjectorPage from "./quests/projector";
 import DebtDetailPage from "./money/debt";
+import FoodReviewPage from "./food/review";
 
 const FULL_HEIGHT_PREFIXES = ["/money", "/food", "/time", "/quests"];
 const WIDE_PREFIXES = ["/daily-log"];
@@ -35,6 +36,7 @@ export default function DashboardPage() {
             <Route path="/" element={<Navigate to="/food/dashboard" replace />} />
             <Route path="/food" element={<Navigate to="/food/dashboard" replace />} />
             <Route path="/food/dashboard" element={<FoodPage />} />
+            <Route path="/food/review" element={<FoodReviewPage />} />
 
             <Route path="/money" element={<Navigate to="/money/dashboard" replace />} />
             <Route path="/money/dashboard"    element={<ExpensesPage tab="dashboard" />} />

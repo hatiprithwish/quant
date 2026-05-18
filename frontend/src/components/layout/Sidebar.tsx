@@ -17,7 +17,14 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/food/dashboard", label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
+  {
+    to: "/food", label: "FOOD", sub: "nutrition", accent: "#22c55e", glyph: "◈",
+    activePrefix: "/food", defaultTo: "/food/dashboard",
+    subItems: [
+      { to: "/food/dashboard", label: "FUEL LOG",  sub: "daily nutrition", glyph: "◈" },
+      { to: "/food/review",    label: "DB REVIEW",  sub: "pending items",   glyph: "◉" },
+    ],
+  },
   {
     to: "/money", label: "MONEY", sub: "finance", accent: "#f59e0b", glyph: "◉",
     activePrefix: "/money", defaultTo: "/money/dashboard",

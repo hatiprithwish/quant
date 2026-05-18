@@ -27,6 +27,7 @@ import { moneyCategoryRoutes } from "./routes/MoneyCategoryRoutes";
 import { investmentRoutes } from "./routes/InvestmentRoutes";
 import { trajectoryRoutes } from "./routes/TrajectoryRoutes";
 import { habitRoutes } from "./routes/HabitRoutes";
+import { foodItemsRoutes } from "./routes/FoodItemsRoutes";
 import { handleMcpRequest } from "./mcp";
 import { getDb } from "./db";
 import { ApiKeyDAL } from "./data-access-layer/ApiKeyDAL";
@@ -145,6 +146,7 @@ app.route("/api/money-category", moneyCategoryRoutes);
 app.route("/api/investments", investmentRoutes);
 app.route("/api/trajectory", trajectoryRoutes);
 app.route("/api/habits", habitRoutes);
+app.route("/api/food-items", foodItemsRoutes);
 
 app.all("/mcp", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";

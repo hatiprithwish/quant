@@ -125,6 +125,8 @@ dailyLogRoutes.post(
         userId,
         date,
         c.env.AI,
+        c.env.USDA_API_KEY ?? "DEMO_KEY",
+        c.env.BROWSER,
         db,
       );
       Logger.info({
