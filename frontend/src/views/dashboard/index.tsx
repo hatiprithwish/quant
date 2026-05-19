@@ -10,7 +10,13 @@ import DailyLogPage from "./daily-log";
 import QuestsPage from "./quests";
 import QuestDetailPage from "./quests/[id]";
 import QuestsBoardPage from "./quests/board";
+import TrajectoryDashboardPage from "./quests/trajectory";
+import VisionVaultPage from "./quests/vault";
+import WeeklyCheckinPage from "./quests/checkin";
+import HabitIntelligencePage from "./quests/habits";
+import CompoundProjectorPage from "./quests/projector";
 import DebtDetailPage from "./money/debt";
+import FoodReviewPage from "./food/review";
 
 const FULL_HEIGHT_PREFIXES = ["/money", "/food", "/time", "/quests"];
 const WIDE_PREFIXES = ["/daily-log"];
@@ -30,6 +36,7 @@ export default function DashboardPage() {
             <Route path="/" element={<Navigate to="/food/dashboard" replace />} />
             <Route path="/food" element={<Navigate to="/food/dashboard" replace />} />
             <Route path="/food/dashboard" element={<FoodPage />} />
+            <Route path="/food/review" element={<FoodReviewPage />} />
 
             <Route path="/money" element={<Navigate to="/money/dashboard" replace />} />
             <Route path="/money/dashboard"    element={<ExpensesPage tab="dashboard" />} />
@@ -44,12 +51,17 @@ export default function DashboardPage() {
             <Route path="/time/reports" element={<TimePage section="reports" />} />
             <Route path="/time/bucket/:id" element={<BucketEntriesPage />} />
 
-            <Route path="/quests"        element={<QuestsPage filter="all" />} />
-            <Route path="/quests/active" element={<QuestsPage filter="active" />} />
-            <Route path="/quests/paused" element={<QuestsPage filter="paused" />} />
-            <Route path="/quests/done"   element={<QuestsPage filter="done" />} />
-            <Route path="/quests/board"  element={<QuestsBoardPage />} />
-            <Route path="/quests/:id"    element={<QuestDetailPage />} />
+            <Route path="/quests"                element={<QuestsPage filter="all" />} />
+            <Route path="/quests/active"         element={<QuestsPage filter="active" />} />
+            <Route path="/quests/paused"         element={<QuestsPage filter="paused" />} />
+            <Route path="/quests/done"           element={<QuestsPage filter="done" />} />
+            <Route path="/quests/board"          element={<QuestsBoardPage />} />
+            <Route path="/quests/trajectory"     element={<TrajectoryDashboardPage />} />
+            <Route path="/quests/vault"          element={<VisionVaultPage />} />
+            <Route path="/quests/checkin"        element={<WeeklyCheckinPage />} />
+            <Route path="/quests/habits"         element={<HabitIntelligencePage />} />
+            <Route path="/quests/projector"      element={<CompoundProjectorPage />} />
+            <Route path="/quests/:id"            element={<QuestDetailPage />} />
 
             <Route path="/body"      element={<BodyPage />} />
             <Route path="/daily-log" element={<DailyLogPage />} />

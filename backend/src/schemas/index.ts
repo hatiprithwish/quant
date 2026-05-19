@@ -16,3 +16,4 @@ export * from "./quests";
 export * from "./time-buckets";
 export * from "./investment";
 export * from "./daily-log";
+export * from "./trajectory";

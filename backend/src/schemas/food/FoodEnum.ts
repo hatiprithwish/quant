@@ -29,3 +29,15 @@ export const mealTypeLabelToInt: Record<MealTypeLabelEnum, MealTypeIntEnum> = {
   [MealTypeLabelEnum.Dinner]: MealTypeIntEnum.Dinner,
   [MealTypeLabelEnum.Snack]: MealTypeIntEnum.Snack,
 };
+
+export enum FoodItemReviewStatusEnum {
+  Pending = "pending",
+  Approved = "approved",
+}
+
+export enum FoodItemSourceEnum {
+  USDA = "usda",
+  OpenFoodFacts = "openfoodfacts",
+  Browser = "browser",
+  AiEstimated = "ai_estimated",
+}

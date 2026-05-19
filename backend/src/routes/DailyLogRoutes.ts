@@ -19,37 +19,33 @@ const dailyLogRoutes = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 dailyLogRoutes.use("*", clerkAuthMiddleware, generalRateLimiter);
 
-dailyLogRoutes.get(
-  "/:date",
-  zValidator("param", ZDateParam),
-  async (c) => {
-    const correlationId = c.get("correlationId") ?? "unknown";
-    const userId = c.get("userId");
-    const { date } = c.req.valid("param");
-    const db = getDb(c.env.DB);
+dailyLogRoutes.get("/:date", zValidator("param", ZDateParam), async (c) => {
+  const correlationId = c.get("correlationId") ?? "unknown";
+  const userId = c.get("userId");
+  const { date } = c.req.valid("param");
+  const db = getDb(c.env.DB);
 
-    try {
-      const result = await DailyLogRepo.getByDate(userId, date, db);
-      Logger.info({
-        correlationId,
-        logCategory: AppConstants.LOG_CATEGORIES.HTTP,
-        logAction: "GetDailyLogSuccess",
-        message: "Daily log retrieved",
-        metadata: { userId, date },
-      });
-      return c.json(result, 200);
-    } catch (err) {
-      Logger.error({
-        correlationId,
-        logCategory: AppConstants.LOG_CATEGORIES.DATABASE,
-        logAction: "GetDailyLogFailure",
-        message: "Failed to get daily log",
-        error: err,
-      });
-      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
-    }
-  },
-);
+  try {
+    const result = await DailyLogRepo.getByDate(userId, date, db);
+    Logger.info({
+      correlationId,
+      logCategory: AppConstants.LOG_CATEGORIES.HTTP,
+      logAction: "GetDailyLogSuccess",
+      message: "Daily log retrieved",
+      metadata: { userId, date },
+    });
+    return c.json(result, 200);
+  } catch (err) {
+    Logger.error({
+      correlationId,
+      logCategory: AppConstants.LOG_CATEGORIES.DATABASE,
+      logAction: "GetDailyLogFailure",
+      message: "Failed to get daily log",
+      error: err,
+    });
+    return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+  }
+});
 
 dailyLogRoutes.get("/", async (c) => {
   const correlationId = c.get("correlationId") ?? "unknown";
@@ -107,7 +103,10 @@ dailyLogRoutes.patch(
         message: "Failed to save daily log",
         error: err,
       });
-      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+      return c.json(
+        { isSuccess: false, message: "Internal server error" },
+        500,
+      );
     }
   },
 );
@@ -122,7 +121,14 @@ dailyLogRoutes.post(
     const db = getDb(c.env.DB);
 
     try {
-      const result = await DailyLogRepo.analyze(userId, date, c.env.AI, db);
+      const result = await DailyLogRepo.analyzeDailyLog(
+        userId,
+        date,
+        c.env.AI,
+        c.env.USDA_API_KEY ?? "DEMO_KEY",
+        c.env.BROWSER,
+        db,
+      );
       Logger.info({
         correlationId,
         logCategory: AppConstants.LOG_CATEGORIES.HTTP,
@@ -139,7 +145,10 @@ dailyLogRoutes.post(
         message: "Failed to analyze daily log",
         error: err,
       });
-      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+      return c.json(
+        { isSuccess: false, message: "Internal server error" },
+        500,
+      );
     }
   },
 );
@@ -154,7 +163,11 @@ dailyLogRoutes.post(
     const db = getDb(c.env.DB);
 
     try {
-      const result = await DailyLogRepo.weeklyReview({ ...body, userId }, c.env.AI, db);
+      const result = await DailyLogRepo.weeklyReview(
+        { ...body, userId },
+        c.env.AI,
+        db,
+      );
       Logger.info({
         correlationId,
         logCategory: AppConstants.LOG_CATEGORIES.HTTP,
@@ -171,7 +184,10 @@ dailyLogRoutes.post(
         message: "Failed to generate weekly review",
         error: err,
       });
-      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+      return c.json(
+        { isSuccess: false, message: "Internal server error" },
+        500,
+      );
     }
   },
 );
@@ -186,7 +202,11 @@ dailyLogRoutes.post(
     const db = getDb(c.env.DB);
 
     try {
-      const result = await DailyLogRepo.compareDays({ ...body, userId }, c.env.AI, db);
+      const result = await DailyLogRepo.compareDays(
+        { ...body, userId },
+        c.env.AI,
+        db,
+      );
       Logger.info({
         correlationId,
         logCategory: AppConstants.LOG_CATEGORIES.HTTP,
@@ -203,7 +223,10 @@ dailyLogRoutes.post(
         message: "Failed to compare days",
         error: err,
       });
-      return c.json({ isSuccess: false, message: "Internal server error" }, 500);
+      return c.json(
+        { isSuccess: false, message: "Internal server error" },
+        500,
+      );
     }
   },
 );

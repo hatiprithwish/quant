@@ -7,7 +7,8 @@ import {
   useMutationCompareDays,
 } from "@/api/mutations";
 import Spinner from "@/components/common/Spinner";
-import type { WeeklyReviewResponse, CompareDaysResponse } from "@/schemas";
+import type { WeeklyReviewResponse, CompareDaysResponse, SkippedEntry } from "@/schemas";
+import WeekInReviewCard from "./components/WeekInReviewCard";
 
 const ACCENT = "#ea580c";
 const AUTOSAVE_MS = 10_000;
@@ -570,6 +571,9 @@ function SidebarPanel({
   setShowCompare,
   mobileOpen,
   setMobileOpen,
+  skippedEntries,
+  showSkipped,
+  setShowSkipped,
 }: {
   date: string;
   today: string;
@@ -591,6 +595,9 @@ function SidebarPanel({
   setShowCompare: (v: boolean) => void;
   mobileOpen: boolean;
   setMobileOpen: (v: boolean) => void;
+  skippedEntries: SkippedEntry[];
+  showSkipped: boolean;
+  setShowSkipped: (v: boolean) => void;
 }) {
   const content = (
     <>
@@ -711,6 +718,85 @@ function SidebarPanel({
       >
         {analyzeLabel}
       </button>
+
+      {showSkipped && skippedEntries.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+          onClick={() => setShowSkipped(false)}
+        >
+          <div
+            style={{
+              background: "#111",
+              border: "1px solid #2a2a2a",
+              borderRadius: 6,
+              padding: 20,
+              maxWidth: 560,
+              width: "100%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <span style={{ color: "#f97316", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em" }}>
+                ⚠ SKIPPED ENTRIES ({skippedEntries.length})
+              </span>
+              <button
+                onClick={() => setShowSkipped(false)}
+                style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 16, lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ color: "#555", fontSize: 10, marginBottom: 14, letterSpacing: "0.08em" }}>
+              THESE ENTRIES COULD NOT BE LOGGED. CORRECT THE ISSUE AND RE-ANALYZE.
+            </p>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
+              <thead>
+                <tr>
+                  {["TYPE", "ENTRY", "REASON"].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: "left",
+                        color: "#444",
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        paddingBottom: 8,
+                        borderBottom: "1px solid #1e1e1e",
+                        paddingRight: 12,
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {skippedEntries.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #1a1a1a" }}>
+                    <td style={{ padding: "8px 12px 8px 0", color: s.type === "expense" ? "#22c55e" : s.type === "time_entry" ? "#a78bfa" : "#f97316", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      {s.type === "expense" ? "EXPENSE" : s.type === "time_entry" ? "TIME" : "MEAL"}
+                    </td>
+                    <td style={{ padding: "8px 12px 8px 0", color: "#ccc" }}>{s.raw}</td>
+                    <td style={{ padding: "8px 0", color: "#666" }}>{s.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div style={{ height: 1, background: "#1e1e1e", margin: "14px 0" }} />
 
@@ -857,6 +943,130 @@ function SidebarPanel({
   );
 }
 
+// ── Daily Pulse Card ──────────────────────────────────────────────────────────
+
+const PULSE_MONO = "'JetBrains Mono','Fira Code','Courier New',monospace";
+
+type PulseMood = 1 | 2 | 3 | 4 | 5;
+
+const MOOD_LABELS: Record<PulseMood, string> = { 1: "DRAINED", 2: "LOW", 3: "OKAY", 4: "GOOD", 5: "PEAK" };
+const MOOD_COLORS: Record<PulseMood, string> = { 1: "#ef4444", 2: "#f97316", 3: "#eab308", 4: "#22c55e", 5: "#a78bfa" };
+const DISTRACTION_LABELS: Record<PulseMood, string> = { 1: "NONE", 2: "LOW", 3: "MED", 4: "HIGH", 5: "LOST" };
+const DISTRACTION_COLORS: Record<PulseMood, string> = { 1: "#22c55e", 2: "#06b6d4", 3: "#eab308", 4: "#f97316", 5: "#ef4444" };
+
+function PulseRatingRow({
+  label, value, onChange, labels, colors,
+}: {
+  label: string; value: PulseMood; onChange: (v: PulseMood) => void;
+  labels: Record<PulseMood, string>; colors: Record<PulseMood, string>;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ fontFamily: PULSE_MONO, fontSize: 7, letterSpacing: "0.1em", color: "rgba(255,255,255,0.3)", width: 74, flexShrink: 0 }}>{label}</span>
+      <div style={{ display: "flex", gap: 4 }}>
+        {([1, 2, 3, 4, 5] as PulseMood[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => onChange(v)}
+            style={{
+              width: 28, height: 20, borderRadius: 3, border: `1px solid ${value === v ? colors[v] : "rgba(255,255,255,0.1)"}`,
+              background: value === v ? `${colors[v]}20` : "transparent",
+              fontFamily: PULSE_MONO, fontSize: 7, fontWeight: 700,
+              color: value === v ? colors[v] : "rgba(255,255,255,0.25)",
+              cursor: "pointer", transition: "all 0.12s",
+            }}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+      <span style={{ fontFamily: PULSE_MONO, fontSize: 8, fontWeight: 700, color: colors[value], width: 52, letterSpacing: "0.06em" }}>
+        {labels[value]}
+      </span>
+    </div>
+  );
+}
+
+function DailyPulseCard({ date }: { date: string }) {
+  const [open, setOpen] = useState(false);
+  const [energy, setEnergy] = useState<PulseMood>(3);
+  const [focus, setFocus] = useState<PulseMood>(3);
+  const [mood, setMood] = useState<PulseMood>(3);
+  const [distraction, setDistraction] = useState<PulseMood>(1);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const overallColor = energy >= 4 && focus >= 4 && distraction <= 2 ? "#22c55e" : energy <= 2 || distraction >= 4 ? "#ef4444" : "#eab308";
+
+  return (
+    <div
+      style={{
+        background: `rgba(234,88,12,0.03)`,
+        border: `1px solid ${open ? "rgba(234,88,12,0.2)" : "rgba(234,88,12,0.1)"}`,
+        borderRadius: 8,
+        marginBottom: 8,
+        overflow: "hidden",
+        transition: "border-color 0.2s",
+        fontFamily: PULSE_MONO,
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", cursor: "pointer", userSelect: "none" }}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span style={{ fontSize: 9, color: overallColor }}>◉</span>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.14em", fontWeight: 700, color: "rgba(234,88,12,0.8)" }}>DAILY PULSE</span>
+          {" "}
+          <span style={{ fontSize: 7, color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em" }}>{date}</span>
+        </div>
+        {!open && (
+          <div style={{ display: "flex", gap: 6 }}>
+            {[
+              { label: "E", val: energy, colors: MOOD_COLORS },
+              { label: "F", val: focus, colors: MOOD_COLORS },
+              { label: "D", val: distraction, colors: DISTRACTION_COLORS },
+            ].map((s) => (
+              <span key={s.label} style={{ fontFamily: PULSE_MONO, fontSize: 7, color: s.colors[s.val as PulseMood], background: `${s.colors[s.val as PulseMood]}15`, border: `1px solid ${s.colors[s.val as PulseMood]}30`, padding: "1px 5px", borderRadius: 2 }}>
+                {s.label}:{s.val}
+              </span>
+            ))}
+          </div>
+        )}
+        <span style={{ fontSize: 8, color: "rgba(234,88,12,0.4)", transform: open ? "rotate(90deg)" : "rotate(0deg)", display: "inline-block", transition: "transform 0.2s" }}>›</span>
+      </div>
+
+      {/* Expanded */}
+      {open && (
+        <div style={{ padding: "0 12px 12px", borderTop: "1px solid rgba(234,88,12,0.08)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+          <PulseRatingRow label="ENERGY" value={energy} onChange={setEnergy} labels={MOOD_LABELS} colors={MOOD_COLORS} />
+          <PulseRatingRow label="FOCUS" value={focus} onChange={setFocus} labels={MOOD_LABELS} colors={MOOD_COLORS} />
+          <PulseRatingRow label="MOOD" value={mood} onChange={setMood} labels={MOOD_LABELS} colors={MOOD_COLORS} />
+          <PulseRatingRow label="DISTRACTION" value={distraction} onChange={setDistraction} labels={DISTRACTION_LABELS} colors={DISTRACTION_COLORS} />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 2 }}>
+            <button
+              onClick={handleSave}
+              style={{
+                fontFamily: PULSE_MONO, fontSize: 8, letterSpacing: "0.1em", padding: "4px 14px",
+                borderRadius: 3, background: saved ? "rgba(34,197,94,0.1)" : "rgba(234,88,12,0.1)",
+                border: `1px solid ${saved ? "rgba(34,197,94,0.3)" : "rgba(234,88,12,0.25)"}`,
+                color: saved ? "#22c55e" : ACCENT, cursor: "pointer",
+              }}
+            >
+              {saved ? "✓ SAVED" : "SAVE PULSE"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function DailyLogPage() {
@@ -869,6 +1079,8 @@ export default function DailyLogPage() {
   const [analyzeStatus, setAnalyzeStatus] = useState<
     "idle" | "pending" | "done" | "error"
   >("idle");
+  const [skippedEntries, setSkippedEntries] = useState<SkippedEntry[]>([]);
+  const [showSkipped, setShowSkipped] = useState(false);
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
@@ -936,7 +1148,9 @@ export default function DailyLogPage() {
   const handleAnalyze = async () => {
     setAnalyzeStatus("pending");
     try {
-      await analyzeMutation.mutateAsync(date);
+      const result = await analyzeMutation.mutateAsync(date);
+      setSkippedEntries(result.skipped_entries ?? []);
+      if ((result.skipped_entries ?? []).length > 0) setShowSkipped(true);
       setAnalyzeStatus("done");
     } catch {
       setAnalyzeStatus("error");
@@ -998,6 +1212,20 @@ export default function DailyLogPage() {
         ? "#ef444455"
         : `${ACCENT}88`;
 
+  const weekStart = (() => {
+    const [y, m, d] = date.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const dow = dt.getDay();
+    const monday = new Date(y, m - 1, d + (dow === 0 ? -6 : 1 - dow));
+    return toLocalDateString(monday);
+  })();
+  const isCurrentWeek = (() => {
+    const todayDt = new Date();
+    const todayDow = todayDt.getDay();
+    const todayMonday = new Date(todayDt.getFullYear(), todayDt.getMonth(), todayDt.getDate() + (todayDow === 0 ? -6 : 1 - todayDow));
+    return weekStart === toLocalDateString(todayMonday);
+  })();
+
   return (
     <>
       <style>{`
@@ -1057,6 +1285,8 @@ export default function DailyLogPage() {
               <span>{saveGlyph}</span>
               <span>{saveLabel}</span>
             </div>
+            <WeekInReviewCard weekStart={weekStart} isCurrentWeek={isCurrentWeek} />
+            {isToday && <DailyPulseCard date={date} />}
             <textarea
               className="daily-log-editor"
               style={{
@@ -1106,6 +1336,9 @@ export default function DailyLogPage() {
         setShowCompare={setShowCompare}
         mobileOpen={mobilePanelOpen}
         setMobileOpen={setMobilePanelOpen}
+        skippedEntries={skippedEntries}
+        showSkipped={showSkipped}
+        setShowSkipped={setShowSkipped}
       />
 
       {/* ── BACKDROP ───────────────────────────────────────────────────── */}

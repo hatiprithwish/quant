@@ -17,7 +17,14 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/food/dashboard", label: "FOOD",   sub: "nutrition", accent: "#22c55e", glyph: "◈" },
+  {
+    to: "/food", label: "FOOD", sub: "nutrition", accent: "#22c55e", glyph: "◈",
+    activePrefix: "/food", defaultTo: "/food/dashboard",
+    subItems: [
+      { to: "/food/dashboard", label: "FUEL LOG",  sub: "daily nutrition", glyph: "◈" },
+      { to: "/food/review",    label: "DB REVIEW",  sub: "pending items",   glyph: "◉" },
+    ],
+  },
   {
     to: "/money", label: "MONEY", sub: "finance", accent: "#f59e0b", glyph: "◉",
     activePrefix: "/money", defaultTo: "/money/dashboard",
@@ -43,11 +50,16 @@ const NAV_ITEMS: NavItem[] = [
     to: "/quests", label: "QUESTS", sub: "goals", accent: "#a855f7", glyph: "◆",
     activePrefix: "/quests", defaultTo: "/quests",
     subItems: [
-      { to: "/quests",        label: "ALL QUESTS", sub: "full roster", glyph: "◈" },
-      { to: "/quests/active", label: "ACTIVE",     sub: "in progress", glyph: "▶" },
-      { to: "/quests/paused", label: "PAUSED",     sub: "on hold",     glyph: "⏸" },
-      { to: "/quests/done",   label: "DONE",       sub: "completed",   glyph: "✓" },
-      { to: "/quests/board",  label: "KANBAN",     sub: "board view",  glyph: "⊞" },
+      { to: "/quests",              label: "ALL QUESTS",  sub: "full roster",    glyph: "◈" },
+      { to: "/quests/active",       label: "ACTIVE",      sub: "in progress",    glyph: "▶" },
+      { to: "/quests/paused",       label: "PAUSED",      sub: "on hold",        glyph: "⏸" },
+      { to: "/quests/done",         label: "DONE",        sub: "completed",      glyph: "✓" },
+      { to: "/quests/board",        label: "KANBAN",      sub: "board view",     glyph: "⊞" },
+      { to: "/quests/trajectory",   label: "TRAJECTORY",  sub: "intelligence",   glyph: "◆" },
+      { to: "/quests/vault",        label: "VAULT",       sub: "5-layer vision", glyph: "◎" },
+      { to: "/quests/checkin",      label: "CHECK-IN",    sub: "weekly review",  glyph: "△" },
+      { to: "/quests/habits",       label: "HABITS",      sub: "intelligence",   glyph: "◉" },
+      { to: "/quests/projector",    label: "PROJECTOR",   sub: "escape math",    glyph: "⇄" },
     ],
   },
   { to: "/daily-log", label: "LOG", sub: "daily log", accent: "#ea580c", glyph: "◈" },

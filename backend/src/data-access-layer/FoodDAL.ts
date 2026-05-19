@@ -29,6 +29,10 @@ export class FoodDAL {
     }
   }
 
+  static async deleteByDate(userId: string, date: string, db: DrizzleDb) {
+    return db.delete(foodLogs).where(and(eq(foodLogs.user_id, userId), eq(foodLogs.date, date)));
+  }
+
   static async findByDateRange(req: GetFoodLogsDbRequest, db: DrizzleDb) {
     return db
       .select()
